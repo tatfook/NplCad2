@@ -41,7 +41,7 @@ function NplOce.exportSingleShape(shape,position,color)
 	return NplOce.export(scene)
 end
 
-function NplOce.exportToParaX(scene)
+function NplOce.exportToParaX(scene, isYUp)
 	if (scene == nil) then
 		return false;
 	end
@@ -59,7 +59,7 @@ function NplOce.exportToParaX(scene)
 	end
 
 	local template = WriteTemplate();
-	local data = scene:toParaX();
+	local data = scene:toParaX(isYUp);
 	if (template ~= nil and data ~= nil) then
 		local Encoding = commonlib.gettable("System.Encoding");
 		data = Encoding.unbase64(data);
