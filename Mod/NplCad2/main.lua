@@ -32,13 +32,15 @@ function NplCad2:init()
 	GameLogic.GetFilters():add_filter("block_types", function(xmlRoot) 
 		local blocks = commonlib.XPath.selectNode(xmlRoot, "/blocks/");
 		if(blocks) then
-			-- NPL CAD v2.0 with Code Block
-			NPL.load("(gl)Mod/NplCad2/ItemCADCodeBlock.lua");
-			blocks[#blocks+1] = {name="block", attr={ name="NPLCADCodeBlock",
-				id = 10513, item_class="ItemCADCodeBlock", text=L"CAD 代码模型",
-				icon = "Mod/NplCad2/textures/icon.png",
-			}}
-			LOG.std(nil, "info", "NplCad2", "NPL CAD code block  is registered");
+            NplCad2.LoadPlugin(function()
+                -- NPL CAD v2.0 with Code Block
+			    NPL.load("(gl)Mod/NplCad2/ItemCADCodeBlock.lua");
+			    blocks[#blocks+1] = {name="block", attr={ name="NPLCADCodeBlock",
+				    id = 10513, item_class="ItemCADCodeBlock", text=L"CAD 代码模型",
+				    icon = "Mod/NplCad2/textures/icon.png",
+			    }}
+			    LOG.std(nil, "info", "NplCad2", "NPL CAD code block  is registered");
+            end)
 		end
 		return xmlRoot;
 	end)
@@ -69,5 +71,20 @@ function NplCad2:OnLeaveWorld()
 end
 
 function NplCad2:OnDestroy()
+end
+
+function NplCad2.LoadPlugin(callback)
+    local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
+    if(not NplOceConnection)then
+        return
+    end
+    local plugin_path;
+	local debug = ParaEngine.GetAppCommandLineByParam("nplcad_debug", false);
+    if(debug)then
+        plugin_path = "plugins/nploce/nploce_d.dll";
+    else
+        plugin_path = "plugins/nploce/nploce.dll";
+    end
+    NplOceConnection.load({ npl_oce_dll = plugin_path, activate_callback = "Mod/NplCad2/NplOceConnection.lua", },callback);
 end
 

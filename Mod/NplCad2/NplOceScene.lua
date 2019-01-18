@@ -8,9 +8,11 @@ use the lib:
 local NplOceScene = NPL.load("Mod/NplCad2/NplOceScene.lua");
 ------------------------------------------------------------
 --]]
-
+NPL.load("(gl)script/ide/System/Encoding/base64.lua");
+NPL.load("(gl)script/ide/Json.lua");
 NPL.load("(gl)script/ide/math/Matrix4.lua");
 local Matrix4 = commonlib.gettable("mathlib.Matrix4");
+local Encoding = commonlib.gettable("System.Encoding");
 
 local NplOceScene = NPL.export();
 
@@ -212,4 +214,19 @@ function NplOceScene.arrayToColor(arr)
         b = arr[3],
         a = arr[4],
     }
+end
+function NplOceScene.saveSceneToParaX(filename,scene)
+    if(not scene)then 
+        return
+    end
+    NplOceScene.run(scene,false);
+    local s = NplOce.exportToParaX(scene)
+    s = Encoding.base64(s);
+    ParaIO.CreateDirectory(filename);
+    local file = ParaIO.open(filename, "w");
+	if(file:IsValid()) then
+		file:WriteString(s);
+		file:close();
+	end
+    return s;
 end
