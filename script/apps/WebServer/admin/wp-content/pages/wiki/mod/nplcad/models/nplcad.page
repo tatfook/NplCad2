@@ -31,9 +31,9 @@ function nplcad:api_runcode(input)
     LOG.std(nil,"debug","nplcad:api_runcode_nploce beginning");
     local output = {};
 
-	local debug_nploce = ParaEngine.GetAppCommandLineByParam("debug_nploce", "false");
+	local nplcad_debug = ParaEngine.GetAppCommandLineByParam("nplcad_debug", false);
     local dll;
-    if(debug_nploce == "true" or debug == "True")then
+    if(nplcad_debug)then
         dll = "plugins/nploce/nploce_d.dll"
     else
         dll = "plugins/nploce/nploce.dll"
@@ -98,7 +98,7 @@ function nplcad.do_string_export_parax(str)
     ShapeBuilder.create()
     NPL.DoString(str);
     NplOceScene.run(ShapeBuilder.getScene(),false);
-    local s = NplOce.exportToParaX(ShapeBuilder.getScene())
+    local s = NplOce.exportToParaX(ShapeBuilder.getScene(),true)
     s = Encoding.base64(s);
     _G.ShapeBuilder = nil;
     return s;

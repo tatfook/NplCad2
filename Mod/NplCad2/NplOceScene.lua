@@ -220,7 +220,7 @@ function NplOceScene.saveSceneToParaX(filename,scene)
         return
     end
     NplOceScene.run(scene,false);
-    local s = NplOce.exportToParaX(scene)
+    local s = NplOce.exportToParaX(scene,true);
     s = Encoding.base64(s);
     ParaIO.CreateDirectory(filename);
     local file = ParaIO.open(filename, "w");
