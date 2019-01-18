@@ -1,0 +1,12 @@
+﻿.vs
+*.db
+*.opendb
+*.user
+*.sdf
+*.suo
+*.log
+/Debug/
+/Properties/
+/bin/
+/obj/
+*.csproj.user

@@ -1,0 +1,105 @@
+<?npl
+--[[
+Title: nplcad.page
+Author: leio
+Date: 2018/9/18
+Desc: 
+http://localhost:8099/api/mod/nplcad/models/nplcad/check
+http://localhost:8099/api/mod/nplcad/models/nplcad/runcode
+]]
+
+include_once(WIKI_ROOT.."models/abstract/base.page");
+
+local nplcad = inherit(models.abstract.base, gettable("models.nplcad"));
+
+NPL.load("(gl)script/ide/System/Encoding/base64.lua");
+NPL.load("(gl)script/ide/Json.lua");
+
+local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
+local Encoding = commonlib.gettable("System.Encoding");
+local NplOceScene = NPL.load("Mod/NplCad2/NplOceScene.lua");
+
+function nplcad:api_check()
+    return {true}
+end
+
+-- Only build from a string,can't include any files
+-- @param {Object} input
+-- @param {string} input.code
+function nplcad:api_runcode(input)
+    local code = input.code;
+    LOG.std(nil,"debug","nplcad:api_runcode_nploce beginning");
+    local output = {};
+
+	local debug_nploce = ParaEngine.GetAppCommandLineByParam("debug_nploce", "false");
+    local dll;
+    if(debug_nploce == "true" or debug == "True")then
+        dll = "plugins/nploce/nploce_d.dll"
+    else
+        dll = "plugins/nploce/nploce.dll"
+    end
+    NplOceConnection.load({ npl_oce_dll = dll },function(msg)
+        if(msg == true)then
+			resume();
+        end
+    end);
+    yield();
+    if(code)then
+        local build_type = input.build_type
+        local func_str = nplcad.do_string;
+        if(build_type == "brep")then
+            func_str = nplcad.do_string_export_brep;
+        elseif(build_type == "parax")then
+            func_str = nplcad.do_string_export_parax;
+        end
+        local ok, result = xpcall(func_str,nplcad.handle_err,code)	
+
+        output.ok = ok;
+        output.result = result;
+    end
+    return output; 
+end
+function nplcad.handle_err(err)
+    commonlib.echo("nplcad.handle_err");
+    commonlib.echo(err);
+    return err
+end
+function nplcad.do_string(str)
+    if(not str)then
+        return
+    end
+    local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
+    _G.ShapeBuilder = ShapeBuilder;
+    ShapeBuilder.create()
+    NPL.DoString(str);
+    NplOceScene.run(ShapeBuilder.getScene(),false);
+    local s = ShapeBuilder.toJson();
+    _G.ShapeBuilder = nil;
+    return s;
+end
+function nplcad.do_string_export_brep(str)
+    if(not str)then
+        return
+    end
+    local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
+    _G.ShapeBuilder = ShapeBuilder;
+    ShapeBuilder.create()
+    NPL.DoString(str);
+    local s = ShapeBuilder.toBrep();
+    _G.ShapeBuilder = nil;
+    return s;
+end
+function nplcad.do_string_export_parax(str)
+    if(not str)then
+        return
+    end
+    local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
+    _G.ShapeBuilder = ShapeBuilder;
+    ShapeBuilder.create()
+    NPL.DoString(str);
+    NplOceScene.run(ShapeBuilder.getScene(),false);
+    local s = NplOce.exportToParaX(ShapeBuilder.getScene())
+    s = Encoding.base64(s);
+    _G.ShapeBuilder = nil;
+    return s;
+end
