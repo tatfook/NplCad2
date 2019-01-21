@@ -39,7 +39,7 @@ function ItemCADCodeBlock:TryCreate(itemStack, entityPlayer, x,y,z, side, data, 
 			local ItemStack = commonlib.gettable("MyCompany.Aries.Game.Items.ItemStack");
 			local item_stack = ItemStack:new():Init(names.CodeBlock, 1);
 			item_stack:SetDataField("langConfigFile", "npl_cad");
-			item_stack:SetDataField("nplCode", "-- sphere(1)");
+			--item_stack:SetDataField("nplCode", "-- sphere(1)");
 			return item:TryCreate(item_stack, entityPlayer, x,y,z, side, data, side_region);
 		end
 	end

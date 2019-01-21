@@ -10,7 +10,19 @@ NplOceConnection.load({ npl_oce_dll = "plugins/nploce/nploce_d.dll", activate_ca
 	local cube = NplOce.cube(1,2,3);
     commonlib.echo(cube:IsNull());
     commonlib.echo(cube:ShapeType());
+
+    local NplOceScene = NPL.load("Mod/NplCad2/NplOceScene.lua");
+    local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
+    ShapeBuilder.create();
+    ShapeBuilder.cube(1,1,2);
+    NplOceScene.saveSceneToParaX("%s",ShapeBuilder.getScene());
 end);
+
+        local NplOceScene = NPL.load("Mod/NplCad2/NplOceScene.lua");
+        local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
+        ShapeBuilder.create();
+        ShapeBuilder.cube(1,1,2);
+        NplOceScene.saveSceneToParaX("%s",ShapeBuilder.getScene());
 ------------------------------------------------------------
 --]]
 NPL.load("(gl)script/ide/math/bit.lua");

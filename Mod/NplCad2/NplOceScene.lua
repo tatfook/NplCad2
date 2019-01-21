@@ -221,11 +221,11 @@ function NplOceScene.saveSceneToParaX(filename,scene)
     end
     NplOceScene.run(scene,false);
     local s = NplOce.exportToParaX(scene,true);
-    s = Encoding.base64(s);
     ParaIO.CreateDirectory(filename);
     local file = ParaIO.open(filename, "w");
 	if(file:IsValid()) then
-		file:WriteString(s);
+        local len = string.len(s);
+		file:write(s,len);
 		file:close();
 	end
     return s;
