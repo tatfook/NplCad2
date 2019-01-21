@@ -5,24 +5,23 @@ Date: 2018/9/28
 Desc: Connect "nploce.dll" 
 use the lib:
 ------------------------------------------------------------
+--using nploce_d.dll
 local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
 NplOceConnection.load({ npl_oce_dll = "plugins/nploce/nploce_d.dll", activate_callback = "Mod/NplCad2/NplOceConnection.lua", },function(msg)
 	local cube = NplOce.cube(1,2,3);
     commonlib.echo(cube:IsNull());
     commonlib.echo(cube:ShapeType());
+end);
 
+--using nploce.dll
+local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
+NplOceConnection.load({ npl_oce_dll = "plugins/nploce/nploce.dll", activate_callback = "Mod/NplCad2/NplOceConnection.lua", },function(msg)
     local NplOceScene = NPL.load("Mod/NplCad2/NplOceScene.lua");
     local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
     ShapeBuilder.create();
-    ShapeBuilder.cube(1,1,2);
-    NplOceScene.saveSceneToParaX("%s",ShapeBuilder.getScene());
+    ShapeBuilder.cube(1,1,1);
+    NplOceScene.saveSceneToParaX("test/test.cube.x",ShapeBuilder.getScene());
 end);
-
-        local NplOceScene = NPL.load("Mod/NplCad2/NplOceScene.lua");
-        local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
-        ShapeBuilder.create();
-        ShapeBuilder.cube(1,1,2);
-        NplOceScene.saveSceneToParaX("%s",ShapeBuilder.getScene());
 ------------------------------------------------------------
 --]]
 NPL.load("(gl)script/ide/math/bit.lua");
