@@ -49,10 +49,7 @@ function NplCad2:init()
 	GameLogic.GetFilters():add_filter("block_list", function(xmlRoot) 
 		for node in commonlib.XPath.eachNode(xmlRoot, "/blocklist/category") do
 			if(node.attr.name == "tool") then
-				node[#node+1] = {name="block", attr={name="NplCad2"} };
-
-				-- TODO for LEIO: uncomment this when it is fully finished
-				-- node[#node+1] = {name="block", attr={name="NPLCADCodeBlock"} };
+				node[#node+1] = {name="block", attr={name="NPLCADCodeBlock"} };
 			end
 		end
 		return xmlRoot;
