@@ -39,6 +39,10 @@ function NplOceConnection.load(options,callback)
         end
         return
     end
+    if(not NPL.GetLuaState)then
+		LOG.std(nil, "error", "NplOceConnection", "can't find the function of NPL.GetLuaState.\n");
+        return
+    end
 	NplOceConnection.callback = callback;
     local npl_oce_dll = options.npl_oce_dll or "plugins/nploce/nploce_d.dll"
 	local activate_callback = options.activate_callback or "Mod/NplCad2/NplOceConnection.lua";
