@@ -175,7 +175,7 @@ end
 -- @param {number} [angle3 = 360]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder.torus(radius1,radius2,angle1,angle2,angle3,color) 
+function ShapeBuilder._torus(radius1,radius2,angle1,angle2,angle3,color) 
     color = ShapeBuilder.converColorToRGBA(color);
     return ShapeBuilder.addShape(NplOce.torus(radius1,radius2,angle1,angle2,angle3),color) 
 end
@@ -223,7 +223,7 @@ end
 -- @param {number} [a1 = 360]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder.circle(r,a0,a1,color) 
+function ShapeBuilder._circle(r,a0,a1,color) 
     color = ShapeBuilder.converColorToRGBA(color);
     return ShapeBuilder.addShape(NplOce.circle(r,a0,a1),color) 
 end
@@ -237,7 +237,7 @@ end
 -- @param {number} [a1 = 0]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder.ellipse(r1,r2,a0,a1,color) 
+function ShapeBuilder._ellipse(r1,r2,a0,a1,color) 
     color = ShapeBuilder.converColorToRGBA(color);
     return ShapeBuilder.addShape(NplOce.ellipse(r1,r2,a0,a1),color) 
 end
