@@ -118,20 +118,25 @@ end
 -- @param {number} [z = 10]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder.cube(x,y,z,color) 
+function ShapeBuilder._cube(x,y,z,color) 
     color = ShapeBuilder.converColorToRGBA(color);
     return ShapeBuilder.addShape(NplOce.cube(x,y,z),color) 
 end
-
+function ShapeBuilder.cube(size,color) 
+    ShapeBuilder._cube(size,size,size,color) 
+end
 -- Create a cylinder
 -- @param {number} [radius = 2]
 -- @param {number} [height = 10]
 -- @param {number} [angle = 360]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder.cylinder(radius,height,angle,color) 
+function ShapeBuilder._cylinder(radius,height,angle,color) 
     color = ShapeBuilder.converColorToRGBA(color);
     return ShapeBuilder.addShape(NplOce.cylinder(radius,height,angle),color) 
+end
+function ShapeBuilder.cylinder(radius,height,color) 
+    ShapeBuilder._cylinder(radius,height,360,color);
 end
 
 -- Create a sphere
@@ -141,11 +146,13 @@ end
 -- @param {number} [angle3 = 360]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder.sphere(radius,angle1,angle2,angle3,color) 
+function ShapeBuilder._sphere(radius,angle1,angle2,angle3,color) 
     color = ShapeBuilder.converColorToRGBA(color);
     return ShapeBuilder.addShape(NplOce.sphere(radius,angle1,angle2,angle3),color) 
 end
-
+function ShapeBuilder.sphere(radius,color) 
+    ShapeBuilder._sphere(radius,-90,90,360,color);
+end
 -- Create a cone
 -- @param {number} [radius1 = 2]
 -- @param {number} [radius2 = 4]
@@ -153,11 +160,13 @@ end
 -- @param {number} [angle = 360]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder.cone(radius1,radius2,height,angle,color) 
+function ShapeBuilder._cone(radius1,radius2,height,angle,color) 
     color = ShapeBuilder.converColorToRGBA(color);
     return ShapeBuilder.addShape(NplOce.cone(radius1,radius2,height,angle),color) 
 end
-
+function ShapeBuilder.cone(radius1,radius2,height,color) 
+    ShapeBuilder._cone(radius1,radius2,height,360,color);
+end
 -- Create a torus
 -- @param {number} [radius1 = 10]
 -- @param {number} [radius2 = 2]
@@ -170,7 +179,9 @@ function ShapeBuilder.torus(radius1,radius2,angle1,angle2,angle3,color)
     color = ShapeBuilder.converColorToRGBA(color);
     return ShapeBuilder.addShape(NplOce.torus(radius1,radius2,angle1,angle2,angle3),color) 
 end
-
+function ShapeBuilder.torus(radius1,radius2,color) 
+    ShapeBuilder._torus(radius1,radius2,-180,180,360,color);
+end
 -- Create a point
 -- @param {number} [x = 0]
 -- @param {number} [y = 0]
@@ -197,8 +208,8 @@ function ShapeBuilder.line(x1,y1,z1,x2,y2,z2,color)
 end
 
 -- Create a plane
--- @param {number} [l = 0]
--- @param {number} [w = 0]
+-- @param {number} [l = 100]
+-- @param {number} [w = 100]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
 function ShapeBuilder.plane(l,w,color) 
@@ -209,14 +220,16 @@ end
 -- Create a circle
 -- @param {number} [r = 0]
 -- @param {number} [a0 = 0]
--- @param {number} [a1 = 0]
+-- @param {number} [a1 = 360]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
 function ShapeBuilder.circle(r,a0,a1,color) 
     color = ShapeBuilder.converColorToRGBA(color);
     return ShapeBuilder.addShape(NplOce.circle(r,a0,a1),color) 
 end
-
+function ShapeBuilder.circle(r,a0,a1,color) 
+    ShapeBuilder._circle(r,0,360,color) 
+end
 -- Create an ellipse
 -- @param {number} [r1 = 0]
 -- @param {number} [r2 = 0]
@@ -228,7 +241,9 @@ function ShapeBuilder.ellipse(r1,r2,a0,a1,color)
     color = ShapeBuilder.converColorToRGBA(color);
     return ShapeBuilder.addShape(NplOce.ellipse(r1,r2,a0,a1),color) 
 end
-
+function ShapeBuilder.ellipse(r1,r2,color) 
+    ShapeBuilder._ellipse(r1,r2,0,360,color) 
+end
 -- Create a helix
 -- @param {number} [p = 0]
 -- @param {number} [h = 0]
@@ -255,8 +270,8 @@ function ShapeBuilder.spiral(g,c,r,color)
 end
 
 -- Create a polygon
--- @param {number} [p = 0]
--- @param {number} [c = 0]
+-- @param {number} [p = 6]
+-- @param {number} [c = 2]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
 function ShapeBuilder.polygon(p,c,color) 
@@ -265,27 +280,26 @@ function ShapeBuilder.polygon(p,c,color)
 end
 
 -- Create a prism
--- @param {number} [p = 0]
--- @param {number} [c = 0]
--- @param {number} [h = 0]
+-- @param {number} [p = 6]
+-- @param {number} [c = 2]
+-- @param {number} [h = 10]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
 function ShapeBuilder.prism(p,c,h,color) 
     color = ShapeBuilder.converColorToRGBA(color);
     return ShapeBuilder.addShape(NplOce.prism(p,c,h),color) 
 end
-
 -- Create a wedge
 -- @param {number} [x1 = 0]
 -- @param {number} [y1 = 0]
 -- @param {number} [z1 = 0]
--- @param {number} [x3 = 0]
--- @param {number} [z3 = 0]
--- @param {number} [x2 = 0]
--- @param {number} [y2 = 0]
--- @param {number} [z2 = 0]
--- @param {number} [x4 = 0]
--- @param {number} [z4 = 0]
+-- @param {number} [x3 = 2]
+-- @param {number} [z3 = 2]
+-- @param {number} [x2 = 10]
+-- @param {number} [y2 = 10]
+-- @param {number} [z2 = 10]
+-- @param {number} [x4 = 8]
+-- @param {number} [z4 = 8]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
 function ShapeBuilder.wedge(x1, y1, z1, x3, z3, x2, y2, z2, x4, z4,color) 
@@ -294,19 +308,21 @@ function ShapeBuilder.wedge(x1, y1, z1, x3, z3, x2, y2, z2, x4, z4,color)
 end
 
 -- Create an ellipsoid
--- @param {number} [r1 = 0]
--- @param {number} [r2 = 0]
+-- @param {number} [r1 = 2]
+-- @param {number} [r2 = 4]
 -- @param {number} [r3 = 0]
--- @param {number} [a1 = 0]
--- @param {number} [a2 = 0]
--- @param {number} [a3 = 0]
+-- @param {number} [a1 = -90]
+-- @param {number} [a2 = 90]
+-- @param {number} [a3 = 360]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder.ellipsoid(r1, r2, r3, a1, a2, a3,color) 
+function ShapeBuilder._ellipsoid(r1, r2, r3, a1, a2, a3,color) 
     color = ShapeBuilder.converColorToRGBA(color);
     return ShapeBuilder.addShape(NplOce.ellipsoid(r1, r2, r3, a1, a2, a3),color) 
 end
-
+function ShapeBuilder.ellipsoid(r1, r2, r3, color) 
+    ShapeBuilder._ellipsoid(r1, r2, r3, -90, 90, 360,color) 
+end
 -- Run boolean operator between two nodes
 -- @param {NplOce.Node} node_1
 -- @param {string} type - union|difference|intersection|section

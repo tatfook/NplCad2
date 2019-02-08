@@ -71,6 +71,7 @@ function nplcad.do_string(str)
     local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
     _G.ShapeBuilder = ShapeBuilder;
     ShapeBuilder.create()
+    nplcad.installMethods(_G, ShapeBuilder)
     NPL.DoString(str);
     NplOceScene.run(ShapeBuilder.getScene(),false);
     local s = ShapeBuilder.toJson();
@@ -84,6 +85,7 @@ function nplcad.do_string_export_brep(str)
     local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
     _G.ShapeBuilder = ShapeBuilder;
     ShapeBuilder.create()
+    nplcad.installMethods(_G, ShapeBuilder)
     NPL.DoString(str);
     local s = ShapeBuilder.toBrep();
     _G.ShapeBuilder = nil;
@@ -96,10 +98,22 @@ function nplcad.do_string_export_parax(str)
     local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
     _G.ShapeBuilder = ShapeBuilder;
     ShapeBuilder.create()
+    nplcad.installMethods(_G, ShapeBuilder)
+
     NPL.DoString(str);
     NplOceScene.run(ShapeBuilder.getScene(),false);
     local s = NplOce.exportToParaX(ShapeBuilder.getScene(),true)
     s = Encoding.base64(s);
     _G.ShapeBuilder = nil;
     return s;
+end
+
+function nplcad.installMethods(codeAPI, shape)
+	for func_name, func in pairs(shape) do
+		if(type(func_name) == "string" and type(func) == "function") then
+			codeAPI[func_name] = function(...)
+				return func(...);
+			end
+		end
+	end
 end
