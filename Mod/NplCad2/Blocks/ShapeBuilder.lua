@@ -118,13 +118,11 @@ end
 -- @param {number} [z = 10]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder._cube(x,y,z,color) 
+function ShapeBuilder.cube(x,y,z,color) 
     color = ShapeBuilder.converColorToRGBA(color);
     return ShapeBuilder.addShape(NplOce.cube(x,y,z),color) 
 end
-function ShapeBuilder.cube(size,color) 
-    ShapeBuilder._cube(size,size,size,color) 
-end
+
 -- Create a cylinder
 -- @param {number} [radius = 2]
 -- @param {number} [height = 10]
