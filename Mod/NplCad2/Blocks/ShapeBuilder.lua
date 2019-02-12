@@ -24,7 +24,92 @@ local Color = commonlib.gettable("System.Core.Color");
 local ShapeBuilder = NPL.export();
 
 ShapeBuilder.scene = nil;
+ShapeBuilder.cur_node = nil; -- for boolean/add node
+ShapeBuilder.selected_node = nil; -- for transforming node
 
+function ShapeBuilder.createNode(name)
+    local cur_node = ShapeBuilder.getCurNode();
+    if(cur_node)then
+        name = name or ShapeBuilder.generateId();
+        local node = NplOce.Node.create(name);
+        cur_node:addChild(node)
+        ShapeBuilder.cur_node = node;
+        return node
+    end
+end
+function ShapeBuilder.group(color)
+    local NplOceScene = NPL.load("Mod/NplCad2/NplOceScene.lua");
+    local cur_node = ShapeBuilder.getCurNode();
+    local child = cur_node:getFirstChild();
+    local drawables_1 = {};
+    local drawables_2 = {};
+	while(child) do
+        local drawable = child:getDrawable();
+        if(drawable)then
+            
+            local tag = child:_getTag();
+            if(tag == "beCut")then
+                table.insert(drawables_2,drawable);
+            else
+                table.insert(drawables_1,drawable);
+            end
+        end
+		child = child:getNextSibling();
+	end
+    local function swapNodes(parent_node,drawables)
+        local len = #drawables;
+        for k = 1,len do
+            local d = drawables[k];
+            local node = d:getNode();
+            local parent = node:getParent();
+            parent:removeChild();
+
+            parent_node:addChild(node);
+
+        end
+        
+    end
+    local temp_node_1 = NplOce.Node.create();
+    swapNodes(temp_node_1, drawables_1);
+    cur_node:addChild(temp_node_1)
+    NplOceScene.runOpSequence("union", temp_node_1, drawables_1)
+
+    local temp_node_2 = NplOce.Node.create();
+    swapNodes(temp_node_2, drawables_2);
+    cur_node:addChild(temp_node_2)
+    NplOceScene.runOpSequence("union", temp_node_2, drawables_2)
+
+    local first_drawable = temp_node_1:getDrawable();
+    local second_drawable = temp_node_2:getDrawable();
+
+    local shape;
+    if(first_drawable and second_drawable)then
+        local shape_1 = first_drawable:getShape();
+        local shape_2 = second_drawable:getShape();
+
+        shape = NplOce.difference(shape_1,shape_2);
+    else
+        local drawable = first_drawable or second_drawable;
+        if(drawable)then
+            shape = drawable:getShape();
+        end
+    end
+    cur_node:removeAllChildren();
+    local last_group = NplOce.Node.create();
+    if(shape)then
+        color = ShapeBuilder.converColorToRGBA(color);
+        color = color or { r = 1, g = 0, b = 0, a = 1 };
+        local model = NplOce.TopoModel.create(shape,color.r,color.g,color.b,color.a);
+        last_group:setDrawable(model);
+        last_group:_setColor(color);
+
+        cur_node:addChild(last_group);
+    end
+    ShapeBuilder.selected_node = last_group;
+end
+function ShapeBuilder.move(x,y,z)
+    ShapeBuilder.setTranslation(ShapeBuilder.getSelectedNode(),x,y,z);
+end
 -- Create a new node and set the current level to it
 function ShapeBuilder.beginNode()
     local cur_node = ShapeBuilder.getCurNode();
@@ -41,9 +126,12 @@ function ShapeBuilder.endNode()
     if(node)then
         if(node.getParent)then
             local parent = node:getParent();
-            ShapeBuilder.cur_node = parent 
+            ShapeBuilder.cur_node = parent;
         end
     end
+end
+function ShapeBuilder.getSelectedNode()
+    return ShapeBuilder.selected_node;
 end
 -- Get the current level node
 function ShapeBuilder.getCurNode()
@@ -108,6 +196,11 @@ function ShapeBuilder.addShape(shape,color)
         local node = NplOce.Node.create(ShapeBuilder.generateId());
         node:setDrawable(model);
         cur_node:addChild(node);
+        local v = color.r + color.g + color.b;
+        if(v == 0)then
+            node:_setTag("beCut")
+        end
+        ShapeBuilder.selected_node = node;
         return node;
     end
     
@@ -120,7 +213,10 @@ end
 -- @return {NplOce.Node} node
 function ShapeBuilder.cube(x,y,z,color) 
     color = ShapeBuilder.converColorToRGBA(color);
-    return ShapeBuilder.addShape(NplOce.cube(x,y,z),color) 
+    local shape = NplOce.cube(x,y,z);
+    -- center align
+    shape:translate(-x/2,-y/2,-z/2);
+    return ShapeBuilder.addShape(shape,color) 
 end
 
 -- Create a cylinder
@@ -393,6 +489,9 @@ end
 -- @return {number} color.a - [0-1]
 function ShapeBuilder.converColorToRGBA(color) 
     if(not color)then
+        return
+    end
+    if(color == "" or color == "none" or color == "nil")then
         return
     end
     if(type(color) == "table")then

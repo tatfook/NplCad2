@@ -102,3 +102,9 @@ end
 function NplOce.Node:_getColor()
     return self._color;
 end
+function NplOce.Node:_setTag(tag)
+    self._tag = tag;
+end
+function NplOce.Node:_getTag()
+    return self._tag;
+end
