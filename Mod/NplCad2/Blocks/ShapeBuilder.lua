@@ -40,60 +40,33 @@ end
 function ShapeBuilder.group(color)
     local NplOceScene = NPL.load("Mod/NplCad2/NplOceScene.lua");
     local cur_node = ShapeBuilder.getCurNode();
+    local drawables = {}
     local child = cur_node:getFirstChild();
-    local drawables_1 = {};
-    local drawables_2 = {};
 	while(child) do
         local drawable = child:getDrawable();
         if(drawable)then
-            
+            table.insert(drawables,drawable);
             local tag = child:_getTag();
-            if(tag == "beCut")then
-                table.insert(drawables_2,drawable);
-            else
-                table.insert(drawables_1,drawable);
-            end
         end
 		child = child:getNextSibling();
 	end
-    local function swapNodes(parent_node,drawables)
-        local len = #drawables;
-        for k = 1,len do
-            local d = drawables[k];
-            local node = d:getNode();
-            local parent = node:getParent();
-            parent:removeChild();
-
-            parent_node:addChild(node);
-
-        end
-        
-    end
-    local temp_node_1 = NplOce.Node.create();
-    swapNodes(temp_node_1, drawables_1);
-    cur_node:addChild(temp_node_1)
-    NplOceScene.runOpSequence("union", temp_node_1, drawables_1)
-
-    local temp_node_2 = NplOce.Node.create();
-    swapNodes(temp_node_2, drawables_2);
-    cur_node:addChild(temp_node_2)
-    NplOceScene.runOpSequence("union", temp_node_2, drawables_2)
-
-    local first_drawable = temp_node_1:getDrawable();
-    local second_drawable = temp_node_2:getDrawable();
-
     local shape;
-    if(first_drawable and second_drawable)then
-        local shape_1 = first_drawable:getShape();
-        local shape_2 = second_drawable:getShape();
+    local result_model;
+    local len = #drawables;
+    if(len == 1)then
+        result_model =  drawables[1];
+        shape = result_model:getShape();
 
-        shape = NplOce.difference(shape_1,shape_2);
-    else
-        local drawable = first_drawable or second_drawable;
-        if(drawable)then
-            shape = drawable:getShape();
-        end
+    elseif(len > 1)then
+        result_model =  drawables[1];
+	    for i=2, len do
+            local next_model = drawables[i];
+            local op = next_model:getNode():_getTag() or "union";
+		    result_model = NplOceScene.operateTwoNodes(result_model, drawables[i], op, cur_node);
+	    end
+        shape = result_model:getShape();
     end
+    
     cur_node:removeAllChildren();
     local last_group = NplOce.Node.create();
     if(shape)then
@@ -109,6 +82,9 @@ function ShapeBuilder.group(color)
 end
 function ShapeBuilder.move(x,y,z)
     ShapeBuilder.setTranslation(ShapeBuilder.getSelectedNode(),x,y,z);
+end
+function ShapeBuilder.scale(x,y,z)
+    ShapeBuilder.setScale(ShapeBuilder.getSelectedNode(),x,y,z);
 end
 -- Create a new node and set the current level to it
 function ShapeBuilder.beginNode()
@@ -184,7 +160,7 @@ end
 -- @param {NPL_TopoDS_Shape} shape
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder.addShape(shape,color) 
+function ShapeBuilder.addShape(shape,color,tag) 
     if(not shape)then
         return
     end
@@ -196,10 +172,7 @@ function ShapeBuilder.addShape(shape,color)
         local node = NplOce.Node.create(ShapeBuilder.generateId());
         node:setDrawable(model);
         cur_node:addChild(node);
-        local v = color.r + color.g + color.b;
-        if(v == 0)then
-            node:_setTag("beCut")
-        end
+        node:_setTag(tag)
         ShapeBuilder.selected_node = node;
         return node;
     end
@@ -211,12 +184,11 @@ end
 -- @param {number} [z = 10]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder.cube(x,y,z,color) 
+function ShapeBuilder.cube(x,y,z,color,tag) 
     color = ShapeBuilder.converColorToRGBA(color);
     local shape = NplOce.cube(x,y,z);
-    -- center align
     shape:translate(-x/2,-y/2,-z/2);
-    return ShapeBuilder.addShape(shape,color) 
+    return ShapeBuilder.addShape(shape,color,tag) 
 end
 
 -- Create a cylinder
@@ -240,12 +212,14 @@ end
 -- @param {number} [angle3 = 360]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder._sphere(radius,angle1,angle2,angle3,color) 
+function ShapeBuilder._sphere(radius,angle1,angle2,angle3,color,tag) 
     color = ShapeBuilder.converColorToRGBA(color);
-    return ShapeBuilder.addShape(NplOce.sphere(radius,angle1,angle2,angle3),color) 
+    local shape = NplOce.sphere(radius,angle1,angle2,angle3);
+    shape:translate(0,0,0);
+    return ShapeBuilder.addShape(shape,color,tag) 
 end
-function ShapeBuilder.sphere(radius,color) 
-    ShapeBuilder._sphere(radius,-90,90,360,color);
+function ShapeBuilder.sphere(radius,color,tag) 
+    ShapeBuilder._sphere(radius,-90,90,360,color,tag);
 end
 -- Create a cone
 -- @param {number} [radius1 = 2]
@@ -547,15 +521,6 @@ function ShapeBuilder.setScale(node,x,y,z)
     end
 end
 
--- Scales this node's scale by the given factors along each axis
--- @param {number} [x = 1]
--- @param {number} [y = 1]
--- @param {number} [z = 1]
-function ShapeBuilder.scale(node,x,y,z)
-    if(node)then
-        node:scale(x,y,z);
-    end
-end
 
 -- Rotate the node
 -- @param {NplOce.Node} node
