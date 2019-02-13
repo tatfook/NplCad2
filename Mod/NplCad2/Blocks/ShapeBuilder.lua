@@ -17,28 +17,67 @@ NplOceConnection.load({ npl_oce_dll = "plugins/nploce/nploce_d.dll", activate_ca
 end);
 ------------------------------------------------------------
 --]]
-
+local NplOceScene = NPL.load("Mod/NplCad2/NplOceScene.lua");
 NPL.load("(gl)script/ide/System/Core/Color.lua");
+NPL.load("(gl)script/ide/math/Matrix4.lua");
 local Color = commonlib.gettable("System.Core.Color");
+local Matrix4 = commonlib.gettable("mathlib.Matrix4");
 
 local ShapeBuilder = NPL.export();
 
 ShapeBuilder.scene = nil;
+ShapeBuilder.root_node = nil; 
 ShapeBuilder.cur_node = nil; -- for boolean/add node
 ShapeBuilder.selected_node = nil; -- for transforming node
 
 function ShapeBuilder.createNode(name)
-    local cur_node = ShapeBuilder.getCurNode();
-    if(cur_node)then
-        name = name or ShapeBuilder.generateId();
-        local node = NplOce.Node.create(name);
-        cur_node:addChild(node)
-        ShapeBuilder.cur_node = node;
-        return node
+    local name = name or ShapeBuilder.generateId();
+    local node = NplOce.Node.create(name);
+    ShapeBuilder.getRootNode():addChild(node)
+    ShapeBuilder.cur_node = node;
+    return node
+end
+function ShapeBuilder.cloneNodeByName(name,color)
+    local node = ShapeBuilder.getRootNode():findNode(name);
+    if(node)then
+        local cloned_node = node:clone();
+        cloned_node:setId(ShapeBuilder.generateId());
+        color = ShapeBuilder.converColorToRGBA(color) or { r = 1, g = 0, b = 0, a = 1 };
+
+        NplOceScene.visitNode(cloned_node,function(node)
+            ShapeBuilder.setColor(node,color)
+        end)
+        ShapeBuilder.cur_node:addChild(cloned_node)
+        ShapeBuilder.selected_node = cloned_node;
+        return cloned_node
+    end
+end
+function ShapeBuilder.cloneNode(color)
+    local node = ShapeBuilder.selected_node;
+    if(node)then
+        local cloned_node = node:clone();
+        cloned_node:setId(ShapeBuilder.generateId());
+        color = ShapeBuilder.converColorToRGBA(color) or { r = 1, g = 0, b = 0, a = 1 };
+
+        NplOceScene.visitNode(cloned_node,function(node)
+            ShapeBuilder.setColor(node,color)
+        end)
+        ShapeBuilder.cur_node:addChild(cloned_node)
+        ShapeBuilder.selected_node = cloned_node;
+        return cloned_node
+    end
+end
+function ShapeBuilder.deleteNode(name)
+    local node = ShapeBuilder.getRootNode():findNode(name);
+    if(node)then
+        if(node == ShapeBuilder.cur_node or node == ShapeBuilder.selected_node )then
+            return
+        end
+        local parent = node:getParent();
+        parent:removeChild(node);
     end
 end
 function ShapeBuilder.group(color)
-    local NplOceScene = NPL.load("Mod/NplCad2/NplOceScene.lua");
     local cur_node = ShapeBuilder.getCurNode();
     local drawables = {}
     local child = cur_node:getFirstChild();
@@ -46,7 +85,6 @@ function ShapeBuilder.group(color)
         local drawable = child:getDrawable();
         if(drawable)then
             table.insert(drawables,drawable);
-            local tag = child:_getTag();
         end
 		child = child:getNextSibling();
 	end
@@ -61,7 +99,7 @@ function ShapeBuilder.group(color)
         result_model =  drawables[1];
 	    for i=2, len do
             local next_model = drawables[i];
-            local op = next_model:getNode():_getTag() or "union";
+            local op = NplOce._getBooleanOp(next_model:getNode()) or "union";
 		    result_model = NplOceScene.operateTwoNodes(result_model, drawables[i], op, cur_node);
 	    end
         shape = result_model:getShape();
@@ -74,7 +112,7 @@ function ShapeBuilder.group(color)
         color = color or { r = 1, g = 0, b = 0, a = 1 };
         local model = NplOce.TopoModel.create(shape,color.r,color.g,color.b,color.a);
         last_group:setDrawable(model);
-        last_group:_setColor(color);
+        NplOce._setColor(last_group,color)
 
         cur_node:addChild(last_group);
     end
@@ -85,6 +123,9 @@ function ShapeBuilder.move(x,y,z)
 end
 function ShapeBuilder.scale(x,y,z)
     ShapeBuilder.setScale(ShapeBuilder.getSelectedNode(),x,y,z);
+end
+function ShapeBuilder.rotate(axis,angle,pivot_x,pivot_y,pivot_z)
+    ShapeBuilder.setRotation(ShapeBuilder.getSelectedNode(),axis,angle,pivot_x,pivot_y,pivot_z)
 end
 -- Create a new node and set the current level to it
 function ShapeBuilder.beginNode()
@@ -113,10 +154,14 @@ end
 function ShapeBuilder.getCurNode()
     return ShapeBuilder.cur_node;
 end
+function ShapeBuilder.getRootNode()
+    return ShapeBuilder.root_node;
+end
 -- Create a scene
 function ShapeBuilder.create()
     ShapeBuilder.scene = NplOce.Scene.create();
     ShapeBuilder.cur_node = ShapeBuilder.scene:addNode(ShapeBuilder.generateId());
+    ShapeBuilder.root_node = ShapeBuilder.cur_node; 
 end
 -- Set a scene for holding shapes
 -- @param {NplOce.Scene} scene
@@ -172,7 +217,7 @@ function ShapeBuilder.addShape(shape,color,tag)
         local node = NplOce.Node.create(ShapeBuilder.generateId());
         node:setDrawable(model);
         cur_node:addChild(node);
-        node:_setTag(tag)
+        NplOce._setBooleanOp(node,tag)
         ShapeBuilder.selected_node = node;
         return node;
     end
@@ -184,11 +229,11 @@ end
 -- @param {number} [z = 10]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder.cube(x,y,z,color,tag) 
+function ShapeBuilder.cube(x,y,z,color,op) 
     color = ShapeBuilder.converColorToRGBA(color);
     local shape = NplOce.cube(x,y,z);
     shape:translate(-x/2,-y/2,-z/2);
-    return ShapeBuilder.addShape(shape,color,tag) 
+    return ShapeBuilder.addShape(shape,color,op) 
 end
 
 -- Create a cylinder
@@ -197,12 +242,14 @@ end
 -- @param {number} [angle = 360]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder._cylinder(radius,height,angle,color) 
+function ShapeBuilder._cylinder(radius,height,angle,color,op) 
     color = ShapeBuilder.converColorToRGBA(color);
-    return ShapeBuilder.addShape(NplOce.cylinder(radius,height,angle),color) 
+    local shape = NplOce.cylinder(radius,height,angle);
+    shape:translate(0,0,-height/2);
+    return ShapeBuilder.addShape(shape,color,op) 
 end
-function ShapeBuilder.cylinder(radius,height,color) 
-    ShapeBuilder._cylinder(radius,height,360,color);
+function ShapeBuilder.cylinder(radius,height,color,op) 
+    ShapeBuilder._cylinder(radius,height,360,color,op);
 end
 
 -- Create a sphere
@@ -230,7 +277,9 @@ end
 -- @return {NplOce.Node} node
 function ShapeBuilder._cone(radius1,radius2,height,angle,color) 
     color = ShapeBuilder.converColorToRGBA(color);
-    return ShapeBuilder.addShape(NplOce.cone(radius1,radius2,height,angle),color) 
+    local shape = NplOce.cone(radius1,radius2,height,angle);
+    shape:translate(0,0,-height/2);
+    return ShapeBuilder.addShape(shape,color) 
 end
 function ShapeBuilder.cone(radius1,radius2,height,color) 
     ShapeBuilder._cone(radius1,radius2,height,360,color);
@@ -282,7 +331,9 @@ end
 -- @return {NplOce.Node} node
 function ShapeBuilder.plane(l,w,color) 
     color = ShapeBuilder.converColorToRGBA(color);
-    return ShapeBuilder.addShape(NplOce.plane(l,w),color) 
+    local shape = NplOce.plane(l,w);
+    shape:translate(-l/2,-w/2,0);
+    return ShapeBuilder.addShape(shape,color) 
 end
 
 -- Create a circle
@@ -355,7 +406,9 @@ end
 -- @return {NplOce.Node} node
 function ShapeBuilder.prism(p,c,h,color) 
     color = ShapeBuilder.converColorToRGBA(color);
-    return ShapeBuilder.addShape(NplOce.prism(p,c,h),color) 
+    local shape = NplOce.prism(p,c,h);
+    shape:translate(0,0,-h/2);
+    return ShapeBuilder.addShape(shape,color) 
 end
 -- Create a wedge
 -- @param {number} [x1 = 0]
@@ -524,13 +577,51 @@ end
 
 -- Rotate the node
 -- @param {NplOce.Node} node
--- @param {number} [x = 0]
--- @param {number} [y = 0]
--- @param {number} [z = 0]
+-- @param {string} axis - "x" or "y" or "z"
 -- @param {number} [angle = 0] - degree
-function ShapeBuilder.setRotation(node,x,y,z,angle)
+-- @param {number} [pivot_x = 0]
+-- @param {number} [pivot_y = 0]
+-- @param {number} [pivot_z = 0]
+function ShapeBuilder.setRotation(node,axis,angle,pivot_x,pivot_y,pivot_z)
+    if(node)then
+        angle = angle or 0;
+        pivot_x = pivot_x or 0;
+        pivot_y = pivot_y or 0;
+        pivot_z = pivot_z or 0;
+
+        local degree_angle = angle;
+        angle = 3.1415926* angle/180
+        local node_matrix = NplOceScene.convertMatrixColToRow(node:getMatrix());
+        local trans_matrix = Matrix4.translation({pivot_x,pivot_y,pivot_z})
+        local rotate_matrix;
+        if(axis == "x")then
+            rotate_matrix = Matrix4.rotationX(degree_angle);
+        end
+        if(axis == "y")then
+            rotate_matrix = Matrix4.rotationY(degree_angle);
+        end
+        if(axis == "z")then
+            rotate_matrix = Matrix4.rotationZ(degree_angle);
+        end
+		local transformMatrix = Matrix4.__mul(node_matrix,trans_matrix);
+		transformMatrix = Matrix4.__mul(transformMatrix,rotate_matrix);
+        
+        transformMatrix = NplOceScene.convertMatrixRowToCol(transformMatrix);
+        
+        node:setMatrix(transformMatrix);
+    end
+end
+
+function ShapeBuilder.setRotation2(node,axis,angle,pivot_x,pivot_y,pivot_z)
     if(node)then
         angle = 3.1415926* angle/180
+        local x = 0;
+        local y = 0;
+        local z = 0;
+        if(axis == "x")then x = 1 end
+        if(axis == "z")then y = 1 end
+        if(axis == "y")then z = 1 end
+        node:translate(pivot_x,pivot_y,pivot_z);
         node:setRotation(x,y,z,angle);
     end
 end
@@ -568,10 +659,10 @@ end
 -- @param {string} - "#f0000"
 function ShapeBuilder.beginBoolean(op,color) 
     local node = ShapeBuilder.beginNode();
-    node:_setOp(op);
+    NplOce._setOp(node,op);
     if(color)then
         color = ShapeBuilder.converColorToRGBA(color);
-        node:_setColor(color);
+        NplOce._setColor(node,color);
     end
 end
 function ShapeBuilder.endBoolean() 

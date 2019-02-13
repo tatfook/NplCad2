@@ -59,10 +59,10 @@ function NplOceScene.findExternalTagValue(node,name)
 	local p = node;
 	local lastNode;
 	while(p) do
-		local v = p[name];
-		if(v)then
+        if(p:hasTag(name))then
+            local v = p:getTag(name);
 			return v,p;
-		end
+        end
 		lastNode = p;
 		p = p:getParent();
 	end
@@ -145,7 +145,7 @@ function NplOceScene.operateTwoNodes(pre_drawable_node,cur_drawable_node,op,top_
         if(cur_node)then
             cur_node:setDrawable(nil);
         end
-        local top_node_color = top_node:_getColor();
+        local top_node_color = NplOce._getColor(top_node);
         local pre_color = pre_drawable_node:getColor();
         local color = top_node_color or NplOceScene.arrayToColor(pre_color) or { r = 1, g = 0, b = 0, a = 1 };
         local model = NplOce.TopoModel.create(shape,color.r,color.g,color.b,color.a);
@@ -162,7 +162,7 @@ function NplOceScene.run(scene,bUnionAll)
     end
     local scene_first_node = scene:getFirstNode();
     if(bUnionAll)then
-        scene_first_node:_setOp("union");
+        NplOce._setOp(scene_first_node,"union");
     end
     NplOceScene.visit(scene,function(node)
         local drawable = node:getDrawable();
@@ -174,7 +174,7 @@ function NplOceScene.run(scene,bUnionAll)
         end
     end,function(node)
         
-		local actionName = node:_getOp();
+		local actionName = NplOce._getOp(node);
         if(actionName)then
             local action_params = node:_popAllActionParams() or {};
             NplOceScene.runOpSequence(actionName,node, action_params)
@@ -202,6 +202,16 @@ function NplOceScene.convertMatrixColToRow(m)
     local m10, m11, m12, m13 = m[2], m[6], m[10], m[14];
     local m20, m21, m22, m23 = m[3], m[7], m[11], m[15];
     local m30, m31, m32, m33 = m[4], m[8], m[12], m[16];
+    local result = {
+        m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33
+    };
+    return Matrix4:new(result);
+end
+function NplOceScene.convertMatrixRowToCol(m)
+    local m00, m01, m02, m03 = m[1], m[2], m[3],  m[4];
+    local m10, m11, m12, m13 = m[5], m[6], m[7], m[8];
+    local m20, m21, m22, m23 = m[9], m[10], m[11], m[12];
+    local m30, m31, m32, m33 = m[13], m[14], m[15], m[16];
     local result = {
         m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33
     };

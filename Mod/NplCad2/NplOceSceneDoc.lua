@@ -153,12 +153,7 @@ end
 function NplOce.Node:setId(id)
 end
 
--- Set operator on this node
--- this is an external method for NplOce.Node
--- @param {string} op - "union" or "difference" or "intersection"
-function NplOce.Node:_setOp(op)
 
-end
 
 -- Get the number of child of this node
 -- @return {number}

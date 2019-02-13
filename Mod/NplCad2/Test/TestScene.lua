@@ -9,11 +9,13 @@ local TestScene = NPL.load("Mod/NplCad2/Test/TestScene.lua");
 local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
 NplOceConnection.load({ npl_oce_dll = "plugins/nploce/nploce_d.dll" },function(msg)
     NPL.load("Mod/NplCad2/NplOce_Internal.lua");
-    TestScene.Test1("test/test.json");
-    TestScene.Test_toParaX("test/test.x");
+    TestScene.Test_FindNode();
+    TestScene.Test_CloneNode();
+    --TestScene.Test1("test/test.json");
+    --TestScene.Test_toParaX("test/test.x");
 
-    TestScene.Test_VisitNode("test/test_union_children.x");
-    TestScene.Test_VisitNodeTransform("test/test_tranform.json")
+    --TestScene.Test_VisitNode("test/test_union_children.x");
+    --TestScene.Test_VisitNodeTransform("test/test_tranform.json")
 end);
 ------------------------------------------------------------
 --]]
@@ -106,4 +108,31 @@ function TestScene.Test_VisitNodeTransform(filename)
 --        local mesh = NplOce.Mesh.create(shape,1,0,0,1);
 --        NplOce.exportToParaX(mesh, filename)
 --    end
+end
+function TestScene.Test_FindNode()
+    ShapeBuilder.create();
+    local cur_node = ShapeBuilder.getCurNode();
+    local node = NplOce.Node.create("test");
+    cur_node:addChild(node)
+    local name = "object1"
+    local node2 = NplOce.Node.create(name);
+    node:addChild(node2)
+
+    local v = cur_node:findNode(name);
+    if(v)then
+        commonlib.echo("=====found");
+        commonlib.echo(v:getId());
+    end
+end
+function TestScene.Test_CloneNode()
+    ShapeBuilder.create();
+    ShapeBuilder.cube(0,0,0,"#ff0000","difference") 
+    local cur_node = ShapeBuilder.getCurNode();
+    local cloned_node = cur_node:clone();
+    local child = cloned_node:getFirstChild();
+
+    local model = child:getDrawable();
+    local v = NplOce._getBooleanOp(child);
+    commonlib.echo("=====_getBooleanOp");
+    commonlib.echo(v);
 end

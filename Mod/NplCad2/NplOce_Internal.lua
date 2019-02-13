@@ -68,15 +68,7 @@ function NplOce.exportToParaX(scene, isYUp)
 	end
 end
 
--- Set operator on this node
--- this is an external method for NplOce.Node
--- @param {string} op - "union" or "difference" or "intersection"
-function NplOce.Node:_setOp(op)
-    self._op = op;
-end
-function NplOce.Node:_getOp()
-    return self._op;
-end
+
 -- for storing temporary node parameter during scene traversal.
 function NplOce.Node:_pushActionParam(param)
 	self.action_params_ = self.action_params_ or {};
@@ -89,22 +81,35 @@ function NplOce.Node:_popAllActionParams()
 	self.action_params_ = nil;
 	return params;
 end
+
+-- Set operator on this node
+-- @param {NplOce.Node} node
+-- @param {string} op - "union" or "difference" or "intersection"
+function NplOce._setOp(node, op)
+    node:setTag("op",op);
+end
+function NplOce._getOp(node)
+    return node:getTag("op");
+end
+
 -- Set color on this node
--- this is an external method for NplOce.Node
+-- @param {NplOce.Node} node
 -- @param {object} color
 -- @param {number} color.r - range[0,1]
 -- @param {number} color.g - range[0,1]
 -- @param {number} color.b - range[0,1]
 -- @param {number} color.a - range[0,1]
-function NplOce.Node:_setColor(color)
-    self._color = color;
+function NplOce._setColor(node,color)
+    node:setTag("_color",commonlib.serialize(color));
 end
-function NplOce.Node:_getColor()
-    return self._color;
+function NplOce._getColor(node)
+    if(node:hasTag("_color"))then
+        return commonlib.LoadTableFromString(node:getTag("_color"));
+    end
 end
-function NplOce.Node:_setTag(tag)
-    self._tag = tag;
+function NplOce._setBooleanOp(node,v)
+    node:setTag("_boolean_op",v);
 end
-function NplOce.Node:_getTag()
-    return self._tag;
+function NplOce._getBooleanOp(node)
+    return node:getTag("_boolean_op");
 end
