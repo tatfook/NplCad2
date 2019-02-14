@@ -37,13 +37,15 @@ function ShapeBuilder.createNode(name)
     ShapeBuilder.cur_node = node;
     return node
 end
-function ShapeBuilder.cloneNodeByName(name,color)
+function ShapeBuilder.cloneNodeByName(name,color,op)
     local node = ShapeBuilder.getRootNode():findNode(name);
     if(node)then
         local cloned_node = node:clone();
         cloned_node:setId(ShapeBuilder.generateId());
         color = ShapeBuilder.converColorToRGBA(color) or { r = 1, g = 0, b = 0, a = 1 };
 
+        NplOce._setBooleanOp(cloned_node,op)
+        NplOce._setColor(cloned_node,color)
         NplOceScene.visitNode(cloned_node,function(node)
             ShapeBuilder.setColor(node,color)
         end)
@@ -79,45 +81,52 @@ function ShapeBuilder.deleteNode(name)
 end
 function ShapeBuilder.group(color)
     local cur_node = ShapeBuilder.getCurNode();
-    local drawables = {}
-    local child = cur_node:getFirstChild();
-	while(child) do
+
+    local function for_each(node,callback)
+        local child = node:getFirstChild();
+	    while(child) do
+            callback(child)
+		    child = child:getNextSibling();
+	    end
+    end
+    local nodes = {};
+    for_each(cur_node,function(child)
+        NplOceScene.visitNode(child,function(node)
+        local drawable = node:getDrawable();
+        if(drawable)then
+            child:_pushActionParam(drawable);
+        end
+        end, function(node)
+        end)
+        local drawable_nodes = child:_popAllActionParams() or {}
+        NplOceScene.runOpSequence("union", child, drawable_nodes)
+
         local drawable = child:getDrawable();
         if(drawable)then
-            table.insert(drawables,drawable);
+            table.insert(nodes,drawable);
         end
-		child = child:getNextSibling();
-	end
-    local shape;
-    local result_model;
-    local len = #drawables;
-    if(len == 1)then
-        result_model =  drawables[1];
-        shape = result_model:getShape();
-
-    elseif(len > 1)then
-        result_model =  drawables[1];
-	    for i=2, len do
-            local next_model = drawables[i];
-            local op = NplOce._getBooleanOp(next_model:getNode()) or "union";
-		    result_model = NplOceScene.operateTwoNodes(result_model, drawables[i], op, cur_node);
-	    end
-        shape = result_model:getShape();
-    end
+    end)
+    NplOceScene.runOpSequence("none", cur_node, nodes);
     
     cur_node:removeAllChildren();
     local last_group = NplOce.Node.create();
-    if(shape)then
-        color = ShapeBuilder.converColorToRGBA(color);
-        color = color or { r = 1, g = 0, b = 0, a = 1 };
-        local model = NplOce.TopoModel.create(shape,color.r,color.g,color.b,color.a);
-        last_group:setDrawable(model);
-        NplOce._setColor(last_group,color)
+    local model = cur_node:getDrawable();
+    if(model)then
+        local shape = model:getShape();
+        if(shape)then
+            color = ShapeBuilder.converColorToRGBA(color);
+            color = color or { r = 1, g = 0, b = 0, a = 1 };
+            local model = NplOce.TopoModel.create(shape,color.r,color.g,color.b,color.a);
+            last_group:setDrawable(model);
+            NplOce._setColor(last_group,color)
 
-        cur_node:addChild(last_group);
+            cur_node:addChild(last_group);
+        end
+        cur_node:setDrawable(nil);
     end
     ShapeBuilder.selected_node = last_group;
 end
+
 function ShapeBuilder.move(x,y,z)
     ShapeBuilder.setTranslation(ShapeBuilder.getSelectedNode(),x,y,z);
 end
@@ -205,7 +214,7 @@ end
 -- @param {NPL_TopoDS_Shape} shape
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder.addShape(shape,color,tag) 
+function ShapeBuilder.addShape(shape,color,op) 
     if(not shape)then
         return
     end
@@ -217,7 +226,8 @@ function ShapeBuilder.addShape(shape,color,tag)
         local node = NplOce.Node.create(ShapeBuilder.generateId());
         node:setDrawable(model);
         cur_node:addChild(node);
-        NplOce._setBooleanOp(node,tag)
+        NplOce._setColor(node,color)
+        NplOce._setBooleanOp(node,op)
         ShapeBuilder.selected_node = node;
         return node;
     end

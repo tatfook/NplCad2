@@ -16,6 +16,37 @@ local Encoding = commonlib.gettable("System.Encoding");
 
 local NplOceScene = NPL.export();
 
+function NplOceScene.getXml(scene)
+    if(not scene)then
+        return;
+    end
+    local s = "<scene>"
+    NplOceScene.visit(scene, function(node)
+        local attr = "";
+        local color = node:getTag("_color") or "";
+        if(color ~= "nil" and color ~= "" )then
+            attr = attr .. string.format([[ _color="%s" ]],color); 
+        end
+        local op = node:getTag("_boolean_op") or "";
+        if(op ~= "nil" and op ~= "" )then
+            attr = attr .. string.format([[ _boolean_op="%s" ]],op); 
+        end
+        s = string.format([[%s<node id="%s" %s>]],s,node:getId(),attr);
+        local model = node:getDrawable();
+        if(model)then
+            s = s .. "<model>"
+            local shape = model:getShape();
+            if(shape)then
+                s = s .. "<shape />"
+            end
+            s = s .. "</model>"
+        end
+    end, function(node)
+        s = s .. "</node>"
+    end)
+    s = s .. "</scene>"
+    return s;
+end
 -- depth first traversal 
 -- @param {NplOce.Scene} scene: which will be visited
 -- @param preVisitMethod: callback function to be called for each node before child callback invocations. can be nil.
@@ -49,7 +80,6 @@ function NplOceScene.visitNode(node,preVisitMethod, postVisitMethod)
 		postVisitMethod(node);
 	end
 end
-
 -- recursively find tag value in all of its parent 
 -- @return tagValue, sceneNode: if nothing is found, the sceneNode is the rootNode.
 function NplOceScene.findExternalTagValue(node,name)
@@ -97,8 +127,11 @@ function NplOceScene.runOpSequence(op, top_node, drawable_nodes)
         if(not has_model)then
             local w_matrix = NplOceScene.drawableTransform(child_model,top_node)
 
+            -- clone a new model from node
             local child_model_parent = child_model:getNode();
+            local clone_node = child_model_parent:clone();
             child_model_parent:setDrawable(nil);
+            child_model = clone_node:getDrawable();
 
             top_node:setDrawable(child_model);
             local shape = child_model:getShape();
@@ -110,7 +143,11 @@ function NplOceScene.runOpSequence(op, top_node, drawable_nodes)
 
 	local result_model =  topo_model_array[1];;
 	for i=2, len do
-		result_model = NplOceScene.operateTwoNodes(result_model, drawable_nodes[i], op, top_node);
+        local drawable = drawable_nodes[i];
+        if(op == "none")then
+            op = NplOceScene.findExternalTagValue(drawable:getNode(),"_boolean_op") or "union";
+        end
+		result_model = NplOceScene.operateTwoNodes(result_model, drawable, op, top_node);
 	end
 
     top_node:setDrawable(result_model);
@@ -160,26 +197,26 @@ function NplOceScene.run(scene,bUnionAll)
     if(not scene)then
         return
     end
-    local scene_first_node = scene:getFirstNode();
-    if(bUnionAll)then
-        NplOce._setOp(scene_first_node,"union");
-    end
-    NplOceScene.visit(scene,function(node)
-        local drawable = node:getDrawable();
-        if(drawable)then
-            local actionName, actionNode = NplOceScene.findExternalTagValue(node,"_op");
-            if(actionName and actionNode and node ~= actionNode)then
-                actionNode:_pushActionParam(drawable);
-            end
-        end
-    end,function(node)
-        
-		local actionName = NplOce._getOp(node);
-        if(actionName)then
-            local action_params = node:_popAllActionParams() or {};
-            NplOceScene.runOpSequence(actionName,node, action_params)
-        end
-    end)
+--    local scene_first_node = scene:getFirstNode();
+--    if(bUnionAll)then
+--        NplOce._setOp(scene_first_node,"union");
+--    end
+--    NplOceScene.visit(scene,function(node)
+--        local drawable = node:getDrawable();
+--        if(drawable)then
+--            local actionName, actionNode = NplOceScene.findExternalTagValue(node,"_op");
+--            if(actionName and actionNode and node ~= actionNode)then
+--                actionNode:_pushActionParam(drawable);
+--            end
+--        end
+--    end,function(node)
+--        
+--		local actionName = NplOce._getOp(node);
+--        if(actionName)then
+--            local action_params = node:_popAllActionParams() or {};
+--            NplOceScene.runOpSequence(actionName,node, action_params)
+--        end
+--    end)
     return scene;
 end
 
