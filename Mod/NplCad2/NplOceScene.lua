@@ -221,39 +221,17 @@ function NplOceScene.run(scene,bUnionAll)
 end
 
 function NplOceScene.drawableTransform(drawable,top_node)
-    local operationWorldMatrix = NplOceScene.convertMatrixColToRow(top_node:getWorldMatrix());
+    local operationWorldMatrix = Matrix4:new(top_node:getWorldMatrix());
     local node = drawable:getNode();
 	if(node and operationNode ~= node) then
-		local myWorldMatrix = NplOceScene.convertMatrixColToRow(node:getWorldMatrix());
+		local myWorldMatrix = Matrix4:new(node:getWorldMatrix());
 		local operationInverseMatrix = operationWorldMatrix:inverse();
 		local transformMatrix = Matrix4.__mul(myWorldMatrix,operationInverseMatrix);
 		return transformMatrix,operationWorldMatrix;
 	end
 	return Matrix4.IDENTITY,operationWorldMatrix;
 end
--- convert matrix from column-major order to row-major order
--- @param {array} m
--- @return {Matrix4}
-function NplOceScene.convertMatrixColToRow(m)
-    local m00, m01, m02, m03 = m[1], m[5], m[9],  m[13];
-    local m10, m11, m12, m13 = m[2], m[6], m[10], m[14];
-    local m20, m21, m22, m23 = m[3], m[7], m[11], m[15];
-    local m30, m31, m32, m33 = m[4], m[8], m[12], m[16];
-    local result = {
-        m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33
-    };
-    return Matrix4:new(result);
-end
-function NplOceScene.convertMatrixRowToCol(m)
-    local m00, m01, m02, m03 = m[1], m[2], m[3],  m[4];
-    local m10, m11, m12, m13 = m[5], m[6], m[7], m[8];
-    local m20, m21, m22, m23 = m[9], m[10], m[11], m[12];
-    local m30, m31, m32, m33 = m[13], m[14], m[15], m[16];
-    local result = {
-        m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33
-    };
-    return Matrix4:new(result);
-end
+
 function NplOceScene.arrayToColor(arr)
     return {
         r = arr[1],

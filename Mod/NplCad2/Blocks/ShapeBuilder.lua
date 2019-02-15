@@ -601,7 +601,7 @@ function ShapeBuilder.setRotation(node,axis,angle,pivot_x,pivot_y,pivot_z)
 
         local degree_angle = angle;
         angle = 3.1415926* angle/180
-        local node_matrix = NplOceScene.convertMatrixColToRow(node:getMatrix());
+        local node_matrix = Matrix4:new(node:getMatrix());
         local trans_matrix = Matrix4.translation({pivot_x,pivot_y,pivot_z})
         local rotate_matrix;
         if(axis == "x")then
@@ -613,10 +613,8 @@ function ShapeBuilder.setRotation(node,axis,angle,pivot_x,pivot_y,pivot_z)
         if(axis == "z")then
             rotate_matrix = Matrix4.rotationZ(degree_angle);
         end
-		local transformMatrix = Matrix4.__mul(node_matrix,trans_matrix);
-		transformMatrix = Matrix4.__mul(transformMatrix,rotate_matrix);
-        
-        transformMatrix = NplOceScene.convertMatrixRowToCol(transformMatrix);
+		local transformMatrix = Matrix4.__mul(trans_matrix,rotate_matrix);
+		transformMatrix = Matrix4.__mul(transformMatrix,node_matrix);
         
         node:setMatrix(transformMatrix);
     end

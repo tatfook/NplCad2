@@ -9,9 +9,10 @@ local TestScene = NPL.load("Mod/NplCad2/Test/TestScene.lua");
 local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
 NplOceConnection.load({ npl_oce_dll = "plugins/nploce/nploce_d.dll" },function(msg)
     NPL.load("Mod/NplCad2/NplOce_Internal.lua");
+    TestScene.Test_VisitNodeTransform();
     --TestScene.Test_FindNode();
     --TestScene.Test_CloneNode();
-    TestScene.Test_VisitNode2();
+    --TestScene.Test_VisitNode2();
     --TestScene.Test1("test/test.json");
     --TestScene.Test_toParaX("test/test.x");
 
@@ -125,32 +126,17 @@ function TestScene.Test_VisitNode2()
         commonlib.echo(node:getId());
     end)
 end
-function TestScene.Test_VisitNodeTransform(filename)
-    ShapeBuilder.create();
-    ShapeBuilder.beginBoolean("difference") 
-        ShapeBuilder.beginTranslation(0,1,0);
-            ShapeBuilder.sphere(1);
-        ShapeBuilder.endTranslation();
-            ShapeBuilder.beginNode()
-                ShapeBuilder.cube(1,1,1);
-            ShapeBuilder.endNode()
-    ShapeBuilder.endBoolean() 
-
-    local scene = ShapeBuilder.getScene();
-    scene = NplOceScene.run(scene);
-
-    --local s = scene:toParaX();
-    local s = scene:toJson(4);
-    ParaIO.CreateDirectory(filename);
-    local file = ParaIO.open(filename, "w");
-	if(file:IsValid()) then
-		file:WriteString(s);
-		file:close();
-	end
---    if(shape)then
---        local mesh = NplOce.Mesh.create(shape,1,0,0,1);
---        NplOce.exportToParaX(mesh, filename)
---    end
+function TestScene.Test_VisitNodeTransform()
+     ShapeBuilder.create();
+    local cur_node = ShapeBuilder.getCurNode();
+    local node = NplOce.Node.create("node1_1");
+    node:translate(10,20,30);
+    local matrix = node:getMatrix();
+    local world_matrix = node:getWorldMatrix();
+    commonlib.echo("=========matrix");
+    commonlib.echo(matrix);
+    commonlib.echo("=========world_matrix");
+    commonlib.echo(world_matrix);
 end
 function TestScene.Test_FindNode()
     ShapeBuilder.create();
