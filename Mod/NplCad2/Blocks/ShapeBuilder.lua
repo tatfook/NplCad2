@@ -92,10 +92,12 @@ function ShapeBuilder.group(color)
     local nodes = {};
     for_each(cur_node,function(child)
         NplOceScene.visitNode(child,function(node)
-        local drawable = node:getDrawable();
-        if(drawable)then
-            child:_pushActionParam(drawable);
-        end
+            if(child ~= node)then
+                local drawable = node:getDrawable();
+                if(drawable)then
+                    child:_pushActionParam(drawable);
+                end
+            end
         end, function(node)
         end)
         local drawable_nodes = child:_popAllActionParams() or {}
@@ -111,6 +113,7 @@ function ShapeBuilder.group(color)
     cur_node:removeAllChildren();
     local last_group = NplOce.Node.create();
     local model = cur_node:getDrawable();
+    
     if(model)then
         local shape = model:getShape();
         if(shape)then
@@ -120,6 +123,25 @@ function ShapeBuilder.group(color)
             last_group:setDrawable(model);
             NplOce._setColor(last_group,color)
 
+            local box_arr = shape:getBndBox();
+            local min_x = box_arr[1];
+            local min_y = box_arr[2];
+            local min_z = box_arr[3];
+
+            local max_x = box_arr[4];
+            local max_y = box_arr[5];
+            local max_z = box_arr[6];
+
+            local width = max_x - min_x;
+            local height = max_y - min_y;
+            local depth = max_z - min_z;
+
+            local pos_x = min_x + width / 2;
+            local pos_y = min_y + height / 2;
+            local pos_z = min_z + depth / 2;
+
+            last_group:setTranslation(pos_x,pos_y,pos_z);
+            shape:translate(-pos_x,-pos_y,-pos_z);
             cur_node:addChild(last_group);
         end
         cur_node:setDrawable(nil);
@@ -602,7 +624,7 @@ function ShapeBuilder.setRotation(node,axis,angle,pivot_x,pivot_y,pivot_z)
         local degree_angle = angle;
         angle = 3.1415926* angle/180
         local node_matrix = Matrix4:new(node:getMatrix());
-        local trans_matrix = Matrix4.translation({pivot_x,pivot_y,pivot_z})
+        local trans_matrix = Matrix4.translation({-pivot_x,-pivot_y,-pivot_z})
         local rotate_matrix;
         if(axis == "x")then
             rotate_matrix = Matrix4.rotationX(degree_angle);
@@ -613,32 +635,15 @@ function ShapeBuilder.setRotation(node,axis,angle,pivot_x,pivot_y,pivot_z)
         if(axis == "z")then
             rotate_matrix = Matrix4.rotationZ(degree_angle);
         end
-		local transformMatrix = Matrix4.__mul(trans_matrix,rotate_matrix);
-		transformMatrix = Matrix4.__mul(transformMatrix,node_matrix);
+        commonlib.echo("==========trans_matrix");
+        commonlib.echo(trans_matrix);
+        commonlib.echo("==========rotate_matrix");
+        commonlib.echo(rotate_matrix);
+		local transformMatrix = trans_matrix * rotate_matrix * Matrix4.translation({pivot_x,pivot_y,pivot_z}) * node_matrix;
         
         node:setMatrix(transformMatrix);
     end
 end
-
-function ShapeBuilder.setRotation2(node,axis,angle,pivot_x,pivot_y,pivot_z)
-    if(node)then
-        angle = 3.1415926* angle/180
-        local x = 0;
-        local y = 0;
-        local z = 0;
-        if(axis == "x")then x = 1 end
-        if(axis == "z")then y = 1 end
-        if(axis == "y")then z = 1 end
-        node:translate(pivot_x,pivot_y,pivot_z);
-        node:setRotation(x,y,z,angle);
-    end
-end
-
--- fake function to make code readable on block
-function ShapeBuilder.createShape(node)
- 
-end
-
 
 function ShapeBuilder.beginTranslation(x,y,z) 
     local node = ShapeBuilder.beginNode();

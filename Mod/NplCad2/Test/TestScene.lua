@@ -46,7 +46,7 @@ function TestScene.Test1(filename)
     local t = node:getWorldMatrix();
     commonlib.echo("==================a");
     commonlib.echo(t);
-    cube:transform2(t);
+    cube:transform(t);
 
 	ParaIO.CreateDirectory(filename);
     local file = ParaIO.open(filename, "w");
