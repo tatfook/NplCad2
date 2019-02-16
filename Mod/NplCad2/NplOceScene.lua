@@ -41,7 +41,9 @@ function NplOceScene.getXml(scene)
             local shape = model:getShape();
             if(shape)then
                 local box = commonlib.serialize(shape:getBndBox());
-                s = s.. string.format([[ <shape box="%s" />]],box); 
+                local matrix = commonlib.serialize(shape:getMatrix());
+                attr = attr .. string.format([[ matrix="%s" ]],matrix); 
+                s = s.. string.format([[ <shape box="%s" matrix="%s"/>]],box,matrix); 
             end
             s = s .. "</model>"
         end
@@ -139,7 +141,9 @@ function NplOceScene.runOpSequence(op, top_node, drawable_nodes)
 
             top_node:setDrawable(child_model);
             local shape = child_model:getShape();
-            shape:transform(w_matrix);
+            local shape_matrix = shape:getMatrix();
+             
+            shape:setMatrix(shape_matrix * w_matrix);
 
         end
         return
@@ -163,8 +167,12 @@ function NplOceScene.operateTwoNodes(pre_drawable_node,cur_drawable_node,op,top_
         local w_matrix_2 = NplOceScene.drawableTransform(cur_drawable_node,top_node);
         local shape_1 = pre_drawable_node:getShape();
         local shape_2 = cur_drawable_node:getShape();
-        shape_1:transform(w_matrix_1);
-        shape_2:transform(w_matrix_2);
+        local shape_1_matrix = shape_1:getMatrix();
+        local shape_2_matrix = shape_2:getMatrix();
+
+        shape_1:setMatrix(shape_1_matrix * w_matrix_1);
+        shape_2:setMatrix(shape_2_matrix * w_matrix_2);
+        
         -- create a new shape
         local shape;
         if(op == "union")then

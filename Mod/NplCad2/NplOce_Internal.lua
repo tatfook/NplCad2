@@ -113,3 +113,10 @@ end
 function NplOce._getBooleanOp(node)
     return node:getTag("_boolean_op");
 end
+
+function NplOce._setOpWorldMatrix(node,v)
+    node:setTag("_op_world_matrix",v);
+end
+function NplOce._getOpWorldMatrix(node)
+    return node:getTag("_op_world_matrix");
+end

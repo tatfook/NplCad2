@@ -41,16 +41,19 @@ function ShapeBuilder.cloneNodeByName(name,color,op)
     local node = ShapeBuilder.getRootNode():findNode(name);
     if(node)then
         local cloned_node = node:clone();
-        cloned_node:setId(ShapeBuilder.generateId());
+        local id = ShapeBuilder.generateId();
+        cloned_node:setId(id);
         color = ShapeBuilder.converColorToRGBA(color) or { r = 1, g = 0, b = 0, a = 1 };
 
         NplOce._setBooleanOp(cloned_node,op)
         NplOce._setColor(cloned_node,color)
+        
         NplOceScene.visitNode(cloned_node,function(node)
             ShapeBuilder.setColor(node,color)
         end)
         ShapeBuilder.cur_node:addChild(cloned_node)
         ShapeBuilder.selected_node = cloned_node;
+
         return cloned_node
     end
 end
@@ -60,6 +63,9 @@ function ShapeBuilder.cloneNode(color)
         local cloned_node = node:clone();
         cloned_node:setId(ShapeBuilder.generateId());
         color = ShapeBuilder.converColorToRGBA(color) or { r = 1, g = 0, b = 0, a = 1 };
+
+        NplOce._setBooleanOp(cloned_node,op)
+        NplOce._setColor(cloned_node,color)
 
         NplOceScene.visitNode(cloned_node,function(node)
             ShapeBuilder.setColor(node,color)
@@ -81,6 +87,9 @@ function ShapeBuilder.deleteNode(name)
 end
 function ShapeBuilder.group(color)
     local cur_node = ShapeBuilder.getCurNode();
+    ShapeBuilder._group(cur_node, color)
+end
+function ShapeBuilder._group(cur_node, color)
 
     local function for_each(node,callback)
         local child = node:getFirstChild();
@@ -140,8 +149,12 @@ function ShapeBuilder.group(color)
             local pos_y = min_y + height / 2;
             local pos_z = min_z + depth / 2;
 
+
             last_group:setTranslation(pos_x,pos_y,pos_z);
-            shape:translate(-pos_x,-pos_y,-pos_z);
+
+            local matrix = Matrix4:new():identity();
+            matrix:setTrans(-pos_x,-pos_y,-pos_z);
+            shape:setMatrix(matrix);
             cur_node:addChild(last_group);
         end
         cur_node:setDrawable(nil);
@@ -623,61 +636,26 @@ function ShapeBuilder.setRotation(node,axis,angle,pivot_x,pivot_y,pivot_z)
 
         local degree_angle = angle;
         angle = 3.1415926* angle/180
+        
         local node_matrix = Matrix4:new(node:getMatrix());
         local trans_matrix = Matrix4.translation({-pivot_x,-pivot_y,-pivot_z})
         local rotate_matrix;
+        local roate_x = 0;
+        local roate_y = 0;
+        local roate_z = 0;
         if(axis == "x")then
             rotate_matrix = Matrix4.rotationX(degree_angle);
+            roate_x = degree_angle;
         end
         if(axis == "y")then
             rotate_matrix = Matrix4.rotationY(degree_angle);
+            roate_y = degree_angle;
         end
         if(axis == "z")then
             rotate_matrix = Matrix4.rotationZ(degree_angle);
+            roate_z = degree_angle;
         end
-        commonlib.echo("==========trans_matrix");
-        commonlib.echo(trans_matrix);
-        commonlib.echo("==========rotate_matrix");
-        commonlib.echo(rotate_matrix);
 		local transformMatrix = trans_matrix * rotate_matrix * Matrix4.translation({pivot_x,pivot_y,pivot_z}) * node_matrix;
-        
         node:setMatrix(transformMatrix);
     end
-end
-
-function ShapeBuilder.beginTranslation(x,y,z) 
-    local node = ShapeBuilder.beginNode();
-    ShapeBuilder.setTranslation(node,x,y,z) 
-end
-function ShapeBuilder.endTranslation() 
-    ShapeBuilder.endNode();
-end
-function ShapeBuilder.beginScale(x,y,z) 
-    local node = ShapeBuilder.beginNode();
-    ShapeBuilder.setScale(node,x,y,z) 
-end
-function ShapeBuilder.endScale() 
-    ShapeBuilder.endNode();
-end
-function ShapeBuilder.beginRotation(x,y,z,angle) 
-    local node = ShapeBuilder.beginNode();
-    ShapeBuilder.setRotation(node,x,y,z,angle) 
-end
-function ShapeBuilder.endRotation() 
-    ShapeBuilder.endNode();
-end
-
--- Create a new node on current level and set operation
--- @param {string} op - "union" or "difference" or "intersection"
--- @param {string} - "#f0000"
-function ShapeBuilder.beginBoolean(op,color) 
-    local node = ShapeBuilder.beginNode();
-    NplOce._setOp(node,op);
-    if(color)then
-        color = ShapeBuilder.converColorToRGBA(color);
-        NplOce._setColor(node,color);
-    end
-end
-function ShapeBuilder.endBoolean() 
-    ShapeBuilder.endNode();
 end
