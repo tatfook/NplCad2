@@ -30,9 +30,13 @@ ShapeBuilder.root_node = nil;
 ShapeBuilder.cur_node = nil; -- for boolean/add node
 ShapeBuilder.selected_node = nil; -- for transforming node
 
-function ShapeBuilder.createNode(name)
+function ShapeBuilder.createNode(name,color,bOp)
     local name = name or ShapeBuilder.generateId();
     local node = NplOce.Node.create(name);
+    NplOce._setOp(node, bOp)
+    local color = ShapeBuilder.converColorToRGBA(color) or { r = 1, g = 0, b = 0, a = 1 };
+    NplOce._setColor(node,color)
+
     ShapeBuilder.getRootNode():addChild(node)
     ShapeBuilder.cur_node = node;
     return node
@@ -40,37 +44,15 @@ end
 function ShapeBuilder.cloneNodeByName(name,color,op)
     local node = ShapeBuilder.getRootNode():findNode(name);
     if(node)then
-        local cloned_node = node:clone();
-        local id = ShapeBuilder.generateId();
-        cloned_node:setId(id);
-        color = ShapeBuilder.converColorToRGBA(color) or { r = 1, g = 0, b = 0, a = 1 };
-
-        NplOce._setBooleanOp(cloned_node,op)
-        NplOce._setColor(cloned_node,color)
-        
-        NplOceScene.visitNode(cloned_node,function(node)
-            ShapeBuilder.setColor(node,color)
-        end)
-        ShapeBuilder.cur_node:addChild(cloned_node)
+        local cloned_node = NplOceScene.cloneNode(node,color,op)
         ShapeBuilder.selected_node = cloned_node;
-
         return cloned_node
     end
 end
-function ShapeBuilder.cloneNode(color)
+function ShapeBuilder.cloneNode(color,op)
     local node = ShapeBuilder.selected_node;
     if(node)then
-        local cloned_node = node:clone();
-        cloned_node:setId(ShapeBuilder.generateId());
-        color = ShapeBuilder.converColorToRGBA(color) or { r = 1, g = 0, b = 0, a = 1 };
-
-        NplOce._setBooleanOp(cloned_node,op)
-        NplOce._setColor(cloned_node,color)
-
-        NplOceScene.visitNode(cloned_node,function(node)
-            ShapeBuilder.setColor(node,color)
-        end)
-        ShapeBuilder.cur_node:addChild(cloned_node)
+        local cloned_node = NplOceScene.cloneNode(node,color,op)
         ShapeBuilder.selected_node = cloned_node;
         return cloned_node
     end
@@ -87,80 +69,9 @@ function ShapeBuilder.deleteNode(name)
 end
 function ShapeBuilder.group(color)
     local cur_node = ShapeBuilder.getCurNode();
-    ShapeBuilder._group(cur_node, color)
+    NplOceScene.groupNode(cur_node, color)
 end
-function ShapeBuilder._group(cur_node, color)
 
-    local function for_each(node,callback)
-        local child = node:getFirstChild();
-	    while(child) do
-            callback(child)
-		    child = child:getNextSibling();
-	    end
-    end
-    local nodes = {};
-    for_each(cur_node,function(child)
-        NplOceScene.visitNode(child,function(node)
-            if(child ~= node)then
-                local drawable = node:getDrawable();
-                if(drawable)then
-                    child:_pushActionParam(drawable);
-                end
-            end
-        end, function(node)
-        end)
-        local drawable_nodes = child:_popAllActionParams() or {}
-        NplOceScene.runOpSequence("union", child, drawable_nodes)
-
-        local drawable = child:getDrawable();
-        if(drawable)then
-            table.insert(nodes,drawable);
-        end
-    end)
-    NplOceScene.runOpSequence("none", cur_node, nodes);
-    
-    cur_node:removeAllChildren();
-    local last_group = NplOce.Node.create();
-    local model = cur_node:getDrawable();
-    
-    if(model)then
-        local shape = model:getShape();
-        if(shape)then
-            color = ShapeBuilder.converColorToRGBA(color);
-            color = color or { r = 1, g = 0, b = 0, a = 1 };
-            local model = NplOce.TopoModel.create(shape,color.r,color.g,color.b,color.a);
-            last_group:setDrawable(model);
-            NplOce._setColor(last_group,color)
-
-            local box_arr = shape:getBndBox();
-            local min_x = box_arr[1];
-            local min_y = box_arr[2];
-            local min_z = box_arr[3];
-
-            local max_x = box_arr[4];
-            local max_y = box_arr[5];
-            local max_z = box_arr[6];
-
-            local width = max_x - min_x;
-            local height = max_y - min_y;
-            local depth = max_z - min_z;
-
-            local pos_x = min_x + width / 2;
-            local pos_y = min_y + height / 2;
-            local pos_z = min_z + depth / 2;
-
-
-            last_group:setTranslation(pos_x,pos_y,pos_z);
-
-            local matrix = Matrix4:new():identity();
-            matrix:setTrans(-pos_x,-pos_y,-pos_z);
-            shape:setMatrix(matrix);
-            cur_node:addChild(last_group);
-        end
-        cur_node:setDrawable(nil);
-    end
-    ShapeBuilder.selected_node = last_group;
-end
 
 function ShapeBuilder.move(x,y,z)
     ShapeBuilder.setTranslation(ShapeBuilder.getSelectedNode(),x,y,z);
@@ -258,11 +169,15 @@ function ShapeBuilder.addShape(shape,color,op)
         color = ShapeBuilder.converColorToRGBA(color);
         color = color or { r = 1, g = 0, b = 0, a = 1 };
         local model = NplOce.TopoModel.create(shape,color.r,color.g,color.b,color.a);
+        local child_node = NplOce.Node.create(ShapeBuilder.generateId());
+        child_node:setDrawable(model);
+
         local node = NplOce.Node.create(ShapeBuilder.generateId());
-        node:setDrawable(model);
-        cur_node:addChild(node);
+        node:addChild(child_node);
+
         NplOce._setColor(node,color)
         NplOce._setBooleanOp(node,op)
+        cur_node:addChild(node);
         ShapeBuilder.selected_node = node;
         return node;
     end
@@ -277,8 +192,10 @@ end
 function ShapeBuilder.cube(x,y,z,color,op) 
     color = ShapeBuilder.converColorToRGBA(color);
     local shape = NplOce.cube(x,y,z);
-    shape:translate(-x/2,-y/2,-z/2);
-    return ShapeBuilder.addShape(shape,color,op) 
+    local node = ShapeBuilder.addShape(shape,color,op) 
+    local child_node = node:getFirstChild();
+    child_node:translate(-x/2,-y/2,-z/2);
+    return node;
 end
 
 -- Create a cylinder
@@ -633,29 +550,68 @@ function ShapeBuilder.setRotation(node,axis,angle,pivot_x,pivot_y,pivot_z)
         pivot_x = pivot_x or 0;
         pivot_y = pivot_y or 0;
         pivot_z = pivot_z or 0;
-
-        local degree_angle = angle;
-        angle = 3.1415926* angle/180
         
-        local node_matrix = Matrix4:new(node:getMatrix());
-        local trans_matrix = Matrix4.translation({-pivot_x,-pivot_y,-pivot_z})
         local rotate_matrix;
-        local roate_x = 0;
-        local roate_y = 0;
-        local roate_z = 0;
         if(axis == "x")then
-            rotate_matrix = Matrix4.rotationX(degree_angle);
-            roate_x = degree_angle;
+            rotate_matrix = Matrix4.rotationX(angle);
         end
         if(axis == "y")then
-            rotate_matrix = Matrix4.rotationY(degree_angle);
-            roate_y = degree_angle;
+            rotate_matrix = Matrix4.rotationY(angle);
         end
         if(axis == "z")then
-            rotate_matrix = Matrix4.rotationZ(degree_angle);
-            roate_z = degree_angle;
+            rotate_matrix = Matrix4.rotationZ(angle);
         end
-		local transformMatrix = trans_matrix * rotate_matrix * Matrix4.translation({pivot_x,pivot_y,pivot_z}) * node_matrix;
-        node:setMatrix(transformMatrix);
+
+        NplOceScene.visitNode(node,function(child)
+            local drawable = child:getDrawable();
+            if(drawable)then
+
+                local shape = drawable:getShape();
+                if(shape)then
+
+                    local w_matrix = NplOceScene.drawableTransform(drawable,child)
+                    
+
+--                    local box_arr = shape:getBndBox();
+--                    local min_x = box_arr[1];
+--                    local min_y = box_arr[2];
+--                    local min_z = box_arr[3];
+--
+--                    local max_x = box_arr[4];
+--                    local max_y = box_arr[5];
+--                    local max_z = box_arr[6];
+--
+--                    local width = max_x - min_x;
+--                    local height = max_y - min_y;
+--                    local depth = max_z - min_z;
+--
+--                    local offset_x = width / 2;
+--                    local offset_y = height / 2;
+--                    local offset_z = depth / 2;
+--
+--                    local center_x = max_x - offset_x;
+--                    local center_y = max_y - offset_y;
+--                    local center_z = max_z - offset_z;
+--
+
+                    local parent = drawable:getNode();
+                    local matrix = parent:getMatrix();
+
+                    local x = matrix[13];
+                    local y = matrix[14];
+                    local z = matrix[15];
+
+                    local matrix_1 = Matrix4.translation({-x,-y,-z})
+                    local matrix_2 = Matrix4.translation({x,y,z})
+
+                    local local_trans_matrix = Matrix4.translation({pivot_x,pivot_y,pivot_z})
+		            local transformMatrix = matrix * matrix_1 * local_trans_matrix * rotate_matrix * matrix_2;
+
+
+                    parent:setMatrix(transformMatrix);
+
+                end
+            end
+        end)
     end
 end

@@ -82,14 +82,14 @@ function NplOce.Node:_popAllActionParams()
 	return params;
 end
 
--- Set operator on this node
+-- Set operator identifier on this node
 -- @param {NplOce.Node} node
--- @param {string} op - "union" or "difference" or "intersection"
+-- @param {string} op - "true" or "false"
 function NplOce._setOp(node, op)
-    node:setTag("op",op);
+    node:setTag("_op",op);
 end
 function NplOce._getOp(node)
-    return node:getTag("op");
+    return node:getTag("_op");
 end
 
 -- Set color on this node
@@ -107,6 +107,9 @@ function NplOce._getColor(node)
         return commonlib.LoadTableFromString(node:getTag("_color"));
     end
 end
+-- Set operator on this node
+-- @param {NplOce.Node} node
+-- @param {string} op - "union" or "difference" or "intersection"
 function NplOce._setBooleanOp(node,v)
     node:setTag("_boolean_op",v);
 end

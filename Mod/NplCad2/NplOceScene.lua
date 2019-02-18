@@ -26,13 +26,17 @@ function NplOceScene.getXml(scene)
         local matrix = commonlib.serialize(node:getMatrix());
         attr = attr .. string.format([[ matrix="%s" ]],matrix); 
 
+        local _op = node:getTag("_op");
+        if(_op ~= "" and _op ~= "nil" and  _op ~= nil )then
+            attr = attr .. string.format([[ _op="%s" ]],_op); 
+        end
         local color = node:getTag("_color") or "";
         if(color ~= "nil" and color ~= "" )then
             attr = attr .. string.format([[ _color="%s" ]],color); 
         end
-        local op = node:getTag("_boolean_op") or "";
-        if(op ~= "nil" and op ~= "" )then
-            attr = attr .. string.format([[ _boolean_op="%s" ]],op); 
+        local _boolean_op = node:getTag("_boolean_op") or "";
+        if(_boolean_op ~= "nil" and _boolean_op ~= "" )then
+            attr = attr .. string.format([[ _boolean_op="%s" ]],_boolean_op); 
         end
         s = string.format([[%s<node id="%s" %s>]],s,node:getId(),attr);
         local model = node:getDrawable();
@@ -40,10 +44,20 @@ function NplOceScene.getXml(scene)
             s = s .. "<model>"
             local shape = model:getShape();
             if(shape)then
-                local box = commonlib.serialize(shape:getBndBox());
+                local box = shape:getBndBox();
                 local matrix = commonlib.serialize(shape:getMatrix());
                 attr = attr .. string.format([[ matrix="%s" ]],matrix); 
-                s = s.. string.format([[ <shape box="%s" matrix="%s"/>]],box,matrix); 
+                local min_x = box[1];
+                local min_y = box[2];
+                local min_z = box[3];
+                local max_x = box[4];
+                local max_y = box[5];
+                local max_z = box[6];
+                local w = max_x - min_x;
+                local l = max_y - min_y;
+                local d = max_z - min_z;
+                local size = { w,l,d };
+                s = s.. string.format([[ <shape size="%s" box="%s" matrix="%s"/>]],commonlib.serialize(size), commonlib.serialize(box),matrix); 
             end
             s = s .. "</model>"
         end
@@ -112,40 +126,42 @@ end
 function NplOceScene.runOpSequence(op, top_node, drawable_nodes)
     local topo_model_array = {};
     local top_drawable = top_node:getDrawable();
-    local has_model;
+    local len = #drawable_nodes;
+    if(top_drawable and len == 0)then
+        return
+    end
+
     if(top_drawable)then
         table.insert(topo_model_array,top_drawable)
-        has_model = true;
     end
     local k;
     for k = 1, #drawable_nodes do
         table.insert(topo_model_array,drawable_nodes[k])
     end
     local len = #topo_model_array;
-
 	if(len == 0)then
 		return;
 	end
 
 	local first_node = topo_model_array[1];
 	if(len == 1) then
-        local child_model = topo_model_array[1];
-        if(not has_model)then
-            local w_matrix = NplOceScene.drawableTransform(child_model,top_node)
-
-            -- clone a new model from node
-            local child_model_parent = child_model:getNode();
-            local clone_node = child_model_parent:clone();
-            child_model_parent:setDrawable(nil);
-            child_model = clone_node:getDrawable();
-
-            top_node:setDrawable(child_model);
-            local shape = child_model:getShape();
-            local shape_matrix = shape:getMatrix();
-             
-            shape:setMatrix(shape_matrix * w_matrix);
-
-        end
+--        local child_model = topo_model_array[1];
+--        local w_matrix = NplOceScene.drawableTransform(child_model,top_node)
+--
+--        -- clone a new model from node
+--        local child_model_parent = child_model:getNode();
+--        local clone_node = child_model_parent:clone();
+--        child_model = clone_node:getDrawable();
+--        child_model_parent:setDrawable(nil);
+--
+--        top_node:setDrawable(child_model);
+--        local shape = child_model:getShape();
+--        local shape_matrix = shape:getMatrix();
+--        local box_arr = shape:getBndBox();
+--            
+--        shape:setMatrix(Matrix4:new():identity());
+--        -- set world matrix
+--        top_node:setMatrix(w_matrix);
         return
 	end
 
@@ -158,7 +174,7 @@ function NplOceScene.runOpSequence(op, top_node, drawable_nodes)
 		result_model = NplOceScene.operateTwoNodes(result_model, drawable, op, top_node);
 	end
 
-    top_node:setDrawable(result_model);
+    NplOceScene.centerShape(top_node,result_model);
 end
 
 function NplOceScene.operateTwoNodes(pre_drawable_node,cur_drawable_node,op,top_node)
@@ -167,11 +183,9 @@ function NplOceScene.operateTwoNodes(pre_drawable_node,cur_drawable_node,op,top_
         local w_matrix_2 = NplOceScene.drawableTransform(cur_drawable_node,top_node);
         local shape_1 = pre_drawable_node:getShape();
         local shape_2 = cur_drawable_node:getShape();
-        local shape_1_matrix = shape_1:getMatrix();
-        local shape_2_matrix = shape_2:getMatrix();
 
-        shape_1:setMatrix(shape_1_matrix * w_matrix_1);
-        shape_2:setMatrix(shape_2_matrix * w_matrix_2);
+        shape_1:setMatrix(w_matrix_1);
+        shape_2:setMatrix(w_matrix_2);
         
         -- create a new shape
         local shape;
@@ -203,32 +217,129 @@ function NplOceScene.operateTwoNodes(pre_drawable_node,cur_drawable_node,op,top_
     end
 
 end
+function NplOceScene.centerShape(cur_node,model)
+    if(not cur_node or not model)then
+        return
+    end
+    local shape = model:getShape();
+    if(shape)then
 
+        local box_arr = shape:getBndBox();
+        local min_x = box_arr[1];
+        local min_y = box_arr[2];
+        local min_z = box_arr[3];
+
+        local max_x = box_arr[4];
+        local max_y = box_arr[5];
+        local max_z = box_arr[6];
+
+        local width = max_x - min_x;
+        local height = max_y - min_y;
+        local depth = max_z - min_z;
+
+        local pos_x = min_x + width / 2;
+        local pos_y = min_y + height / 2;
+        local pos_z = min_z + depth / 2;
+
+        local matrix = Matrix4:new():identity();
+        matrix:setTrans(-pos_x,-pos_y,-pos_z);
+        shape:setMatrix(matrix);
+
+        
+        cur_node:removeAllChildren();
+        local child_node = NplOce.Node.create(ShapeBuilder.generateId());
+        cur_node:addChild(child_node);
+
+        local cur_node_matrix = Matrix4:new();
+        cur_node_matrix:makeTrans(pos_x,pos_y,pos_z);
+        child_node:setMatrix(cur_node_matrix);
+        child_node:setDrawable(model);
+        cur_node:setDrawable(nil);
+    end
+end
+
+function NplOceScene.cloneNode(node,color,op)
+    if(node)then
+        local cloned_node = node:clone();
+        local id = ShapeBuilder.generateId();
+        cloned_node:setId(id);
+        color = ShapeBuilder.converColorToRGBA(color) or { r = 1, g = 0, b = 0, a = 1 };
+
+        NplOce._setBooleanOp(cloned_node,op)
+        NplOce._setColor(cloned_node,color)
+        
+        NplOceScene.visitNode(cloned_node,function(node)
+            ShapeBuilder.setColor(node,color)
+        end)
+
+        NplOceScene.groupNode(cloned_node, color);
+        -- center shape for roate node correctly
+        --NplOceScene.centerShape(cloned_node);
+        ShapeBuilder.cur_node:addChild(cloned_node)
+        return cloned_node
+    end
+end
+-- running boolean op in cur_node
+function NplOceScene.groupNode(cur_node, color)
+
+    local function for_each(node,callback)
+        local child = node:getFirstChild();
+	    while(child) do
+            callback(child)
+		    child = child:getNextSibling();
+	    end
+    end
+    local nodes = {};
+    for_each(cur_node,function(child)
+        NplOceScene.visitNode(child,function(node)
+            if(child ~= node)then
+                local drawable = node:getDrawable();
+                if(drawable)then
+                    child:_pushActionParam(drawable);
+                end
+            end
+        end, function(child)
+            local drawable_nodes = child:_popAllActionParams() or {}
+            NplOceScene.runOpSequence("union", child, drawable_nodes)
+
+            local drawable = child:getDrawable();
+            if(drawable)then
+                table.insert(nodes,drawable);
+            end
+        end)
+        
+    end)
+    NplOceScene.runOpSequence("none", cur_node, nodes);
+end
 -- running boolean opration in scene if op is found on node
 function NplOceScene.run(scene,bUnionAll)
     if(not scene)then
         return
     end
---    local scene_first_node = scene:getFirstNode();
---    if(bUnionAll)then
---        NplOce._setOp(scene_first_node,"union");
---    end
---    NplOceScene.visit(scene,function(node)
+    local scene_first_node = scene:getFirstNode();
+    if(bUnionAll)then
+        NplOce._setOp(scene_first_node,"true");
+    end
+    NplOceScene.visit(scene,function(node)
 --        local drawable = node:getDrawable();
 --        if(drawable)then
 --            local actionName, actionNode = NplOceScene.findExternalTagValue(node,"_op");
---            if(actionName and actionNode and node ~= actionNode)then
+--            if((actionName == "true" or actionName == "True" or actionName == true ) 
+--                and node ~= actionNode )then
 --                actionNode:_pushActionParam(drawable);
 --            end
 --        end
---    end,function(node)
---        
---		local actionName = NplOce._getOp(node);
---        if(actionName)then
+    end,function(node)
+		local bOp = NplOce._getOp(node);
+        if(bOp == "true" or bOp == "True" or bOp == true)then
 --            local action_params = node:_popAllActionParams() or {};
---            NplOceScene.runOpSequence(actionName,node, action_params)
---        end
---    end)
+--            NplOceScene.runOpSequence("none",node, action_params)
+--            NplOceScene.centerShape(node);
+
+            local color = commonlib.LoadTableFromString(NplOceScene.findExternalTagValue(node,"_color"));
+            NplOceScene.groupNode(node, color);
+        end
+    end)
     return scene;
 end
 

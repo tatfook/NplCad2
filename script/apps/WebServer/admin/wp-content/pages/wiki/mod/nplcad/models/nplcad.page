@@ -119,6 +119,7 @@ function nplcad.do_string_export_scene_code_xml(str)
     ShapeBuilder.create()
     nplcad.installMethods(_G, ShapeBuilder)
     NPL.DoString(str);
+    NplOceScene.run(ShapeBuilder.getScene(),false);
     local s = NplOceScene.getXml(ShapeBuilder.getScene())
     _G.ShapeBuilder = nil;
     return s;
