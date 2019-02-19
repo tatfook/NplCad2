@@ -184,9 +184,12 @@ function NplOceScene.operateTwoNodes(pre_drawable_node,cur_drawable_node,op,top_
         local shape_1 = pre_drawable_node:getShape();
         local shape_2 = cur_drawable_node:getShape();
 
-        shape_1:setMatrix(w_matrix_1);
-        shape_2:setMatrix(w_matrix_2);
+        local matrix_shape_1 = Matrix4:new(shape_1:getMatrix());
+        local matrix_shape_2 = Matrix4:new(shape_2:getMatrix());
+        shape_1:setMatrix(matrix_shape_1 * w_matrix_1);
+        shape_2:setMatrix(matrix_shape_2 * w_matrix_2);
         
+
         -- create a new shape
         local shape;
         if(op == "union")then
@@ -273,8 +276,6 @@ function NplOceScene.cloneNode(node,color,op)
         end)
 
         NplOceScene.groupNode(cloned_node, color);
-        -- center shape for roate node correctly
-        --NplOceScene.centerShape(cloned_node);
         ShapeBuilder.cur_node:addChild(cloned_node)
         return cloned_node
     end
@@ -310,6 +311,7 @@ function NplOceScene.groupNode(cur_node, color)
         
     end)
     NplOceScene.runOpSequence("none", cur_node, nodes);
+
 end
 -- running boolean opration in scene if op is found on node
 function NplOceScene.run(scene,bUnionAll)

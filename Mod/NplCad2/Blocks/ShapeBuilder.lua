@@ -30,6 +30,13 @@ ShapeBuilder.root_node = nil;
 ShapeBuilder.cur_node = nil; -- for boolean/add node
 ShapeBuilder.selected_node = nil; -- for transforming node
 
+function ShapeBuilder.selectNode(name)
+    local node = ShapeBuilder.getRootNode():findNode(name);
+    if(node)then
+        ShapeBuilder.selected_node = node;
+        return node
+    end
+end
 function ShapeBuilder.createNode(name,color,bOp)
     local name = name or ShapeBuilder.generateId();
     local node = NplOce.Node.create(name);
@@ -74,13 +81,18 @@ end
 
 
 function ShapeBuilder.move(x,y,z)
-    ShapeBuilder.setTranslation(ShapeBuilder.getSelectedNode(),x,y,z);
+    local node = ShapeBuilder.getSelectedNode();
+    local child = node:getFirstChild();
+    ShapeBuilder.setTranslation(child,x,y,z);
 end
 function ShapeBuilder.scale(x,y,z)
     ShapeBuilder.setScale(ShapeBuilder.getSelectedNode(),x,y,z);
 end
-function ShapeBuilder.rotate(axis,angle,pivot_x,pivot_y,pivot_z)
-    ShapeBuilder.setRotation(ShapeBuilder.getSelectedNode(),axis,angle,pivot_x,pivot_y,pivot_z)
+function ShapeBuilder.rotate(axis,angle)
+    ShapeBuilder.setRotation(ShapeBuilder.getSelectedNode(),axis,angle)
+end
+function ShapeBuilder.rotateFromPivot(axis,angle,pivot_x,pivot_y,pivot_z)
+    ShapeBuilder.setRotation(ShapeBuilder.getSelectedNode(),axis,angle,pivot_x or 0,pivot_y or 0,pivot_z or 0)
 end
 -- Create a new node and set the current level to it
 function ShapeBuilder.beginNode()
@@ -194,7 +206,7 @@ function ShapeBuilder.cube(x,y,z,color,op)
     local shape = NplOce.cube(x,y,z);
     local node = ShapeBuilder.addShape(shape,color,op) 
     local child_node = node:getFirstChild();
-    child_node:translate(-x/2,-y/2,-z/2);
+    shape:translate(-x/2,-y/2,-z/2);
     return node;
 end
 
@@ -521,7 +533,7 @@ end
 -- @param {number} [tz = 0]
 function ShapeBuilder.translate(node,tx,ty,tz)
     if(node)then
-        node:translate(x,y,z);
+        node:translate(tx,ty,tz);
     end
 end
 
@@ -546,10 +558,12 @@ end
 -- @param {number} [pivot_z = 0]
 function ShapeBuilder.setRotation(node,axis,angle,pivot_x,pivot_y,pivot_z)
     if(node)then
+
         angle = angle or 0;
-        pivot_x = pivot_x or 0;
-        pivot_y = pivot_y or 0;
-        pivot_z = pivot_z or 0;
+        local from_pivot = true;
+        if(pivot_x == nil and pivot_y == nil and pivot_z == nil)then
+            from_pivot = false;
+        end
         
         local rotate_matrix;
         if(axis == "x")then
@@ -568,47 +582,27 @@ function ShapeBuilder.setRotation(node,axis,angle,pivot_x,pivot_y,pivot_z)
 
                 local shape = drawable:getShape();
                 if(shape)then
+                    if(from_pivot)then
 
-                    local w_matrix = NplOceScene.drawableTransform(drawable,child)
+                        local w_matrix = NplOceScene.drawableTransform(drawable,node);
+                        local pos_x = pivot_x - w_matrix[13];
+                        local pos_y = pivot_y - w_matrix[14];
+                        local pos_z = pivot_z - w_matrix[15];
+
+                        local shape_matrix = Matrix4:new(shape:getMatrix());
+                        local matrix_1 = Matrix4.translation({-pos_x,-pos_y,-pos_z})
+                        local matrix_2 = Matrix4.translation({pos_x,pos_y,pos_z})
+
+                        local transformMatrix = shape_matrix * matrix_1 * rotate_matrix * matrix_2;
+                        shape:setMatrix(transformMatrix);
+
+                    else
+                        local shape_matrix = Matrix4:new(shape:getMatrix());
+                        local transformMatrix = shape_matrix * rotate_matrix;
+                        shape:setMatrix(transformMatrix);
+                        
+                    end
                     
-
---                    local box_arr = shape:getBndBox();
---                    local min_x = box_arr[1];
---                    local min_y = box_arr[2];
---                    local min_z = box_arr[3];
---
---                    local max_x = box_arr[4];
---                    local max_y = box_arr[5];
---                    local max_z = box_arr[6];
---
---                    local width = max_x - min_x;
---                    local height = max_y - min_y;
---                    local depth = max_z - min_z;
---
---                    local offset_x = width / 2;
---                    local offset_y = height / 2;
---                    local offset_z = depth / 2;
---
---                    local center_x = max_x - offset_x;
---                    local center_y = max_y - offset_y;
---                    local center_z = max_z - offset_z;
---
-
-                    local parent = drawable:getNode();
-                    local matrix = parent:getMatrix();
-
-                    local x = matrix[13];
-                    local y = matrix[14];
-                    local z = matrix[15];
-
-                    local matrix_1 = Matrix4.translation({-x,-y,-z})
-                    local matrix_2 = Matrix4.translation({x,y,z})
-
-                    local local_trans_matrix = Matrix4.translation({pivot_x,pivot_y,pivot_z})
-		            local transformMatrix = matrix * matrix_1 * local_trans_matrix * rotate_matrix * matrix_2;
-
-
-                    parent:setMatrix(transformMatrix);
 
                 end
             end
