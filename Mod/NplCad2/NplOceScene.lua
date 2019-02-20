@@ -15,6 +15,7 @@ local Matrix4 = commonlib.gettable("mathlib.Matrix4");
 local Encoding = commonlib.gettable("System.Encoding");
 
 local NplOceScene = NPL.export();
+local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
 
 function NplOceScene.getXml(scene)
     if(not scene)then
@@ -127,6 +128,7 @@ function NplOceScene.runOpSequence(op, top_node, drawable_nodes)
     local topo_model_array = {};
     local top_drawable = top_node:getDrawable();
     local len = #drawable_nodes;
+    
     if(top_drawable and len == 0)then
         return
     end
@@ -139,41 +141,19 @@ function NplOceScene.runOpSequence(op, top_node, drawable_nodes)
         table.insert(topo_model_array,drawable_nodes[k])
     end
     local len = #topo_model_array;
-	if(len == 0)then
-		return;
-	end
-
-	local first_node = topo_model_array[1];
-	if(len == 1) then
---        local child_model = topo_model_array[1];
---        local w_matrix = NplOceScene.drawableTransform(child_model,top_node)
---
---        -- clone a new model from node
---        local child_model_parent = child_model:getNode();
---        local clone_node = child_model_parent:clone();
---        child_model = clone_node:getDrawable();
---        child_model_parent:setDrawable(nil);
---
---        top_node:setDrawable(child_model);
---        local shape = child_model:getShape();
---        local shape_matrix = shape:getMatrix();
---        local box_arr = shape:getBndBox();
---            
---        shape:setMatrix(Matrix4:new():identity());
---        -- set world matrix
---        top_node:setMatrix(w_matrix);
+    if(len < 2 )then
         return
-	end
-
-	local result_model =  topo_model_array[1];;
+    end
+	local result_model =  topo_model_array[1];
+    local _boolean_op;
 	for i=2, len do
         local drawable = drawable_nodes[i];
+        local node = drawable:getNode();
         if(op == "none")then
-            op = NplOceScene.findExternalTagValue(drawable:getNode(),"_boolean_op") or "union";
+            _boolean_op = NplOceScene.findExternalTagValue(node,"_boolean_op") or "union";
         end
-		result_model = NplOceScene.operateTwoNodes(result_model, drawable, op, top_node);
+		result_model = NplOceScene.operateTwoNodes(result_model, drawable, _boolean_op, top_node);
 	end
-
     NplOceScene.centerShape(top_node,result_model);
 end
 
