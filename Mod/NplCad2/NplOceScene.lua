@@ -147,12 +147,15 @@ function NplOceScene.runOpSequence(op, top_node, drawable_nodes)
 	local result_model =  topo_model_array[1];
     local _boolean_op;
 	for i=2, len do
-        local drawable = drawable_nodes[i];
+        local drawable = topo_model_array[i];
         local node = drawable:getNode();
         if(op == "none")then
             _boolean_op = NplOceScene.findExternalTagValue(node,"_boolean_op") or "union";
+        else
+            _boolean_op = op or "union";
         end
 		result_model = NplOceScene.operateTwoNodes(result_model, drawable, _boolean_op, top_node);
+        
 	end
     NplOceScene.centerShape(top_node,result_model);
 end
@@ -178,6 +181,8 @@ function NplOceScene.operateTwoNodes(pre_drawable_node,cur_drawable_node,op,top_
             shape = NplOce.difference(shape_1,shape_2);
         elseif(op == "intersection")then
             shape = NplOce.intersection(shape_1,shape_2);
+        else
+	        LOG.std(nil, "error", "NplCad2", "unsupported op: %s", op);
         end
 
         -- remove drawable from pre node

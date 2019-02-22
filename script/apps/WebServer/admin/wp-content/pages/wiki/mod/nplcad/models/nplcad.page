@@ -47,9 +47,7 @@ function nplcad:api_runcode(input)
     if(code)then
         local build_type = input.build_type
         local func_str = nplcad.do_string;
-        if(build_type == "brep")then
-            func_str = nplcad.do_string_export_brep;
-        elseif(build_type == "parax")then
+        if(build_type == "parax")then
             func_str = nplcad.do_string_export_parax;
         elseif(build_type == "scene_code_xml")then
             func_str = nplcad.do_string_export_scene_code_xml;
@@ -77,20 +75,6 @@ function nplcad.do_string(str)
     NPL.DoString(str);
     NplOceScene.run(ShapeBuilder.getScene(),false);
     local s = ShapeBuilder.toJson();
-    _G.ShapeBuilder = nil;
-    return s;
-end
-function nplcad.do_string_export_brep(str)
-    if(not str)then
-        return
-    end
-    local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
-    _G.ShapeBuilder = ShapeBuilder;
-    ShapeBuilder.create()
-    nplcad.installMethods(_G, ShapeBuilder)
-    NPL.DoString(str);
-    --local s = ShapeBuilder.toBrep();
-    local s = NplOceScene.getXml(ShapeBuilder.getScene())
     _G.ShapeBuilder = nil;
     return s;
 end

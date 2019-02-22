@@ -24,7 +24,7 @@ local Color = commonlib.gettable("System.Core.Color");
 local Matrix4 = commonlib.gettable("mathlib.Matrix4");
 
 local ShapeBuilder = NPL.export();
-
+ShapeBuilder.Precision_Confusion = 0.0000001
 ShapeBuilder.scene = nil;
 ShapeBuilder.root_node = nil; 
 ShapeBuilder.cur_node = nil; -- for boolean/add node
@@ -41,7 +41,7 @@ function ShapeBuilder.createNode(name,color,bOp)
     ShapeBuilder.cur_node = node;
     return node
 end
-function ShapeBuilder.cloneNodeByName(name,color,op)
+function ShapeBuilder.cloneNodeByName(op,name,color)
     local node = ShapeBuilder.getRootNode():findNode(name);
     if(node)then
         local cloned_node = NplOceScene.cloneNode(node,color,op)
@@ -49,7 +49,7 @@ function ShapeBuilder.cloneNodeByName(name,color,op)
         return cloned_node
     end
 end
-function ShapeBuilder.cloneNode(color,op)
+function ShapeBuilder.cloneNode(op,color)
     local node = ShapeBuilder.selected_node;
     if(node)then
         local cloned_node = NplOceScene.cloneNode(node,color,op)
@@ -67,46 +67,18 @@ function ShapeBuilder.deleteNode(name)
         parent:removeChild(node);
     end
 end
-function ShapeBuilder.group(color)
-    local cur_node = ShapeBuilder.getCurNode();
-    NplOceScene.groupNode(cur_node, color)
-end
-
 
 function ShapeBuilder.move(x,y,z)
     local node = ShapeBuilder.getSelectedNode();
     local child = node:getFirstChild();
-    --ShapeBuilder.setTranslation(child,x,y,z);
     ShapeBuilder.translate(child,x,y,z);
 end
-function ShapeBuilder.scale(x,y,z)
-    ShapeBuilder.setScale(ShapeBuilder.getSelectedNode(),x,y,z);
-end
+
 function ShapeBuilder.rotate(axis,angle)
     ShapeBuilder.setRotation(ShapeBuilder.getSelectedNode(),axis,angle)
 end
 function ShapeBuilder.rotateFromPivot(axis,angle,pivot_x,pivot_y,pivot_z)
     ShapeBuilder.setRotation(ShapeBuilder.getSelectedNode(),axis,angle,pivot_x or 0,pivot_y or 0,pivot_z or 0)
-end
--- Create a new node and set the current level to it
-function ShapeBuilder.beginNode()
-    local cur_node = ShapeBuilder.getCurNode();
-    if(cur_node)then
-        local node = NplOce.Node.create(ShapeBuilder.generateId());
-        cur_node:addChild(node)
-        ShapeBuilder.cur_node = node;
-        return node
-    end
-end
--- Get back the parent node
-function ShapeBuilder.endNode()
-    local node = ShapeBuilder.getCurNode();
-    if(node)then
-        if(node.getParent)then
-            local parent = node:getParent();
-            ShapeBuilder.cur_node = parent;
-        end
-    end
 end
 function ShapeBuilder.getSelectedNode()
     return ShapeBuilder.selected_node;
@@ -136,12 +108,6 @@ function ShapeBuilder.getScene()
     return ShapeBuilder.scene;
 end
 
--- Export the scene to brep
--- @return {string} v
-function ShapeBuilder.toBrep()
-    local brep = "brep";
-    return brep;
-end
 
 -- Export the scene to json string
 -- @param {number} [indent = -1]
@@ -190,12 +156,20 @@ function ShapeBuilder.addShape(shape,color,op)
     
 end
 -- Create a cube
+function ShapeBuilder.cube(op,size,color) 
+    color = ShapeBuilder.converColorToRGBA(color);
+    local shape = NplOce.cube(size,size,size);
+    local node = ShapeBuilder.addShape(shape,color,op) 
+    shape:translate(-size/2,-size/2,-size/2);
+    return node;
+end
+-- Create a box
 -- @param {number} [x = 10]
 -- @param {number} [y = 10]
 -- @param {number} [z = 10]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder.cube(x,y,z,color,op) 
+function ShapeBuilder.box(op,x,y,z,color) 
     color = ShapeBuilder.converColorToRGBA(color);
     local shape = NplOce.cube(x,y,z);
     local node = ShapeBuilder.addShape(shape,color,op) 
@@ -209,14 +183,15 @@ end
 -- @param {number} [angle = 360]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder._cylinder(radius,height,angle,color,op) 
+function ShapeBuilder._cylinder(op,radius,height,angle,color) 
     color = ShapeBuilder.converColorToRGBA(color);
+    radius = math.max(radius,ShapeBuilder.Precision_Confusion);
     local shape = NplOce.cylinder(radius,height,angle);
     shape:translate(0,0,-height/2);
     return ShapeBuilder.addShape(shape,color,op) 
 end
-function ShapeBuilder.cylinder(radius,height,color,op) 
-    ShapeBuilder._cylinder(radius,height,360,color,op);
+function ShapeBuilder.cylinder(op,radius,height,color) 
+    ShapeBuilder._cylinder(op,radius,height,360,color);
 end
 
 -- Create a sphere
@@ -226,30 +201,33 @@ end
 -- @param {number} [angle3 = 360]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder._sphere(radius,angle1,angle2,angle3,color,op) 
+function ShapeBuilder._sphere(op,radius,angle1,angle2,angle3,color) 
     color = ShapeBuilder.converColorToRGBA(color);
+    radius = math.max(radius,ShapeBuilder.Precision_Confusion);
     local shape = NplOce.sphere(radius,angle1,angle2,angle3);
     shape:translate(0,0,0);
     return ShapeBuilder.addShape(shape,color,op) 
 end
-function ShapeBuilder.sphere(radius,color,op) 
-    ShapeBuilder._sphere(radius,-90,90,360,color,op);
+function ShapeBuilder.sphere(op,radius,color) 
+    ShapeBuilder._sphere(op,radius,-90,90,360,color);
 end
 -- Create a cone
--- @param {number} [radius1 = 2]
--- @param {number} [radius2 = 4]
+-- @param {number} [top_radius = 2]
+-- @param {number} [bottom_radius = 4]
 -- @param {number} [height = 10]
 -- @param {number} [angle = 360]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder._cone(radius1,radius2,height,angle,color,op) 
+function ShapeBuilder._cone(op,top_radius,bottom_radius,height,angle,color) 
     color = ShapeBuilder.converColorToRGBA(color);
-    local shape = NplOce.cone(radius1,radius2,height,angle);
+    top_radius = math.max(top_radius,ShapeBuilder.Precision_Confusion);
+    bottom_radius = math.max(bottom_radius,ShapeBuilder.Precision_Confusion);
+    local shape = NplOce.cone(top_radius,bottom_radius,height,angle);
     shape:translate(0,0,-height/2);
     return ShapeBuilder.addShape(shape,color,op) 
 end
-function ShapeBuilder.cone(radius1,radius2,height,color,op) 
-    ShapeBuilder._cone(radius1,radius2,height,360,color,op);
+function ShapeBuilder.cone(op,top_radius,bottom_radius,height,color,op) 
+    ShapeBuilder._cone(op,top_radius,bottom_radius,height,360,color,op);
 end
 -- Create a torus
 -- @param {number} [radius1 = 10]
@@ -259,12 +237,12 @@ end
 -- @param {number} [angle3 = 360]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder._torus(radius1,radius2,angle1,angle2,angle3,color,op) 
+function ShapeBuilder._torus(op,radius1,radius2,angle1,angle2,angle3,color) 
     color = ShapeBuilder.converColorToRGBA(color);
     return ShapeBuilder.addShape(NplOce.torus(radius1,radius2,angle1,angle2,angle3),color,op) 
 end
-function ShapeBuilder.torus(radius1,radius2,color,op) 
-    ShapeBuilder._torus(radius1,radius2,-180,180,360,color,op);
+function ShapeBuilder.torus(op,radius1,radius2,color) 
+    ShapeBuilder._torus(op,radius1,radius2,-180,180,360,color);
 end
 
 -- Create a prism
@@ -273,11 +251,34 @@ end
 -- @param {number} [h = 10]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder.prism(p,c,h,color,op) 
+function ShapeBuilder.prism(op,p,c,h,color) 
     color = ShapeBuilder.converColorToRGBA(color);
+    p = math.max(p,3);
     local shape = NplOce.prism(p,c,h);
     shape:translate(0,0,-h/2);
     return ShapeBuilder.addShape(shape,color,op) 
+end
+
+function ShapeBuilder.wedge(op,x, z, h, color) 
+    local x1 = 0;
+    local z1 = 0;
+
+    local x2 = x;
+    local z2 = z;
+
+    local y1 = 0;
+    local y2 = h;
+
+    local x3 = 0;
+    local z3 = 0;
+
+    local x4 = x;
+    local z4 = ShapeBuilder.Precision_Confusion;
+
+    color = ShapeBuilder.converColorToRGBA(color);
+    local shape = NplOce.wedge(x1, y1, z1, x3, z3, x2, y2, z2, x4, z4);
+    shape:translate(-x/2,-h/2,-z/2);
+    return ShapeBuilder.addShape(shape,color,op);
 end
 -- Create a wedge
 -- @param {number} [x1 = 0]
@@ -292,9 +293,10 @@ end
 -- @param {number} [z4 = 8]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder.wedge(x1, y1, z1, x3, z3, x2, y2, z2, x4, z4,color,op) 
+function ShapeBuilder._wedge(op,x1, y1, z1, x3, z3, x2, y2, z2, x4, z4,color) 
     color = ShapeBuilder.converColorToRGBA(color);
-    return ShapeBuilder.addShape(NplOce.wedge(x1, y1, z1, x3, z3, x2, y2, z2, x4, z4),color,op) 
+    local shape = NplOce.wedge(x1, y1, z1, x3, z3, x2, y2, z2, x4, z4);
+    return ShapeBuilder.addShape(shape,color,op) 
 end
 
 -- Create an ellipsoid
@@ -306,12 +308,12 @@ end
 -- @param {number} [a3 = 360]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder._ellipsoid(r1, r2, r3, a1, a2, a3,color,op) 
+function ShapeBuilder._ellipsoid(op,r1, r2, r3, a1, a2, a3,color) 
     color = ShapeBuilder.converColorToRGBA(color);
     return ShapeBuilder.addShape(NplOce.ellipsoid(r1, r2, r3, a1, a2, a3),color,op) 
 end
-function ShapeBuilder.ellipsoid(r1, r2, r3, color,op) 
-    ShapeBuilder._ellipsoid(r1, r2, r3, -90, 90, 360,color,op) 
+function ShapeBuilder.ellipsoid(op,r1, r2, r3, color) 
+    ShapeBuilder._ellipsoid(op,r1, r2, r3, -90, 90, 360,color) 
 end
 
 -- Create a point
