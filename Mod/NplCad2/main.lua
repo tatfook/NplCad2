@@ -80,9 +80,9 @@ function NplCad2.LoadPlugin(callback)
     local plugin_path;
 	local debug = ParaEngine.GetAppCommandLineByParam("nplcad_debug", false);
     if(debug)then
-        plugin_path = "plugins/nploce/nploce_d.dll";
+        plugin_path = "plugins/nploce_d.dll";
     else
-        plugin_path = "plugins/nploce/nploce.dll";
+        plugin_path = "plugins/nploce.dll";
     end
     NplOceConnection.load({ npl_oce_dll = plugin_path, activate_callback = "Mod/NplCad2/NplOceConnection.lua", },callback);
 end
