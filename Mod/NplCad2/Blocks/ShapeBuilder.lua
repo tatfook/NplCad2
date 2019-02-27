@@ -29,7 +29,18 @@ ShapeBuilder.scene = nil;
 ShapeBuilder.root_node = nil; 
 ShapeBuilder.cur_node = nil; -- for boolean/add node
 ShapeBuilder.selected_node = nil; -- for transforming node
+ShapeBuilder.y_up = nil; 
 
+function ShapeBuilder.setYUp(v)
+    ShapeBuilder.y_up = v; 
+end
+function ShapeBuilder.swapYZ(y,z)
+    if(ShapeBuilder.y_up)then
+        return z,y;
+    else
+        return y,z;
+    end
+end
 function ShapeBuilder.createNode(name,color,bOp)
     local name = name or ShapeBuilder.generateId();
     local node = NplOce.Node.create(name);
@@ -71,6 +82,7 @@ end
 function ShapeBuilder.move(x,y,z)
     local node = ShapeBuilder.getSelectedNode();
     local child = node:getFirstChild();
+
     ShapeBuilder.translate(child,x,y,z);
 end
 
@@ -91,8 +103,9 @@ function ShapeBuilder.getRootNode()
     return ShapeBuilder.root_node;
 end
 -- Create a scene
-function ShapeBuilder.create()
+function ShapeBuilder.create(zup)
     ShapeBuilder.scene = NplOce.Scene.create();
+    ShapeBuilder.setYUp(not zup)
     ShapeBuilder.cur_node = ShapeBuilder.scene:addNode(ShapeBuilder.generateId());
     ShapeBuilder.root_node = ShapeBuilder.cur_node; 
 end
@@ -490,6 +503,7 @@ end
 -- @param {number} [z = 0]
 function ShapeBuilder.setTranslation(node,x,y,z) 
     if(node)then
+        y,z = ShapeBuilder.swapYZ(y,z);
         node:setTranslation(x,y,z);
     end
 end
@@ -500,6 +514,7 @@ end
 -- @param {number} [tz = 0]
 function ShapeBuilder.translate(node,tx,ty,tz)
     if(node)then
+        ty,tz = ShapeBuilder.swapYZ(ty,tz);
         node:translate(tx,ty,tz);
     end
 end
@@ -511,6 +526,7 @@ end
 -- @param {number} [z = 1]
 function ShapeBuilder.setScale(node,x,y,z)
     if(node)then
+        y,z = ShapeBuilder.swapYZ(y,z);
         node:setScale(x,y,z);
     end
 end
@@ -532,15 +548,24 @@ function ShapeBuilder.setRotation(node,axis,angle,pivot_x,pivot_y,pivot_z)
             from_pivot = false;
         end
         
+        pivot_y,pivot_z = ShapeBuilder.swapYZ(pivot_y,pivot_z);
         local rotate_matrix;
         if(axis == "x")then
             rotate_matrix = Matrix4.rotationX(angle);
         end
         if(axis == "y")then
-            rotate_matrix = Matrix4.rotationY(angle);
+            if(ShapeBuilder.y_up)then
+                rotate_matrix = Matrix4.rotationZ(angle);
+            else
+                rotate_matrix = Matrix4.rotationY(angle);
+            end
         end
         if(axis == "z")then
-            rotate_matrix = Matrix4.rotationZ(angle);
+            if(ShapeBuilder.y_up)then
+                rotate_matrix = Matrix4.rotationY(angle);
+            else
+                rotate_matrix = Matrix4.rotationZ(angle);
+            end
         end
 
         NplOceScene.visitNode(node,function(child)
