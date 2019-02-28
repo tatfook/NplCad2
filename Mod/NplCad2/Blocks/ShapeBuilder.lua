@@ -30,7 +30,14 @@ ShapeBuilder.root_node = nil;
 ShapeBuilder.cur_node = nil; -- for boolean/add node
 ShapeBuilder.selected_node = nil; -- for transforming node
 ShapeBuilder.y_up = nil; 
+ShapeBuilder.print_dialog = nil; 
 
+function ShapeBuilder.print3d(v)
+    ShapeBuilder.print_dialog = v; 
+end
+function ShapeBuilder.getPrint3d()
+    return ShapeBuilder.print_dialog;
+end
 function ShapeBuilder.setYUp(v)
     ShapeBuilder.y_up = v; 
 end
@@ -44,7 +51,7 @@ end
 function ShapeBuilder.createNode(name,color,bOp)
     local name = name or ShapeBuilder.generateId();
     local node = NplOce.Node.create(name);
-    NplOce._setOp(node, bOp)
+    NplOce._setOp(node, tostring(bOp))
     local color = ShapeBuilder.converColorToRGBA(color) or { r = 1, g = 0, b = 0, a = 1 };
     NplOce._setColor(node,color)
 
