@@ -355,13 +355,17 @@ function NplOceScene.saveSceneToParaX(filename,scene)
         return
     end
     NplOceScene.run(scene,false);
-    local s = NplOce.exportToParaX(scene,true);
-    ParaIO.CreateDirectory(filename);
-    local file = ParaIO.open(filename, "w");
-	if(file:IsValid()) then
-        local len = string.len(s);
-		file:write(s,len);
-		file:close();
-	end
-    return s;
+    local s = NplOce.exportToParaX(scene,true) or "";
+    local len = string.len(s);
+    local result = false;
+    if(len > 0)then
+        ParaIO.CreateDirectory(filename);
+        local file = ParaIO.open(filename, "w");
+	    if(file:IsValid()) then
+		    file:write(s,len);
+		    file:close();
+            result = true;
+	    end
+    end
+    return result;
 end

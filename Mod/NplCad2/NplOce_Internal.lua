@@ -57,14 +57,15 @@ function NplOce.exportToParaX(scene, isYUp)
 			end
 		end
 	end
-
-	local template = WriteTemplate();
+	local template = WriteTemplate() or "";
 	local data = scene:toParaX(isYUp);
-	if (template ~= nil and data ~= nil) then
-		local Encoding = commonlib.gettable("System.Encoding");
-		data = Encoding.unbase64(data);
-		local res = template..data;
-		return res;
+	if (template ~= "") then
+        if(data ~= nil)then
+            local Encoding = commonlib.gettable("System.Encoding");
+		    data = Encoding.unbase64(data);
+		    template = template..data;
+            return template;
+        end
 	end
 end
 
