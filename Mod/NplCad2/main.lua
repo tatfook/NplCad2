@@ -35,10 +35,10 @@ function NplCad2:init()
             -- NPL CAD v2.0 with Code Block
 			NPL.load("(gl)Mod/NplCad2/ItemCADCodeBlock.lua");
 			blocks[#blocks+1] = {name="block", attr={ name="NPLCADCodeBlock",
-				id = 10513, item_class="ItemCADCodeBlock", text=L"CAD 代码模型",
+				id = 10513, item_class="ItemCADCodeBlock", text=L"npl block cad 代码模型",
 				icon = "Mod/NplCad2/textures/icon.png",
 			}}
-			LOG.std(nil, "info", "NplCad2", "NPL CAD code block  is registered");
+			LOG.std(nil, "info", "NplCad2", "npl block cad  is registered");
 
             -- load plugin
             NplCad2.LoadPlugin(function()
