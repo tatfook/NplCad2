@@ -255,12 +255,15 @@ function NplOceScene.cloneNode(node,color,op)
 
         NplOce._setBooleanOp(cloned_node,op)
         NplOce._setColor(cloned_node,color)
-        
-        NplOceScene.visitNode(cloned_node,function(node)
-            ShapeBuilder.setColor(node,color)
-        end)
 
         NplOceScene.groupNode(cloned_node, color);
+
+         NplOceScene.visitNode(cloned_node,function(node)
+            if(cloned_node ~= node)then
+                NplOce._setBooleanOp(node,nil)
+                ShapeBuilder.setColor(node,color)
+            end
+        end)
         ShapeBuilder.cur_node:addChild(cloned_node)
         return cloned_node
     end
