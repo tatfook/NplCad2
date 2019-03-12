@@ -154,7 +154,7 @@ function NplOceScene.runOpSequence(op, top_node, drawable_nodes)
         else
             _boolean_op = op or "union";
         end
-		result_model = NplOceScene.operateTwoNodes(result_model, drawable, _boolean_op, top_node);
+		result_model = NplOceScene.operateTwoNodes(result_model, drawable, _boolean_op, top_node) or result_model;
         
 	end
     NplOceScene.centerShape(top_node,result_model);
@@ -184,7 +184,10 @@ function NplOceScene.operateTwoNodes(pre_drawable_node,cur_drawable_node,op,top_
         else
 	        LOG.std(nil, "error", "NplCad2", "unsupported op: %s", op);
         end
-
+        if(not shape or not shape:IsNull())then
+	        LOG.std(nil, "error", "NplCad2", "the result of boolean is null");
+            return
+        end
         -- remove drawable from pre node
         local pre_node = pre_drawable_node:getNode();
         if(pre_node)then
@@ -196,6 +199,7 @@ function NplOceScene.operateTwoNodes(pre_drawable_node,cur_drawable_node,op,top_
         if(cur_node)then
             cur_node:setDrawable(nil);
         end
+
         local top_node_color = NplOce._getColor(top_node);
         local pre_color = pre_drawable_node:getColor();
         local color = top_node_color or NplOceScene.arrayToColor(pre_color) or { r = 1, g = 0, b = 0, a = 1 };
