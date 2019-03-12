@@ -34,9 +34,9 @@ function nplcad:api_runcode(input)
 	local nplcad_debug = ParaEngine.GetAppCommandLineByParam("nplcad_debug", false);
     local dll;
     if(nplcad_debug)then
-        dll = "plugins/nploce/nploce_d.dll"
+        dll = "plugins/nploce_d.dll"
     else
-        dll = "plugins/nploce/nploce.dll"
+        dll = "plugins/nploce.dll"
     end
     NplOceConnection.load({ npl_oce_dll = dll },function(msg)
         if(msg == true)then
@@ -71,7 +71,7 @@ function nplcad.do_string(str)
     local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
     _G.ShapeBuilder = ShapeBuilder;
     ShapeBuilder.create()
-    ShapeBuilder.setYUp(false);
+    ShapeBuilder.setYUp(true);
     nplcad.installMethods(_G, ShapeBuilder)
     NPL.DoString(str);
     NplOceScene.run(ShapeBuilder.getScene(),false);
@@ -102,7 +102,7 @@ function nplcad.do_string_export_scene_code_xml(str)
     local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
     _G.ShapeBuilder = ShapeBuilder;
     ShapeBuilder.create()
-    ShapeBuilder.setYUp(false);
+    ShapeBuilder.setYUp(true);
     nplcad.installMethods(_G, ShapeBuilder)
     NPL.DoString(str);
     NplOceScene.run(ShapeBuilder.getScene(),false);
