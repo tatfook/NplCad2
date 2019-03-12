@@ -50,7 +50,7 @@ function NplCad2:init()
 	-- add block to category list to be displayed in builder window (E key)
 	GameLogic.GetFilters():add_filter("block_list", function(xmlRoot) 
 		for node in commonlib.XPath.eachNode(xmlRoot, "/blocklist/category") do
-			if(node.attr.name == "tool") then
+			if(node.attr.name == "tool" or node.attr.name == "character") then
 				node[#node+1] = {name="block", attr={name="NPLCADCodeBlock"} };
 			end
 		end
