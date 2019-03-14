@@ -246,8 +246,8 @@ function ShapeBuilder._cone(op,top_radius,bottom_radius,height,angle,color)
     shape:translate(0,0,-height/2);
     return ShapeBuilder.addShape(shape,color,op) 
 end
-function ShapeBuilder.cone(op,top_radius,bottom_radius,height,color,op) 
-    ShapeBuilder._cone(op,top_radius,bottom_radius,height,360,color,op);
+function ShapeBuilder.cone(op,top_radius,bottom_radius,height,color) 
+    ShapeBuilder._cone(op,top_radius,bottom_radius,height,360,color);
 end
 -- Create a torus
 -- @param {number} [radius1 = 10]
