@@ -7,32 +7,15 @@ use the lib:
 ------------------------------------------------------------
 local TestScene = NPL.load("Mod/NplCad2/Test/TestScene.lua");
 local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
-NplOceConnection.load({ npl_oce_dll = "plugins/nploce/nploce_d.dll" },function(msg)
+NplOceConnection.load({ npl_oce_dll = "plugins/nploce_d.dll" },function(msg)
     NPL.load("Mod/NplCad2/NplOce_Internal.lua");
-    TestScene.Test_VisitNodeTransform();
-    --TestScene.Test_FindNode();
-    --TestScene.Test_CloneNode();
-    --TestScene.Test_VisitNode2();
-    --TestScene.Test1("test/test.json");
-    --TestScene.Test_toParaX("test/test.x");
-
-    --TestScene.Test_VisitNode("test/test_union_children.x");
-    --TestScene.Test_VisitNodeTransform("test/test_tranform.json")
+    TestScene.Test_ShapePlus("test/test.x");
 end);
 ------------------------------------------------------------
 --]]
 local NplOceScene = NPL.load("Mod/NplCad2/NplOceScene.lua");
 local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
 local TestScene = NPL.export();
-function TestScene.TestCreateCube(filename)
-    local s = NplOce.TestCreateCube(2);
-	ParaIO.CreateDirectory(filename);
-    local file = ParaIO.open(filename, "w");
-	if(file:IsValid()) then
-		file:WriteString(s);
-		file:close();
-	end
-end
 
 function TestScene.Test1(filename)
     local cube = NplOce.cube();
@@ -164,4 +147,83 @@ function TestScene.Test_CloneNode()
     local v = NplOce._getBooleanOp(child);
     commonlib.echo("=====_getBooleanOp");
     commonlib.echo(v);
+end
+function TestScene.Test_ShapePlus()
+    local shapes = {
+        "ShapeNodeBox",
+        "ShapeNodeCylinder",
+        "ShapeNodeSphere",
+        "ShapeNodeCone",
+        "ShapeNodeTorus",
+        "ShapeNodePrism",
+        "ShapeNodeEllipsoid",
+        "ShapeNodeWedge",
+    }
+    for k,name in ipairs(shapes) do
+
+        local func = NplOce[name]
+        if(func and func.create)then
+            filename = string.format("test/%s.x",name);
+            local node = func.create();
+            node:setColor({0,0,1,1});
+            node:setValue();
+            local scene = NplOce.Scene.create();
+            local cur_node = scene:addNode("root");
+            cur_node:addChild(node);
+
+            local s = NplOce.exportToParaX(scene,true) or "";
+            local len = string.len(s);
+            if(len > 0)then
+                ParaIO.CreateDirectory(filename);
+                local file = ParaIO.open(filename, "w");
+	            if(file:IsValid()) then
+		            file:write(s,len);
+		            file:close();
+	            end
+            end
+        end
+        
+    end
+    _guihelper.MessageBox("done");
+end
+function TestScene.Test_CustomShapeNode()
+
+    local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
+
+    local scene = NplOce.Scene.create();
+    local cur_node = scene:addNode("root");
+    local node = NplOce.ShapeNode.create("node1");
+    cur_node:addChild(node);
+
+    local node = NplOce.ShapeNode.create("node2");
+    node:setOpEnabled(true);
+    cur_node:addChild(node);
+
+    local box_node = NplOce.ShapeNodeBox.create();
+    box_node:setValue(1,1,1);
+    node:addChild(box_node);
+
+    local sphere_node = NplOce.ShapeNodeSphere.create();
+    sphere_node:setValue(0.6);
+    sphere_node:setOp("difference");
+    node:addChild(sphere_node);
+
+    
+
+    TestScene.SaveFile("test/CustomShapeNode.before.xml",SceneHelper.getXml(scene))
+    TestScene.SaveFile("test/CustomShapeNode.before.x",NplOce.exportToParaX(scene,true))
+    SceneHelper.run(scene,true)
+    TestScene.SaveFile("test/CustomShapeNode.xml",SceneHelper.getXml(scene))
+    TestScene.SaveFile("test/CustomShapeNode.x",NplOce.exportToParaX(scene,true))
+    
+    _guihelper.MessageBox("done");
+end
+function TestScene.SaveFile(filename,s)
+    local len = string.len(s);
+    ParaIO.CreateDirectory(filename);
+    local file = ParaIO.open(filename, "w");
+	if(file:IsValid()) then
+		file:write(s,len);
+		file:close();
+	end
 end

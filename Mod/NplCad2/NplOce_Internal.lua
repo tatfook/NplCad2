@@ -71,13 +71,13 @@ end
 
 
 -- for storing temporary node parameter during scene traversal.
-function NplOce.Node:_pushActionParam(param)
+function NplOce.ShapeNode:_pushActionParam(param)
 	self.action_params_ = self.action_params_ or {};
 	table.insert(self.action_params_, param);
 end
 
 -- return all action params as array or nil, and clear them all.
-function NplOce.Node:_popAllActionParams()
+function NplOce.ShapeNode:_popAllActionParams()
 	local params = self.action_params_;
 	self.action_params_ = nil;
 	return params;

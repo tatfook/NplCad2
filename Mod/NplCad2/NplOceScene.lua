@@ -26,18 +26,23 @@ function NplOceScene.getXml(scene)
         local attr = "";
         local matrix = commonlib.serialize(node:getMatrix());
         attr = attr .. string.format([[ matrix="%s" ]],matrix); 
-
-        local _op = node:getTag("_op");
-        if(_op ~= "" and _op ~= "nil" and  _op ~= nil )then
-            attr = attr .. string.format([[ _op="%s" ]],_op); 
+        if(node.getOp)then
+            local _op = node:getOp();
+            if(_op ~= "" and _op ~= "nil" and  _op ~= nil )then
+                attr = attr .. string.format([[ op="%s" ]],_op); 
+            end
         end
-        local color = node:getTag("_color") or "";
-        if(color ~= "nil" and color ~= "" )then
-            attr = attr .. string.format([[ _color="%s" ]],color); 
+        if(node.getColor)then
+            local color = node:getColor() or "";
+            if(color ~= "nil" and color ~= "" )then
+                attr = attr .. string.format([[ color="%s" ]],commonlib.serialize(color)); 
+            end
         end
-        local _boolean_op = node:getTag("_boolean_op") or "";
-        if(_boolean_op ~= "nil" and _boolean_op ~= "" )then
-            attr = attr .. string.format([[ _boolean_op="%s" ]],_boolean_op); 
+        if(node.getOpEnabled)then
+            local _boolean_op = node:getOpEnabled() or "";
+            if(_boolean_op ~= "nil" and _boolean_op ~= "" )then
+                attr = attr .. string.format([[ op_enabled="%s" ]],_boolean_op); 
+            end
         end
         s = string.format([[%s<node id="%s" %s>]],s,node:getId(),attr);
         local model = node:getDrawable();

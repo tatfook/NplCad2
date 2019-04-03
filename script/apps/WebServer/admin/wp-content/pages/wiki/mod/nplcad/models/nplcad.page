@@ -17,7 +17,7 @@ NPL.load("(gl)script/ide/Json.lua");
 
 local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
 local Encoding = commonlib.gettable("System.Encoding");
-local NplOceScene = NPL.load("Mod/NplCad2/NplOceScene.lua");
+local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
 
 function nplcad:api_check()
     return {true}
@@ -49,6 +49,8 @@ function nplcad:api_runcode(input)
         local func_str = nplcad.do_string;
         if(build_type == "parax")then
             func_str = nplcad.do_string_export_parax;
+        elseif(build_type == "before_scene_code_xml")then
+            func_str = nplcad.do_string_export_before_scene_code_xml;
         elseif(build_type == "scene_code_xml")then
             func_str = nplcad.do_string_export_scene_code_xml;
         end
@@ -74,7 +76,7 @@ function nplcad.do_string(str)
     ShapeBuilder.setYUp(true);
     nplcad.installMethods(_G, ShapeBuilder)
     NPL.DoString(str);
-    NplOceScene.run(ShapeBuilder.getScene(),false);
+    SceneHelper.run(ShapeBuilder.getScene(),false);
     local s = ShapeBuilder.toJson();
     _G.ShapeBuilder = nil;
     return s;
@@ -89,9 +91,23 @@ function nplcad.do_string_export_parax(str)
     nplcad.installMethods(_G, ShapeBuilder)
 
     NPL.DoString(str);
-    NplOceScene.run(ShapeBuilder.getScene(),false);
+    SceneHelper.run(ShapeBuilder.getScene(),false);
     local s = NplOce.exportToParaX(ShapeBuilder.getScene(),true)
     s = Encoding.base64(s);
+    _G.ShapeBuilder = nil;
+    return s;
+end
+function nplcad.do_string_export_before_scene_code_xml(str)
+    if(not str)then
+        return
+    end
+    local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
+    _G.ShapeBuilder = ShapeBuilder;
+    ShapeBuilder.create()
+    ShapeBuilder.setYUp(true);
+    nplcad.installMethods(_G, ShapeBuilder)
+    NPL.DoString(str);
+    local s = SceneHelper.getXml(ShapeBuilder.getScene())
     _G.ShapeBuilder = nil;
     return s;
 end
@@ -105,8 +121,8 @@ function nplcad.do_string_export_scene_code_xml(str)
     ShapeBuilder.setYUp(true);
     nplcad.installMethods(_G, ShapeBuilder)
     NPL.DoString(str);
-    NplOceScene.run(ShapeBuilder.getScene(),false);
-    local s = NplOceScene.getXml(ShapeBuilder.getScene())
+    SceneHelper.run(ShapeBuilder.getScene(),false);
+    local s = SceneHelper.getXml(ShapeBuilder.getScene())
     _G.ShapeBuilder = nil;
     return s;
 end

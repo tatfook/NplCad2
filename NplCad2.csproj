@@ -56,6 +56,7 @@
     <None Include="Mod\NplCad2\NplOceScene.lua" />
     <None Include="Mod\NplCad2\NplOceSceneDoc.lua" />
     <None Include="Mod\NplCad2\NplOce_Internal.lua" />
+    <None Include="Mod\NplCad2\SceneHelper.lua" />
     <None Include="Mod\NplCad2\Test\TestScene.lua" />
     <None Include="script\apps\WebServer\admin\wp-content\pages\wiki\mod\nplcad\models\nplcad.page" />
   </ItemGroup>
