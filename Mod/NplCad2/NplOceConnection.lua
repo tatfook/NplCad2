@@ -16,11 +16,7 @@ end);
 --using nploce.dll
 local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
 NplOceConnection.load({ npl_oce_dll = "plugins/nploce.dll", activate_callback = "Mod/NplCad2/NplOceConnection.lua", },function(msg)
-    local NplOceScene = NPL.load("Mod/NplCad2/NplOceScene.lua");
-    local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
-    ShapeBuilder.create();
-    ShapeBuilder.cube(1,1,1);
-    NplOceScene.saveSceneToParaX("test/test.cube.x",ShapeBuilder.getScene());
+    
 end);
 ------------------------------------------------------------
 --]]

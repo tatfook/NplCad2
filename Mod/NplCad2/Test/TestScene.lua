@@ -13,7 +13,6 @@ NplOceConnection.load({ npl_oce_dll = "plugins/nploce_d.dll" },function(msg)
 end);
 ------------------------------------------------------------
 --]]
-local NplOceScene = NPL.load("Mod/NplCad2/NplOceScene.lua");
 local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
 local TestScene = NPL.export();
 
@@ -45,70 +44,8 @@ function TestScene.Test_toParaX(filename)
     NplOce.exportToParaX(mesh, filename)
 end
 
-function TestScene.Test_VisitNode(filename)
-    ShapeBuilder.create();
-    ShapeBuilder.beginBoolean("union") 
-        ShapeBuilder.cube(1);
-        ShapeBuilder.cylinder(1);
-        ShapeBuilder.sphere(1);
 
-        ShapeBuilder.beginBoolean("union") 
-            ShapeBuilder.beginNode()
-                ShapeBuilder.cone(1,2,3);
-                ShapeBuilder.torus(5,1);
-            ShapeBuilder.endNode()
-        ShapeBuilder.endBoolean() 
-    ShapeBuilder.endBoolean() 
 
-    local scene = ShapeBuilder.getScene();
-    local shape = NplOceScene.unionToOneShape(scene);
-    if(shape)then
-        local mesh = NplOce.Mesh.create(shape,1,0,0,1);
-        NplOce.exportToParaX(mesh, filename)
-    end
-end
-function TestScene.Test_VisitNode2()
-    ShapeBuilder.create();
-    local cur_node = ShapeBuilder.getCurNode();
-    local node = NplOce.Node.create("node1_1");
-    cur_node:addChild(node)
-
-    node:addChild(NplOce.Node.create("node1_1_1"))
-
-    local node = NplOce.Node.create("node1_2");
-    cur_node:addChild(node)
-
-    cur_node = node;
-    local node = NplOce.Node.create("node1_2_1");
-    cur_node:addChild(node)
-
-    local node = NplOce.Node.create("node1_2_2");
-    cur_node:addChild(node)
-
-    local function run_op(node)
-        if(not node)then    
-            return
-        end
-        commonlib.echo("=========run op");
-        commonlib.echo(node:getId());
-        commonlib.echo("=========begin");
-        local child = node:getFirstChild();
-	    while(child) do
-            commonlib.echo(child:getId());
-		    child = child:getNextSibling();
-	    end
-        commonlib.echo("=========end");
-
-    end
-    NplOceScene.visit(ShapeBuilder.getScene(),function(node)
-        --commonlib.echo("=========push");
-        --commonlib.echo(node:getId());
-    end,function(node)
-        run_op(node);
-        commonlib.echo("=========post");
-        commonlib.echo(node:getId());
-    end)
-end
 function TestScene.Test_VisitNodeTransform()
      ShapeBuilder.create();
     local cur_node = ShapeBuilder.getCurNode();

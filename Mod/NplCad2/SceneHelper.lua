@@ -201,8 +201,9 @@ function SceneHelper.runOpSequence(node, action_params)
         local model = action_params[1];
         for k = 2, len do
             local next_model = action_params[k];
-            result_shape = SceneHelper.operateTwoNodes(model,next_model,node)
+            model = SceneHelper.operateTwoNodes(model,next_model,node)
         end
+        result_shape = model:getShape();
     end
     if(result_shape)then
         -- clear children
@@ -260,7 +261,9 @@ function SceneHelper.operateTwoNodes(model,next_model,top_node)
 	        LOG.std(nil, "error", "NplCad2", "the result of boolean is null");
             return
         end
-        return shape;
+        local result = NplOce.ShapeModel.create(shape);
+        --TODO:destroy model
+        return result;
     end
 end
 function SceneHelper.saveSceneToParaX(filename,scene)
