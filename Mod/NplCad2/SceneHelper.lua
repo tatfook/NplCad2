@@ -288,7 +288,6 @@ end
 function SceneHelper.replaceChildrenNodeId(top_node)
     SceneHelper.visitNode(top_node,function(node)
         local id = node:getId() or "";
-        node:setOpEnabled(false);
         if(id ~= "")then
             node:setId(ParaGlobal.GenerateUniqueID());
         end
