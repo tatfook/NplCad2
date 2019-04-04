@@ -211,6 +211,7 @@ function SceneHelper.runOpSequence(node, action_params)
         -- set a new model
         local model = NplOce.ShapeModel.create(result_shape);
         node:setDrawable(model);
+        node:setOpEnabled(false);
     end
 end
 function SceneHelper.drawableTransform(drawable,top_node)
@@ -288,6 +289,7 @@ end
 function SceneHelper.replaceChildrenNodeId(top_node)
     SceneHelper.visitNode(top_node,function(node)
         local id = node:getId() or "";
+        node:setOpEnabled(false);
         if(id ~= "")then
             node:setId(ParaGlobal.GenerateUniqueID());
         end
