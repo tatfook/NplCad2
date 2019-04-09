@@ -60,6 +60,9 @@ function ShapeBuilder.createNode(name,color,bOp)
     return node
 end
 function ShapeBuilder.cloneNodeByName(op,name,color)
+    if(ShapeBuilder.isEmpty(name))then
+        return
+    end
     local node = ShapeBuilder.getRootNode():findNode(name);
     return ShapeBuilder._cloneNode(node,op,color)
 end
@@ -80,6 +83,9 @@ function ShapeBuilder._cloneNode(node,op,color)
     return cloned_node
 end
 function ShapeBuilder.deleteNode(name)
+    if(ShapeBuilder.isEmpty(name))then
+        return
+    end
     local node = ShapeBuilder.getRootNode():findNode(name);
     if(node)then
         if(node == ShapeBuilder.cur_node or node == ShapeBuilder.selected_node )then
@@ -94,6 +100,15 @@ function ShapeBuilder.move(x,y,z)
     local node = ShapeBuilder.getSelectedNode();
     ShapeBuilder.translate(node,x,y,z);
 end
+function ShapeBuilder.moveNode(name,x,y,z)
+    if(ShapeBuilder.isEmpty(name))then
+        return
+    end
+    local node = ShapeBuilder.getRootNode():findNode(name);
+    if(node)then
+        ShapeBuilder.translate(node,x,y,z);
+    end
+end
 
 function ShapeBuilder.scale(x,y,z)
     local node = ShapeBuilder.getSelectedNode();
@@ -102,6 +117,15 @@ end
 
 function ShapeBuilder.rotate(axis,angle)
     ShapeBuilder.setRotationFromNode(ShapeBuilder.getSelectedNode(),axis,angle);
+end
+function ShapeBuilder.rotateNode(name,axis,angle)
+    if(ShapeBuilder.isEmpty(name))then
+        return
+    end
+    local node = ShapeBuilder.getRootNode():findNode(name);
+    if(node)then
+        ShapeBuilder.setRotationFromNode(node,axis,angle);
+    end
 end
 -- Set rotation
 -- @param {NplOce.ShapeNode} node
@@ -145,6 +169,15 @@ function ShapeBuilder.setRotationFromNode(node,axis,angle)
 end
 function ShapeBuilder.rotateFromPivot(axis,angle,pivot_x,pivot_y,pivot_z)
     ShapeBuilder.SetRotationFromPivot(ShapeBuilder.getSelectedNode(),axis,angle,pivot_x or 0,pivot_y or 0,pivot_z or 0)
+end
+function ShapeBuilder.rotateNodeFromPivot(name,axis,angle,pivot_x,pivot_y,pivot_z)
+    if(ShapeBuilder.isEmpty(name))then
+        return
+    end
+    local node = ShapeBuilder.getRootNode():findNode(name);
+    if(node)then
+        ShapeBuilder.SetRotationFromPivot(node,axis,angle,pivot_x or 0,pivot_y or 0,pivot_z or 0)
+    end
 end
 -- Set rotation 
 -- @param {NplOce.ShapeNode} node
@@ -497,4 +530,10 @@ function ShapeBuilder.setScale(node,x,y,z)
         y,z = ShapeBuilder.swapYZ(y,z);
         node:setScale(x,y,z);
     end
+end
+function ShapeBuilder.isEmpty(s)
+    if(s == nil or s == "")then
+        return true;
+    end
+    return false;
 end
