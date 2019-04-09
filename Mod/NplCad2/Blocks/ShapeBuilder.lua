@@ -23,7 +23,6 @@ local Color = commonlib.gettable("System.Core.Color");
 local Matrix4 = commonlib.gettable("mathlib.Matrix4");
 local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
 
-local pi = 3.1415926;
 local ShapeBuilder = NPL.export();
 ShapeBuilder.Precision_Confusion = 0.0000001
 ShapeBuilder.scene = nil;
@@ -74,7 +73,7 @@ function ShapeBuilder._cloneNode(node,op,color)
     local cloned_node = node:clone();
     cloned_node:setOp(op);
     cloned_node:setColor(ShapeBuilder.converColorToRGBA(color));
-    SceneHelper.replaceChildrenNodeId(cloned_node)
+    SceneHelper.clearNodesId(cloned_node)
 
     ShapeBuilder.cur_node:addChild(cloned_node);
     ShapeBuilder.selected_node = cloned_node;
@@ -93,9 +92,12 @@ end
 
 function ShapeBuilder.move(x,y,z)
     local node = ShapeBuilder.getSelectedNode();
-    --local child = node:getFirstChild();
-
     ShapeBuilder.translate(node,x,y,z);
+end
+
+function ShapeBuilder.scale(x,y,z)
+    local node = ShapeBuilder.getSelectedNode();
+    ShapeBuilder.setScale(node,x,y,z);
 end
 
 function ShapeBuilder.rotate(axis,angle)
@@ -111,7 +113,7 @@ function ShapeBuilder.setRotationFromNode(node,axis,angle)
     end
     local x,y,z;
     angle = angle or 0;
-    angle = angle * pi / 180;
+    angle = angle * math.pi * (1.0 / 180.0);
     if(axis == "x")then
         x = 1;
         y = 0;

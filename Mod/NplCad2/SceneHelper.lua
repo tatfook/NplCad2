@@ -26,8 +26,16 @@ function SceneHelper._pushActionParam(node,param)
     end
 
 	local action_params_ = SceneHelper.traversal_nodes_map[node] or {};
-	table.insert(action_params_, param);
-
+    local bIncluded = false;
+    for __, v in ipairs(action_params_) do
+        if(v == param)then
+            bIncluded = true;
+            break;
+        end
+    end
+    if(not bIncluded)then
+	    table.insert(action_params_, param);
+    end
     SceneHelper.traversal_nodes_map[node] = action_params_;
 end
 
@@ -149,7 +157,7 @@ function SceneHelper.run(scene,bUnionAll)
     if(bUnionAll)then
         scene_first_node:setOpEnabled(true);
     end
-    SceneHelper.visit(scene,function(node)
+    local function push_nodes(node)
         local drawable = node:getDrawable();
         if(drawable)then
             local parent = SceneHelper.findParentOpEnabled(node);
@@ -157,9 +165,19 @@ function SceneHelper.run(scene,bUnionAll)
                 SceneHelper._pushActionParam(parent,drawable);
             end
         end
-    end,function(node)
+    end
+    local function pop_nodes(node)
         local action_params = SceneHelper._popAllActionParams(node) or {};
         SceneHelper.runOpSequence(node, action_params)
+        node:setOpEnabled(false);
+    end
+    SceneHelper.visit(scene,function(node)
+        push_nodes(node);
+    end,function(node)
+        -- running boolean op
+        pop_nodes(node)
+        -- check if parent has op enabled
+        push_nodes(node);
     end)
     return scene;
 end
@@ -214,6 +232,7 @@ function SceneHelper.runOpSequence(node, action_params)
         node:setOpEnabled(false);
     end
 end
+
 function SceneHelper.drawableTransform(drawable,top_node)
     local operationWorldMatrix = Matrix4:new(top_node:getWorldMatrix());
     local node = drawable:getNode();
@@ -244,9 +263,13 @@ function SceneHelper.operateTwoNodes(model,next_model,top_node)
         -- clone new shape to boolean op
         local clone_shape_1 = shape_1:clone();
         local clone_shape_2 = shape_2:clone();
-        clone_shape_1:setMatrix(matrix_shape_1 * w_matrix_1);
-        clone_shape_2:setMatrix(matrix_shape_2 * w_matrix_2);
+
+        w_matrix_1 = matrix_shape_1 * w_matrix_1;
+        w_matrix_2 = matrix_shape_2 * w_matrix_2;
+        clone_shape_1:setMatrix(w_matrix_1);
+        clone_shape_2:setMatrix(w_matrix_2);
         
+       
         -- create a new shape
         local shape;
         if(op == "union")then
@@ -286,12 +309,8 @@ function SceneHelper.saveSceneToParaX(filename,scene)
     end
     return result;
 end
-function SceneHelper.replaceChildrenNodeId(top_node)
+function SceneHelper.clearNodesId(top_node)
     SceneHelper.visitNode(top_node,function(node)
-        local id = node:getId() or "";
-        node:setOpEnabled(false);
-        if(id ~= "")then
-            node:setId(ParaGlobal.GenerateUniqueID());
-        end
+        node:setId("");
     end)
 end

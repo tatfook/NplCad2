@@ -53,7 +53,6 @@
     <None Include="Mod\NplCad2\main.lua" />
     <None Include="Mod\NplCad2\NplOceConnection.lua" />
     <None Include="Mod\NplCad2\NplOceDoc.lua" />
-    <None Include="Mod\NplCad2\NplOceScene.lua" />
     <None Include="Mod\NplCad2\NplOceSceneDoc.lua" />
     <None Include="Mod\NplCad2\NplOce_Internal.lua" />
     <None Include="Mod\NplCad2\SceneHelper.lua" />

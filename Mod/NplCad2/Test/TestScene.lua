@@ -9,10 +9,14 @@ local TestScene = NPL.load("Mod/NplCad2/Test/TestScene.lua");
 local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
 NplOceConnection.load({ npl_oce_dll = "plugins/nploce_d.dll" },function(msg)
     NPL.load("Mod/NplCad2/NplOce_Internal.lua");
-    TestScene.Test_ShapePlus("test/test.x");
+    TestScene.Test_ShapeNode_Rotation();
 end);
 ------------------------------------------------------------
 --]]
+NPL.load("(gl)script/ide/math/Matrix4.lua");
+local Matrix4 = commonlib.gettable("mathlib.Matrix4");
+
+
 local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
 local TestScene = NPL.export();
 
@@ -163,4 +167,29 @@ function TestScene.SaveFile(filename,s)
 		file:write(s,len);
 		file:close();
 	end
+end
+function TestScene.Test_ShapeNode_Rotation()
+    local node = NplOce.ShapeNode.create();
+    local angle = 90 * math.pi * (1.0 / 180.0);
+    node:setRotation(1.0,0.0,0.0,angle)
+    node:translate(0.15,0,0)
+    local matrix = node:getMatrix();
+
+    local matrix_lua = Matrix4.rotationX(90)
+    matrix_lua:setTrans(0.15,0,0)
+    local shape = NplOce.cube();
+    shape:setMatrix(matrix_lua);
+    local matrix_shape = shape:getMatrix();
+    echo("==================angle");
+    echo(string.format("%.25f",angle));
+    echo("==================pi");
+    echo(string.format("%.25f",math.pi));
+    echo(string.format("%.18f",math.pi));
+    echo(string.format("%.17f",math.pi));
+    echo("==================test");
+    for k=1,16 do
+        local s = string.format("%d:%.18f %.18f %.18f",k,matrix[k],matrix_lua[k],matrix_shape[k]);
+        echo(s);
+    end
+    
 end
