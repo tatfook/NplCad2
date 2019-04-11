@@ -221,7 +221,11 @@ function SceneHelper.runOpSequence(node, action_params)
             local next_model = action_params[k];
             model = SceneHelper.operateTwoNodes(model,next_model,node)
         end
-        result_shape = model:getShape();
+        if(model)then
+            result_shape = model:getShape();
+        else
+	        LOG.std(nil, "error", "NplCad2", "the model is nil");
+        end
     end
     if(result_shape)then
         -- clear children
