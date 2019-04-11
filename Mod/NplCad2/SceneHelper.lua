@@ -314,3 +314,13 @@ function SceneHelper.clearNodesId(top_node)
         node:setId("");
     end)
 end
+
+function SceneHelper.installMethods(codeAPI, shape)
+	for func_name, func in pairs(shape) do
+		if(type(func_name) == "string" and type(func) == "function") then
+			codeAPI[func_name] = function(...)
+				return func(...);
+			end
+		end
+	end
+end
