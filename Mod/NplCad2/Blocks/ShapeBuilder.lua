@@ -224,6 +224,51 @@ function ShapeBuilder.SetRotationFromPivot(node,axis,angle,pivot_x,pivot_y,pivot
     end
     node:setMatrix(transform_matrix);
 end
+function ShapeBuilder.mirrorNodeByName(name,axis_plane,x,y,z,color) 
+    local node = ShapeBuilder.getRootNode():findNode(name);
+    ShapeBuilder._mirrorNode(node,axis_plane,x,y,z,color);
+end
+function ShapeBuilder.mirrorNode(axis_plane,x,y,z,color) 
+    local node = ShapeBuilder.getSelectedNode();
+    ShapeBuilder._mirrorNode(node,axis_plane,x,y,z,color);
+end
+-- Mirror all of shapes in node
+function ShapeBuilder._mirrorNode(node,axis_plane,x,y,z,color) 
+    if(not node)then
+        return
+    end
+    local dir_x,dir_y,dir_z = 0,0,0;
+    if(axis_plane == "xy")then
+        dir_x = 1;
+        dir_y = 1;
+    elseif(axis_plane == "xz")then
+        dir_x = 1;
+        dir_z = 1;
+    elseif(axis_plane == "yz")then
+        dir_y = 1;
+        dir_z = 1;
+    end
+    y,z = ShapeBuilder.swapYZ(y,z);
+    dir_y,dir_z = ShapeBuilder.swapYZ(dir_y,dir_z);
+
+    local cloned_node = node:clone();
+    cloned_node:setColor(ShapeBuilder.converColorToRGBA(color));
+    SceneHelper.clearNodesId(cloned_node)
+     SceneHelper.visitNode(cloned_node,function(node)
+        local model = node:getDrawable();
+        if(model)then
+            local shape = model:getShape();
+            if(shape)then
+                shape = NplOce.mirror(shape, {x,y,z}, {dir_x,dir_y,dir_z})
+                model:setShape(shape);
+            end
+        end
+    end)
+
+    ShapeBuilder.cur_node:addChild(cloned_node);
+    ShapeBuilder.selected_node = cloned_node;
+end
+
 function ShapeBuilder.getSelectedNode()
     return ShapeBuilder.selected_node;
 end
@@ -447,22 +492,7 @@ function ShapeBuilder.ellipsoid(op,r1, r2, r3, color)
     ShapeBuilder._ellipsoid(op,r1, r2, r3, -90, 90, 360,color) 
 end
 
--- TODO
--- Mirror a node
--- @param {number} [x = 0]
--- @param {number} [y = 0]
--- @param {number} [z = 0]
--- @param {number} [dir_x = 0]
--- @param {number} [dir_y = 0]
--- @param {number} [dir_z = 0]
--- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
--- @return {NplOce.Node} node
-function ShapeBuilder.mirror(node,x,y,z,dir_x,dir_y,dir_z,color) 
---    color = ShapeBuilder.converColorToRGBA(color);
---    local model = node:getDrawable();
---    local shape = model:getShape();
---    return ShapeBuilder.addShape(NplOce.mirror(shape, {x,y,z}, {dir_x,dir_y,dir_z}),color) 
-end
+
 -- Convert from color string to rgba table, if the type of color is table return color directly
 -- @param {string} color - can be "#ffffff" or "#ffffffff" with alpha
 -- @return {object} color

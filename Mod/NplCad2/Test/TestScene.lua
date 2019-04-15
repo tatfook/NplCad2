@@ -9,7 +9,7 @@ local TestScene = NPL.load("Mod/NplCad2/Test/TestScene.lua");
 local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
 NplOceConnection.load({ npl_oce_dll = "plugins/nploce_d.dll" },function(msg)
     NPL.load("Mod/NplCad2/NplOce_Internal.lua");
-    TestScene.Test_ShapeNode_Rotation();
+    TestScene.Test_MirrorNode();
 end);
 ------------------------------------------------------------
 --]]
@@ -192,4 +192,28 @@ function TestScene.Test_ShapeNode_Rotation()
         echo(s);
     end
     
+end
+function TestScene.Test_MirrorNode()
+    local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
+
+    local scene = NplOce.Scene.create();
+    local cur_node = scene:addNode("root");
+    local node = NplOce.ShapeNodeBox.create("node1");
+    node:setValue(1,1,1);
+    cur_node:addChild(node);
+
+    local model = node:getDrawable();
+    local shape = model:getShape();
+    local pos = {0,0,0};
+    local xy_plane = {1,0,1};
+    local mirror_shape = NplOce.mirror(shape, pos, xy_plane);
+
+    local mirror_node = NplOce.ShapeNode.create();
+    local mirror_model = NplOce.ShapeModel.create();
+    mirror_model:setShape(mirror_shape);
+    mirror_node:setDrawable(mirror_model);
+    cur_node:addChild(mirror_node);
+
+
+    TestScene.SaveFile("test/Test_MirrorNode.x",NplOce.exportToParaX(scene,true))
 end
