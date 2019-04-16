@@ -211,7 +211,6 @@ function SceneHelper.runOpSequence(node, action_params)
         local shape = model:getShape();
         local w_matrix = SceneHelper.drawableTransform(model,node);
         local matrix_shape = Matrix4:new(shape:getMatrix());
-
         --  clone a new shape
         result_shape = shape:clone();
         result_shape:setMatrix(matrix_shape * w_matrix);

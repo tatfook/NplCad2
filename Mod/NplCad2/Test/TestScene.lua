@@ -205,7 +205,8 @@ function TestScene.Test_MirrorNode()
     local model = node:getDrawable();
     local shape = model:getShape();
     local pos = {0,0,0};
-    local xy_plane = {1,0,1};
+    local xy_plane = {0,0,1};
+
     local mirror_shape = NplOce.mirror(shape, pos, xy_plane);
 
     local mirror_node = NplOce.ShapeNode.create();

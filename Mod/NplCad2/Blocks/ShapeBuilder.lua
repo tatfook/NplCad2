@@ -114,6 +114,10 @@ function ShapeBuilder.scale(x,y,z)
     local node = ShapeBuilder.getSelectedNode();
     ShapeBuilder.setScale(node,x,y,z);
 end
+function ShapeBuilder.scaleNode(name,x,y,z)
+    local node = ShapeBuilder.getRootNode():findNode(name);
+    ShapeBuilder.setScale(node,x,y,z);
+end
 
 function ShapeBuilder.rotate(axis,angle)
     ShapeBuilder.setRotationFromNode(ShapeBuilder.getSelectedNode(),axis,angle);
@@ -224,49 +228,65 @@ function ShapeBuilder.SetRotationFromPivot(node,axis,angle,pivot_x,pivot_y,pivot
     end
     node:setMatrix(transform_matrix);
 end
-function ShapeBuilder.mirrorNodeByName(name,axis_plane,x,y,z,color) 
+function ShapeBuilder.mirrorNodeByName(name,axis_plane,x,y,z) 
     local node = ShapeBuilder.getRootNode():findNode(name);
-    ShapeBuilder._mirrorNode(node,axis_plane,x,y,z,color);
+    ShapeBuilder._mirrorNode(node,axis_plane,x,y,z);
 end
-function ShapeBuilder.mirrorNode(axis_plane,x,y,z,color) 
+function ShapeBuilder.mirrorNode(axis_plane,x,y,z) 
     local node = ShapeBuilder.getSelectedNode();
-    ShapeBuilder._mirrorNode(node,axis_plane,x,y,z,color);
+    ShapeBuilder._mirrorNode(node,axis_plane,x,y,z);
 end
 -- Mirror all of shapes in node
-function ShapeBuilder._mirrorNode(node,axis_plane,x,y,z,color) 
+function ShapeBuilder._mirrorNode(node,axis_plane,x,y,z) 
     if(not node)then
         return
     end
     local dir_x,dir_y,dir_z = 0,0,0;
     if(axis_plane == "xy")then
-        dir_x = 1;
-        dir_y = 1;
+        dir_z = 1;
     elseif(axis_plane == "xz")then
-        dir_x = 1;
-        dir_z = 1;
-    elseif(axis_plane == "yz")then
         dir_y = 1;
-        dir_z = 1;
+    elseif(axis_plane == "yz")then
+        dir_x = 1;
     end
     y,z = ShapeBuilder.swapYZ(y,z);
     dir_y,dir_z = ShapeBuilder.swapYZ(dir_y,dir_z);
 
-    local cloned_node = node:clone();
-    cloned_node:setColor(ShapeBuilder.converColorToRGBA(color));
-    SceneHelper.clearNodesId(cloned_node)
-     SceneHelper.visitNode(cloned_node,function(node)
+    local mirror_node_root = NplOce.ShapeNode.create();
+    local top_node = node;
+    local parent = top_node:getParent();
+    if(not parent)then
+        return
+    end
+     SceneHelper.visitNode(top_node,function(node)
         local model = node:getDrawable();
         if(model)then
             local shape = model:getShape();
             if(shape)then
-                shape = NplOce.mirror(shape, {x,y,z}, {dir_x,dir_y,dir_z})
-                model:setShape(shape);
+                local w_matrix = SceneHelper.drawableTransform(model,parent);
+                local matrix_shape = Matrix4:new(shape:getMatrix());
+                w_matrix = matrix_shape * w_matrix;
+
+                local clone_shape = shape:clone();
+                clone_shape:setMatrix(w_matrix);
+                -- use world matrix on top_node to mirror
+                local mirror_shape = NplOce.mirror(clone_shape, {x,y,z}, {dir_x,dir_y,dir_z})
+
+
+                local mirror_model = NplOce.ShapeModel.create();
+                mirror_model:setShape(mirror_shape);
+
+                local mirror_node = NplOce.ShapeNode.create();
+                mirror_node:setColor(node:getColor());
+                mirror_node:setDrawable(mirror_model);
+                mirror_node_root:addChild(mirror_node);
+
+                --TODO:destroy clone_shape
             end
         end
     end)
-
-    ShapeBuilder.cur_node:addChild(cloned_node);
-    ShapeBuilder.selected_node = cloned_node;
+    ShapeBuilder.cur_node:addChild(mirror_node_root);
+    ShapeBuilder.selected_node = mirror_node_root;
 end
 
 function ShapeBuilder.getSelectedNode()
@@ -430,7 +450,29 @@ function ShapeBuilder.prism(op,edges, radius, height,color)
     ShapeBuilder.addShapeNode(node,op,color) 
     return node;
 end
+function ShapeBuilder.wedge_full(op,x1, y1, z1, x3, z3, x2, y2, z2, x4, z4,color) 
+    local node = NplOce.ShapeNodeWedge.create();
+    node:setValue(x1, y1, z1, x3, z3, x2, y2, z2, x4, z4);
+    ShapeBuilder.addShapeNode(node,op,color) 
+    return node;
+end
+-- ÌÝÐÎ
+function ShapeBuilder.trapezoid(op,top_w,bottom_w,hight,depth,color) 
+    local xmin,ymin,zmin = 0,0,0;
+    local w = (bottom_w - top_w)/2;
+    x2min = w;
+    z2min = 0;
+    xmax = bottom_w;
+    ymax = hight;
+    zmax = depth;
+    x2max = x2min + top_w;
+    z2max = depth;
 
+    local node = NplOce.ShapeNodeWedge.create();
+    node:setValue(xmin,ymin,zmin,x2min,z2min,xmax,ymax,zmax,x2max,z2max);
+    ShapeBuilder.addShapeNode(node,op,color) 
+    return node;
+end
 function ShapeBuilder.wedge(op,x, z, h, color) 
     local x1 = 0;
     local z1 = 0;
