@@ -284,7 +284,7 @@ function SceneHelper.operateTwoNodes(model,next_model,top_node)
         else
 	        LOG.std(nil, "error", "NplCad2", "unsupported op: %s", op);
         end
-        if(not shape or not shape:IsTessellated())then
+        if(not shape)then
 	        LOG.std(nil, "error", "NplCad2", "the result of boolean is null");
             return
         end
