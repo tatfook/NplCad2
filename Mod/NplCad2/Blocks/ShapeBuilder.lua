@@ -228,11 +228,11 @@ function ShapeBuilder.SetRotationFromPivot(node,axis,angle,pivot_x,pivot_y,pivot
     end
     node:setMatrix(transform_matrix);
 end
-function ShapeBuilder.mirrorNodeByName(name,axis_plane,x,y,z) 
+function ShapeBuilder.mirrorNode(name,axis_plane,x,y,z) 
     local node = ShapeBuilder.getRootNode():findNode(name);
     ShapeBuilder._mirrorNode(node,axis_plane,x,y,z);
 end
-function ShapeBuilder.mirrorNode(axis_plane,x,y,z) 
+function ShapeBuilder.mirror(axis_plane,x,y,z) 
     local node = ShapeBuilder.getSelectedNode();
     ShapeBuilder._mirrorNode(node,axis_plane,x,y,z);
 end
