@@ -157,6 +157,13 @@ function SceneHelper.run(scene,bUnionAll)
     if(bUnionAll)then
         scene_first_node:setOpEnabled(true);
     end
+    SceneHelper.runNode(scene_first_node);
+    return scene;
+end
+function SceneHelper.runNode(top_node)
+    if(not top_node)then
+        return
+    end
     local function push_nodes(node)
         local drawable = node:getDrawable();
         if(drawable)then
@@ -171,7 +178,7 @@ function SceneHelper.run(scene,bUnionAll)
         SceneHelper.runOpSequence(node, action_params)
         node:setOpEnabled(false);
     end
-    SceneHelper.visit(scene,function(node)
+    SceneHelper.visitNode(top_node,function(node)
         push_nodes(node);
     end,function(node)
         -- running boolean op
@@ -179,9 +186,7 @@ function SceneHelper.run(scene,bUnionAll)
         -- check if parent has op enabled
         push_nodes(node);
     end)
-    return scene;
 end
-
 function SceneHelper.findParentOpEnabled(node)
 	if(not node)then
 		return

@@ -251,14 +251,14 @@ function ShapeBuilder._mirrorNode(node,axis_plane,x,y,z)
     end
     y,z = ShapeBuilder.swapYZ(y,z);
     dir_y,dir_z = ShapeBuilder.swapYZ(dir_y,dir_z);
-
-    local mirror_node_root = NplOce.ShapeNode.create();
-    local top_node = node;
-    local parent = top_node:getParent();
+    local parent = node:getParent();
     if(not parent)then
         return
     end
-     SceneHelper.visitNode(top_node,function(node)
+    local mirror_node_root = NplOce.ShapeNode.create();
+    local top_node = node:clone();
+    SceneHelper.runNode(top_node);
+    SceneHelper.visitNode(top_node,function(node)
         local model = node:getDrawable();
         if(model)then
             local shape = model:getShape();
@@ -267,10 +267,9 @@ function ShapeBuilder._mirrorNode(node,axis_plane,x,y,z)
                 local matrix_shape = Matrix4:new(shape:getMatrix());
                 w_matrix = matrix_shape * w_matrix;
 
-                local clone_shape = shape:clone();
-                clone_shape:setMatrix(w_matrix);
+                shape:setMatrix(w_matrix);
                 -- use world matrix on top_node to mirror
-                local mirror_shape = NplOce.mirror(clone_shape, {x,y,z}, {dir_x,dir_y,dir_z})
+                local mirror_shape = NplOce.mirror(shape, {x,y,z}, {dir_x,dir_y,dir_z})
 
 
                 local mirror_model = NplOce.ShapeModel.create();
@@ -278,16 +277,18 @@ function ShapeBuilder._mirrorNode(node,axis_plane,x,y,z)
 
                 local mirror_node = NplOce.ShapeNode.create();
                 mirror_node:setColor(node:getColor());
+                mirror_node:setOp(node:getOp());
                 mirror_node:setDrawable(mirror_model);
                 mirror_node_root:addChild(mirror_node);
 
-                --TODO:destroy clone_shape
+                --TODO:destroy shape
             end
         end
     end)
     ShapeBuilder.cur_node:addChild(mirror_node_root);
     ShapeBuilder.selected_node = mirror_node_root;
 end
+
 
 function ShapeBuilder.getSelectedNode()
     return ShapeBuilder.selected_node;
