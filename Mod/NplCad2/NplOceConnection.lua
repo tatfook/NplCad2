@@ -21,6 +21,7 @@ end);
 ------------------------------------------------------------
 --]]
 NPL.load("(gl)script/ide/math/bit.lua");
+NPL.load("(gl)script/ide/System/os/os.lua");
 
 local NplOceConnection = NPL.export();
 NplOceConnection.is_loaded = false;
@@ -33,6 +34,10 @@ function NplOceConnection.load(options,callback)
         if(callback)then
             callback(true);
         end
+        return
+    end
+    if(not NplOceConnection.OsSupported())then
+	    LOG.std(nil, "info", "NplOceConnection", "nplcad isn't supported on %s",System.os.GetPlatform());
         return
     end
     if(not NPL.GetLuaState)then
@@ -52,6 +57,10 @@ function NplOceConnection.load(options,callback)
 		return
 	end
 	NPL.activate(npl_oce_dll, { lua_state = value, callback = activate_callback});
+end
+function NplOceConnection.OsSupported()
+    local is_supported = (System.os.GetPlatform()=="win32" and not System.os.Is64BitsSystem());
+    return is_supported;
 end
 local function activate()
 	if(msg and msg.successful)then
