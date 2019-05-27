@@ -29,6 +29,7 @@ ShapeBuilder.scene = nil;
 ShapeBuilder.root_node = nil; 
 ShapeBuilder.cur_node = nil; -- for boolean/add node
 ShapeBuilder.selected_node = nil; -- for transforming node
+ShapeBuilder.cur_joint = nil; -- for binding bones
 ShapeBuilder.y_up = nil; 
 ShapeBuilder.print_dialog = nil; 
 
@@ -48,6 +49,42 @@ function ShapeBuilder.swapYZ(y,z)
         return y,z;
     end
 end
+function ShapeBuilder.createJointRoot(name)
+    local name = name or ShapeBuilder.generateId();
+    local joint = NplOce.Joint.create(name);
+    ShapeBuilder.getRootNode():addChild(joint)
+    ShapeBuilder.cur_joint = joint;
+
+end
+function ShapeBuilder.createJoint(name,x,y,z)
+    local name = name or ShapeBuilder.generateId();
+    local joint = NplOce.Joint.create(name);
+    ShapeBuilder.cur_joint:addChild(joint);
+
+    ShapeBuilder.setTranslation(joint,x,y,z) 
+    ShapeBuilder.cur_joint = joint;
+end
+function ShapeBuilder.bindNodeByName(name)
+    local cur_joint = ShapeBuilder.cur_joint;
+    if(not cur_joint)then
+        return
+    end
+    local top_node = ShapeBuilder.getRootNode():findNode(name);
+    SceneHelper.visitNode(top_node,function(node)
+        local model = node:getDrawable();
+        if(model)then
+            local skin = model:getSkin();
+            if(not skin)then
+                skin = NplOce.MeshSkin.create();
+                -- only 1 joint can be bound
+                skin:setJointCount(1);
+                model:setSkin(skin);
+            end
+            skin:setJoint(cur_joint,0);
+        end
+    end)
+end
+
 function ShapeBuilder.createNode(name,color,bOp)
     local name = name or ShapeBuilder.generateId();
     local node = NplOce.ShapeNode.create(name);

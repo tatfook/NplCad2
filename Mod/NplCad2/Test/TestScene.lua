@@ -9,13 +9,14 @@ local TestScene = NPL.load("Mod/NplCad2/Test/TestScene.lua");
 local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
 NplOceConnection.load({ npl_oce_dll = "plugins/nploce_d.dll" },function(msg)
     NPL.load("Mod/NplCad2/NplOce_Internal.lua");
-    TestScene.Test_MirrorNode();
+    TestScene.Test_Skin();
 end);
 ------------------------------------------------------------
 --]]
 NPL.load("(gl)script/ide/math/Matrix4.lua");
 local Matrix4 = commonlib.gettable("mathlib.Matrix4");
 
+local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
 
 local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
 local TestScene = NPL.export();
@@ -129,7 +130,6 @@ function TestScene.Test_ShapePlus()
 end
 function TestScene.Test_CustomShapeNode()
 
-    local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
 
     local scene = NplOce.Scene.create();
     local cur_node = scene:addNode("root");
@@ -217,4 +217,36 @@ function TestScene.Test_MirrorNode()
 
 
     TestScene.SaveFile("test/Test_MirrorNode.x",NplOce.exportToParaX(scene,true))
+end
+function TestScene.Test_Skin()
+    local scene = NplOce.Scene.create();
+    local cur_node = scene:addNode("root");
+    local node = NplOce.ShapeNodeBox.create("node1");
+    node:setValue(1,1,1);
+    cur_node:addChild(node);
+
+    echo("==================node:getTypeName()");
+    echo(node:getTypeName());
+    local model = node:getDrawable();
+
+    local joint = NplOce.Joint.create("test_joint");
+    echo("==================joint:getTypeName()");
+    echo(joint:getTypeName());
+    cur_node:addChild(joint);
+    local skin = NplOce.MeshSkin.create();
+    model:setSkin(skin);
+
+    skin:setJointCount(1);
+    skin:setJoint(joint,0);
+
+    local cnt = skin:getJointCount();
+    echo("==================skin:getJointCount()");
+    echo(cnt);
+    for k = 0,cnt-1 do
+        local t_joint = skin:getJoint(k);
+        echo("==========t_joint:getId()");
+        echo({k,t_joint:getId(),skin:getJointIndex(t_joint)});
+    end
+
+    TestScene.SaveFile("test/Test_Skin.xml",SceneHelper.getXml(scene));
 end

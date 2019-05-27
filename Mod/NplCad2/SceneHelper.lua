@@ -87,7 +87,7 @@ function SceneHelper.getXml(scene)
             world_matrix = node:getWorldMatrix()
             --attr = attr .. string.format([[ world_matrix="%s" ]],commonlib.serialize(world_matrix)); 
         end
-        s = string.format([[%s<node id="%s" %s>]],s,node:getId(),attr);
+        s = string.format([[%s<node id="%s" type="%s" %s>]],s,node:getId(),node:getTypeName(),attr);
         local model = node:getDrawable();
         if(model)then
             s = s .. "<model>"
@@ -115,6 +115,18 @@ function SceneHelper.getXml(scene)
                 s = s.. string.format([[ <shape size="%s" box="%s" matrix="%s" world_matrix="%s" />]],commonlib.serialize(size), commonlib.serialize(box),commonlib.serialize(matrix),SceneHelper.matrixToString(world_matrix)); 
             end
             s = s .. "</model>"
+
+            local skin = model:getSkin();
+            if(skin)then
+                s = s .. "<joints>"
+                local cnt = skin:getJointCount();
+                for k = 0, cnt-1 do
+                    local joint = skin:getJoint(k);
+                    local joint_id = joint:getId();
+                    s = s .. string.format([[<joint id="%s"/>]],joint_id);
+                end
+                s = s .. "</joints>"
+            end
         end
     end, function(node)
         s = s .. "</node>"
