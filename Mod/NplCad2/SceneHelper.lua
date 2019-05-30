@@ -170,6 +170,7 @@ function SceneHelper.run(scene,bUnionAll)
         scene_first_node:setOpEnabled(true);
     end
     SceneHelper.runNode(scene_first_node);
+    SceneHelper.bindJoints(scene_first_node,scene.joints_map);
     return scene;
 end
 function SceneHelper.runNode(top_node)
@@ -308,6 +309,29 @@ function SceneHelper.operateTwoNodes(model,next_model,top_node)
         local result = NplOce.ShapeModel.create(shape);
         --TODO:destroy model
         return result;
+    end
+end
+-- binding joints at last
+-- each node binding one joint
+function SceneHelper.bindJoints(root_node, joints_map)
+    if(not root_node or not joints_map)then
+        return
+    end
+    for joint,node_name in pairs(joints_map) do
+        local top_node = root_node:findNode(node_name);
+        SceneHelper.visitNode(top_node,function(node)
+            local model = node:getDrawable();
+            if(model)then
+                local skin = model:getSkin();
+                if(not skin)then
+                    skin = NplOce.MeshSkin.create();
+                    -- only 1 joint can be bound
+                    skin:setJointCount(1);
+                    model:setSkin(skin);
+                end
+                skin:setJoint(joint,0);
+            end
+        end)
     end
 end
 function SceneHelper.saveSceneToParaX(filename,scene)

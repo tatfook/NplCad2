@@ -69,20 +69,12 @@ function ShapeBuilder.bindNodeByName(name)
     if(not cur_joint)then
         return
     end
-    local top_node = ShapeBuilder.getRootNode():findNode(name);
-    SceneHelper.visitNode(top_node,function(node)
-        local model = node:getDrawable();
-        if(model)then
-            local skin = model:getSkin();
-            if(not skin)then
-                skin = NplOce.MeshSkin.create();
-                -- only 1 joint can be bound
-                skin:setJointCount(1);
-                model:setSkin(skin);
-            end
-            skin:setJoint(cur_joint,0);
-        end
-    end)
+    local node = ShapeBuilder.getRootNode():findNode(name);
+    if(node)then
+        -- only 1 joint can be bound
+        ShapeBuilder.scene.joints_map[cur_joint] = name;
+    end
+    
 end
 
 function ShapeBuilder.createNode(name,color,bOp)
@@ -343,6 +335,8 @@ function ShapeBuilder.create(zup)
     ShapeBuilder.setYUp(not zup)
     ShapeBuilder.cur_node = ShapeBuilder.scene:addNode(ShapeBuilder.generateId());
     ShapeBuilder.root_node = ShapeBuilder.cur_node; 
+    -- save binding relation temporarily before running boolean op in scene
+    ShapeBuilder.scene.joints_map = {}; 
 end
 -- Set a scene for holding shapes
 -- @param {NplOce.Scene} scene
