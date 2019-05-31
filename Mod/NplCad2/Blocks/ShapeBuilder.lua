@@ -29,6 +29,7 @@ ShapeBuilder.scene = nil;
 ShapeBuilder.root_node = nil; 
 ShapeBuilder.cur_node = nil; -- for boolean/add node
 ShapeBuilder.selected_node = nil; -- for transforming node
+ShapeBuilder.root_joint = nil; -- for binding bones
 ShapeBuilder.cur_joint = nil; -- for binding bones
 ShapeBuilder.y_up = nil; 
 ShapeBuilder.print_dialog = nil; 
@@ -53,6 +54,7 @@ function ShapeBuilder.createJointRoot(name)
     local name = name or ShapeBuilder.generateId();
     local joint = NplOce.Joint.create(name);
     ShapeBuilder.getRootNode():addChild(joint)
+    ShapeBuilder.root_joint = joint;
     ShapeBuilder.cur_joint = joint;
 
 end
@@ -64,17 +66,23 @@ function ShapeBuilder.createJoint(name,x,y,z)
     ShapeBuilder.setTranslation(joint,x,y,z) 
     ShapeBuilder.cur_joint = joint;
 end
+function ShapeBuilder.endJoint()
+    local cur_joint = ShapeBuilder.cur_joint;
+    local parent;
+    if(cur_joint)then
+        parent = cur_joint:getParent();
+    end
+    ShapeBuilder.cur_joint = parent or ShapeBuilder.root_joint;
+end
 function ShapeBuilder.bindNodeByName(name)
     local cur_joint = ShapeBuilder.cur_joint;
     if(not cur_joint)then
         return
     end
-    local node = ShapeBuilder.getRootNode():findNode(name);
-    if(node)then
-        -- only 1 joint can be bound
-        ShapeBuilder.scene.joints_map[cur_joint] = name;
-    end
-    
+    -- only 1 joint can be bound
+    -- ignore checking node existed
+    -- binding joints at last
+    ShapeBuilder.scene.joints_map[cur_joint] = name;
 end
 
 function ShapeBuilder.createNode(name,color,bOp)
