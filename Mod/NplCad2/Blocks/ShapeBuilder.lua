@@ -359,17 +359,46 @@ function ShapeBuilder.getScene()
 end
 
 
--- Export the scene to json string
+-- Export the scene to json string with gltf format
 -- @param {number} [indent = -1]
 -- @return {string} v
 function ShapeBuilder.toJson(indent)
-    local json = ShapeBuilder.scene:toJson(4);
+    local json = ShapeBuilder.scene:toGltf_String();
+    --ShapeBuilder.TestToGltf();
     return json;
 end
 
 function ShapeBuilder.toParaX()
     local json = ShapeBuilder.scene:toParaX();
     return json;
+end
+
+function ShapeBuilder.TestToGltf()
+    if(ShapeBuilder.scene.toGltf_File)then
+        local filename = ParaIO.GetCurDirectory(0).."test/test_string.gltf";
+	    filename = string.gsub(filename, "/", "\\");
+        ParaIO.CreateDirectory(filename);
+        local json = ShapeBuilder.scene:toGltf_String();
+
+        local file = ParaIO.open(filename, "w");
+	    if(file:IsValid()) then
+		    file:write(json,#json);
+		    file:close();
+	    end
+
+
+        local filename = ParaIO.GetCurDirectory(0).."test/test.gltf";
+	    filename = string.gsub(filename, "/", "\\");
+        ShapeBuilder.scene:toGltf_File(filename,false,true,true,true,false);
+
+        local filename = ParaIO.GetCurDirectory(0).."test/test.glb";
+	    filename = string.gsub(filename, "/", "\\");
+        ShapeBuilder.scene:toGltf_File(filename,false,false,false,false,true);
+
+        local filename = ParaIO.GetCurDirectory(0).."test/test2.glb";
+	    filename = string.gsub(filename, "/", "\\");
+        ShapeBuilder.scene:toGltf_File(filename,false,true,true,false,true);
+    end
 end
 
 -- Generate an unique id
