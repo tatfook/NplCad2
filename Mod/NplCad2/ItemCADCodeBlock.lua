@@ -40,7 +40,10 @@ function ItemCADCodeBlock:TryCreate(itemStack, entityPlayer, x,y,z, side, data, 
 			local item_stack = ItemStack:new():Init(names.CodeBlock, 1);
 			item_stack:SetDataField("langConfigFile", "npl_cad");
 			--item_stack:SetDataField("nplCode", "-- sphere(1)");
-			return item:TryCreate(item_stack, entityPlayer, x,y,z, side, data, side_region);
+
+			-- add purple color to the code block using 8bit color data
+			local color8_data = 0x0800; 
+			return item:TryCreate(item_stack, entityPlayer, x,y,z, side, (data or 0)+color8_data, side_region);
 		end
 	end
 end
