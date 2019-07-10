@@ -6,6 +6,7 @@ Date: 2018/9/18
 Desc: 
 http://localhost:8099/api/mod/nplcad/models/nplcad/check
 http://localhost:8099/api/mod/nplcad/models/nplcad/runcode
+http://localhost:8099/api/mod/nplcad/models/nplcad/loadblocklyeditor?blocktype=paracraft
 http://localhost:8099/api/mod/nplcad/models/nplcad/loadblocklyeditor?blocktype=blockcad
 ]]
 
@@ -64,11 +65,14 @@ function nplcad:api_loadblocklyeditor(input)
 
     local blocktype = input.blocktype;
 
-    if(blocktype == "blockcad")then
 
         NPL.load("(gl)script/apps/Aries/Creator/Game/Code/CodeHelpWindow.lua");
         local CodeHelpWindow = commonlib.gettable("MyCompany.Aries.Game.Code.CodeHelpWindow");
-        CodeHelpWindow.SetLanguageConfigFile("npl_cad")
+        if(blocktype == "paracraft")then
+            CodeHelpWindow.SetLanguageConfigFile("npl")
+        elseif(blocktype == "blockcad")then
+            CodeHelpWindow.SetLanguageConfigFile("npl_cad")
+        end
 
         local menu_xml = CodeBlocklySerializer.GetBlocklyMenuXml();
 		local config_json = CodeBlocklySerializer.GetBlocklyConfig();
@@ -81,7 +85,6 @@ function nplcad:api_loadblocklyeditor(input)
 			execution_str = execution_str,
 			keywords_json = keywords_json,
 		};
-    end
 end
 -- Only build from a string,can't include any files
 -- @param {Object} input
