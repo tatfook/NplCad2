@@ -72,6 +72,8 @@ function nplcad:api_loadblocklyeditor(input)
             CodeHelpWindow.SetLanguageConfigFile("npl")
         elseif(blocktype == "blockcad")then
             CodeHelpWindow.SetLanguageConfigFile("npl_cad")
+        else
+            CodeHelpWindow.SetLanguageConfigFile(blocktype)
         end
 
         local menu_xml = CodeBlocklySerializer.GetBlocklyMenuXml();
