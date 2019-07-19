@@ -37,11 +37,15 @@ function nplcad:api_exportParaXToGltf(input)
         file:close();
     end
 
+
+    local textures = ParaScene.GetParaXTextures(filename);
+    commonlib.echo("======textures");
+    commonlib.echo(textures);
     -- testing write file
-    ParaScene.ParaXExportTo_glTF(filename,"character/temp_export/test_file.gltf", false,true);
+    ParaScene.ParaXExportTo_glTF(filename,"character/temp_export/test_file.gltf", textures, false,true);
 
     -- testing write string
-    local data = ParaScene.ParaXExportTo_glTF_String(filename,false);
+    local data = ParaScene.ParaXExportTo_glTF_String(filename,false,textures);
     local outpath = "character/temp_export/test.gltf"
     local file = ParaIO.open(outpath, "w");
     if(file:IsValid()) then	
