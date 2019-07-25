@@ -37,11 +37,15 @@ function nplcad:api_exportParaXToGltf(input)
         file:close();
     end
 
+
+    local textures = ParaScene.GetParaXTextures(filename);
+    commonlib.echo("======textures");
+    commonlib.echo(textures);
     -- testing write file
-    ParaScene.ParaXExportTo_glTF(filename,"character/temp_export/test_file.gltf", false,true);
+    ParaScene.ParaXExportTo_glTF(filename,"character/temp_export/test_file.gltf", textures, false,true);
 
     -- testing write string
-    local data = ParaScene.ParaXExportTo_glTF_String(filename,false);
+    local data = ParaScene.ParaXExportTo_glTF_String(filename,false,textures);
     local outpath = "character/temp_export/test.gltf"
     local file = ParaIO.open(outpath, "w");
     if(file:IsValid()) then	
@@ -56,12 +60,12 @@ end
 -- load blockly config
 function nplcad:api_loadblocklyeditor(input)
     NPL.load("(gl)script/apps/Aries/Creator/Game/Common/Translation.lua");
-	NPL.load("(gl)script/apps/Aries/Creator/Game/Code/CodeBlocklySerializer.lua");
+	NPL.load("(gl)script/apps/Aries/Creator/Game/Code/CodeBlocklyGenerator.lua");
     local Translation = commonlib.gettable("MyCompany.Aries.Game.Common.Translation")
 
     local lang = Translation.GetCurrentLanguage();
 
-	local CodeBlocklySerializer = commonlib.gettable("MyCompany.Aries.Game.Code.CodeBlocklySerializer");
+	local CodeBlocklyGenerator = commonlib.gettable("MyCompany.Aries.Game.Code.CodeBlocklyGenerator");
 
     local blocktype = input.blocktype;
 
@@ -72,12 +76,17 @@ function nplcad:api_loadblocklyeditor(input)
             CodeHelpWindow.SetLanguageConfigFile("npl")
         elseif(blocktype == "blockcad")then
             CodeHelpWindow.SetLanguageConfigFile("npl_cad")
+        else
+            CodeHelpWindow.SetLanguageConfigFile(blocktype)
         end
+        local categories = CodeHelpWindow.GetCategoryButtons();
+        local all_cmds = CodeHelpWindow.GetAllCmds();
+        local code_generator = CodeBlocklyGenerator:new():OnInit(categories,all_cmds);
 
-        local menu_xml = CodeBlocklySerializer.GetBlocklyMenuXml();
-		local config_json = CodeBlocklySerializer.GetBlocklyConfig();
-		local execution_str = CodeBlocklySerializer.GetBlocklyCode();
-		local keywords_json = CodeBlocklySerializer.GetKeywords();
+        local menu_xml = code_generator:GetBlocklyMenuXml();
+		local config_json = code_generator:GetBlocklyConfig();
+		local execution_str = code_generator:GetBlocklyCode();
+		local keywords_json = code_generator:GetKeywords();
 		return {
             lang = lang,
 			menu_xml = menu_xml,
