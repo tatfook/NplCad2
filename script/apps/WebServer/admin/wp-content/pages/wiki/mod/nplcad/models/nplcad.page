@@ -25,37 +25,100 @@ local lastErrorCallstack = "";
 function nplcad:api_check()
     return {true}
 end
+function nplcad.copyFiles(input_files,output_root_folder)
+    if(not input_files)then
+        return
+    end
+    local result = {};
+    for k,v in ipairs(input_files) do
+        local filename = nplcad.save_to_file(v,output_root_folder)
+        table.insert(result,filename);
+    end
+    return result;
+end
+function nplcad.save_to_file(asset_file_name,output_root_folder)
+
+    local content;
+    local file = ParaIO.OpenAssetFile(asset_file_name);
+    if(file:IsValid()) then	
+        content = file:GetText(0, -1);
+        file:close();
+    end
+    local filename = string.format("%s/%s",output_root_folder,asset_file_name);
+    if(content)then
+        ParaIO.CreateDirectory(filename);
+        local file = ParaIO.open(filename, "w");
+        if(file:IsValid()) then	
+            file:WriteString(content,#content);
+            file:close();
+        end
+    end
+    return filename;
+end
+function nplcad.loadAssetFile(asset_file_name,callback)
+    LOG.std(nil,"info","nplcad.loadAssetFile", asset_file_name);
+    NPL.load("(gl)script/ide/AssetPreloader.lua");
+    local loader = commonlib.AssetPreloader:new({
+	    callbackFunc = function(nItemsLeft, loader)
+		    if(nItemsLeft <= 0) then
+                if(callback)then
+                    callback();
+                end
+		    end
+	    end
+    });
+    loader:AddAssets(asset_file_name);
+    loader:Start();
+end
+-- download .x and its textures from assets server and export to gltf
+-- @param input.content - asset path, like this: character/CC/03animals/treemonster/treemonster.x
 function nplcad:api_exportParaXToGltf(input)
-    local content = input.content;
-    content = Encoding.unbase64(content);
+    ParaAsset.SetAssetServerUrl("http://cdn.keepwork.com/update61/assetdownload/update/");
+    local asset_file_name = input.content;
+    local output_root_folder = "temp/parax_to_gltf";
+    local filename;
+    local textures = {};
+    nplcad.loadAssetFile(asset_file_name,function()
 
-    local filename = "character/temp_export/test.x"
-    ParaIO.CreateDirectory(filename);
-    local file = ParaIO.open(filename, "w");
-    if(file:IsValid()) then	
-        file:WriteString(content,#content);
-        file:close();
-    end
+        filename = nplcad.save_to_file(asset_file_name,output_root_folder);
+        textures = ParaScene.GetParaXTexturesFromFile(filename);
 
-
-    local textures = ParaScene.GetParaXTextures(filename);
-    commonlib.echo("======textures");
-    commonlib.echo(textures);
+        -- download textures
+        nplcad.loadAssetFile(textures,function()
+            resume();
+        end)
+    end)
+    yield();
+    local raw_textures = textures;
+    textures = nplcad.copyFiles(textures,output_root_folder);
     -- testing write file
-    ParaScene.ParaXExportTo_glTF(filename,"character/temp_export/test_file.gltf", textures, false,true);
+    ParaScene.ParaXFileExportTo_glTF_File(filename,output_root_folder .. "/test_file.gltf", textures, false,true);
 
-    -- testing write string
-    local data = ParaScene.ParaXExportTo_glTF_String(filename,false,textures);
-    local outpath = "character/temp_export/test.gltf"
-    local file = ParaIO.open(outpath, "w");
-    if(file:IsValid()) then	
-        file:WriteString(data,#data);
-        file:close();
-    end
-
+    local data = ParaScene.ParaXFileExportTo_glTF_String(filename,false,textures);
     return {
         data = data,
+        textures = raw_textures,
     }
+end
+-- export .x buffter to gltf, make sure its textures are existed in right path
+-- @param input.content - the buffer of .x file
+function nplcad:api_exportLocalParaXToGltf(input)
+    local content = input.content;
+    if(content)then
+        content = Encoding.unbase64(content);
+        local size = #content;
+        local textures = ParaScene.GetParaXTexturesFromBuffer(content,size);
+
+        -- testing write file
+        local output_root_folder = "temp/parax_to_gltf";
+        ParaScene.ParaXBufferExportTo_glTF_File(content,size,output_root_folder .. "/test_buffer.gltf", textures, false,true);
+
+        local data = ParaScene.ParaXBufferExportTo_glTF_String(content,size,false,textures);
+        return {
+            data = data,
+            textures = textures,
+        }
+    end
 end
 -- load blockly config
 function nplcad:api_loadblocklyeditor(input)
@@ -158,7 +221,6 @@ function nplcad.getcode(str)
         local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
         _G.ShapeBuilder = ShapeBuilder;
         ShapeBuilder.create()
-        ShapeBuilder.setYUp(true);
         SceneHelper.installMethods(_G, ShapeBuilder)
         %s
         SceneHelper.run(ShapeBuilder.getScene(),false);
@@ -177,11 +239,10 @@ function nplcad.getcode_export_parax(str)
         local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
         _G.ShapeBuilder = ShapeBuilder;
         ShapeBuilder.create()
-        ShapeBuilder.setYUp(true);
         SceneHelper.installMethods(_G, ShapeBuilder)
         %s
         SceneHelper.run(ShapeBuilder.getScene(),false);
-        local s = NplOce.exportToParaX(ShapeBuilder.getScene(),true)
+        local s = NplOce.exportToParaX(ShapeBuilder.getScene())
         s = Encoding.base64(s);
         _G.ShapeBuilder = nil;
         return s;
@@ -194,7 +255,6 @@ function nplcad.getcode_export_before_scene_code_xml(str)
         local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
         _G.ShapeBuilder = ShapeBuilder;
         ShapeBuilder.create()
-        ShapeBuilder.setYUp(true);
         SceneHelper.installMethods(_G, ShapeBuilder)
         %s
         local s = SceneHelper.getXml(ShapeBuilder.getScene())
@@ -209,7 +269,6 @@ function nplcad.getcode_export_scene_code_xml(str)
         local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
         _G.ShapeBuilder = ShapeBuilder;
         ShapeBuilder.create()
-        ShapeBuilder.setYUp(true);
         SceneHelper.installMethods(_G, ShapeBuilder)
         %s
         SceneHelper.run(ShapeBuilder.getScene(),false);
