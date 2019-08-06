@@ -19,9 +19,13 @@ end);
 --]]
 NPL.load("(gl)script/ide/System/Core/Color.lua");
 NPL.load("(gl)script/ide/math/Matrix4.lua");
+NPL.load("(gl)script/ide/math/Quaternion.lua");
+NPL.load("(gl)script/ide/math/vector.lua");
 local Color = commonlib.gettable("System.Core.Color");
 local Matrix4 = commonlib.gettable("mathlib.Matrix4");
 local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
+local Quaternion = commonlib.gettable("mathlib.Quaternion");
+local vector3d = commonlib.gettable("mathlib.vector3d");
 
 local ShapeBuilder = NPL.export();
 ShapeBuilder.Precision_Confusion = 0.0000001
@@ -49,14 +53,15 @@ function ShapeBuilder.createAnimation(name)
     ShapeBuilder.cur_animation = animation; 
 end
 -- create a config table before add a channel to cur_animation
-function ShapeBuilder.addChannel(name,propertyId,curve_type)
+function ShapeBuilder.addChannel(name,transform_type,curve_type)
+    local propertyId = ShapeBuilder.getPropertyId(transform_type);
+    curve_type = ShapeBuilder.getCurveType(curve_type)
     ShapeBuilder.cur_channel_config = {
         name = name,
         propertyId = propertyId,
         curve_type = curve_type,
         timeValues = {},
     }; 
-    
 end
 -- create a really channel with the cur_channel_config
 function ShapeBuilder.endChannel()
@@ -79,33 +84,85 @@ function ShapeBuilder.endChannel()
             local keyTimes = {};
             local keyValues = {};
             for k,v in ipairs(timeValues) do
-                table.insert(keyTimes,v.time);
-                for __,vv in ipairs(v.value) do
-                    table.insert(keyValues,vv);
+                if(v.propertyId == propertyId)then
+                    table.insert(keyTimes,v.time);
+                    for __,vv in ipairs(v.value) do
+                        table.insert(keyValues,vv);
+                    end
                 end
             end
+
             cur_animation:addChannel(node,propertyId,cnt,keyTimes,keyValues,curve_type);
         end
     end
     -- clear cur_channel_config
     ShapeBuilder.cur_channel_config = {};
 end
--- insert time,value to a table of current channel
+function ShapeBuilder.getCurveType(type)
+    local curve_type;
+    if(type == "linear")then
+        curve_type = NplOce.Curve_Enum.LINEAR;
+    elseif(type == "step")then
+        curve_type = NplOce.Curve_Enum.STEP;
+    end
+    return curve_type;
+end
+-- get property id
+-- @param {string} [transform_type = "translate"] - the type of transformation, "translate" or "scale" or "rotate"
+function ShapeBuilder.getPropertyId(transform_type)
+    local propertyId;
+    if(transform_type == "translate")then
+        propertyId = NplOce.Transform_Enum.ANIMATE_TRANSLATE;
+    elseif(transform_type == "scale")then
+        propertyId = NplOce.Transform_Enum.ANIMATE_SCALE;
+    elseif(transform_type == "rotate")then
+        propertyId = NplOce.Transform_Enum.ANIMATE_ROTATE;
+    end
+    return propertyId;
+end
+-- insert time,value to a table of current channel with translation
 -- @param {string} [time = "0"] - key time
--- @param {stirng} [x = "0"] - key value
--- @param {stirng} [y = "0"] - key value
--- @param {stirng} [z = "0"] - key value
-function ShapeBuilder.getAnimationTimeValue(time,x,y,z)
+-- @param {table} value - key value
+function ShapeBuilder.setAnimationTimeValue(transform_type, time, value)
+    local propertyId = ShapeBuilder.getPropertyId(transform_type);
     local cur_channel_config = ShapeBuilder.cur_channel_config;
     if(cur_channel_config and cur_channel_config.timeValues)then
-        time = tonumber(time);
-        x = tonumber(x);
-        y = tonumber(y);
-        z = tonumber(z);
         local timeValues = cur_channel_config.timeValues;
-        table.insert(timeValues,{time = time, value = {x,y,z},})
+        table.insert(timeValues,{propertyId = propertyId, time = time, value = value })
     end
     
+end
+function ShapeBuilder.setAnimationTimeValue_Translate(time,x,y,z)
+    local value = {x,y,z};
+    ShapeBuilder.setAnimationTimeValue("translate", time, value);
+end
+function ShapeBuilder.setAnimationTimeValue_Scale(time,x,y,z)
+    local value = {x,y,z};
+    ShapeBuilder.setAnimationTimeValue("scale", time, value);
+end
+function ShapeBuilder.setAnimationTimeValue_Rotate(time,axis,angle)
+    local x,y,z;
+    angle = angle or 0;
+    angle = angle * math.pi * (1.0 / 180.0);
+    if(axis == "x")then
+        x = 1;
+        y = 0;
+        z = 0;
+    end
+    if(axis == "y")then
+        x = 0;
+        y = 1;
+        z = 0;
+    end
+    if(axis == "z")then
+        x = 0;
+        y = 0;
+        z = 1;
+    end
+    local rkAxis = vector3d:new(x,y,z)
+    local q = Quaternion:FromAngleAxis(angle, rkAxis);
+    local value = { q[1], q[2], q[3], q[4] }
+    ShapeBuilder.setAnimationTimeValue("rotate", time,value);
 end
 function ShapeBuilder.createJointRoot(name)
     local name = name or ShapeBuilder.generateId();

@@ -28,6 +28,7 @@ NplOce.Transform_Enum = {
     ANIMATE_SCALE_ROTATE = 19,
 
 }
+
 local curve_value = -1;
 local function get_next_value()
     curve_value = curve_value + 1;
