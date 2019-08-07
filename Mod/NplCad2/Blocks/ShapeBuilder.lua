@@ -53,12 +53,10 @@ function ShapeBuilder.createAnimation(name)
     ShapeBuilder.cur_animation = animation; 
 end
 -- create a config table before add a channel to cur_animation
-function ShapeBuilder.addChannel(name,transform_type,curve_type)
-    local propertyId = ShapeBuilder.getPropertyId(transform_type);
+function ShapeBuilder.addChannel(name,curve_type)
     curve_type = ShapeBuilder.getCurveType(curve_type)
     ShapeBuilder.cur_channel_config = {
         name = name,
-        propertyId = propertyId,
         curve_type = curve_type,
         timeValues = {},
     }; 
@@ -72,27 +70,41 @@ function ShapeBuilder.endChannel()
         local name = cur_channel_config.name;
         local node = ShapeBuilder.getRootNode():findNode(name);
         if(node)then
-            local propertyId = cur_channel_config.propertyId;
             local curve_type = cur_channel_config.curve_type;
             local timeValues = cur_channel_config.timeValues or {};
-            local cnt = #timeValues;
-            -- sort by time
-            table.sort(timeValues,function(a,b)
-                return a.time < b.time;
-            end)
 
-            local keyTimes = {};
-            local keyValues = {};
+            local key_values_map = {};
             for k,v in ipairs(timeValues) do
-                if(v.propertyId == propertyId)then
-                    table.insert(keyTimes,v.time);
-                    for __,vv in ipairs(v.value) do
+                local propertyId = v.propertyId;
+                local key_values = key_values_map[propertyId];
+                -- filter time/value by propertyId which value is ANIMATE_TRANSLATE or ANIMATE_SCALE or ANIMATE_ROTATE
+                if(not key_values)then
+                    key_values = {};
+                    key_values_map[propertyId] = key_values;
+                end
+                table.insert(key_values,v);
+            end
+    
+            for propertyId,data in pairs (key_values_map) do
+                -- sort by time
+                table.sort(data,function(a,b)
+                    return a.time < b.time;
+                end)
+                local keyTimes = {};
+                local keyValues = {};
+                for __,v in ipairs (data) do
+                    local time = v.time;
+                    local value = v.value;
+                    table.insert(keyTimes,time);
+
+                    -- converte table to array
+                    for __,vv in ipairs(value) do
                         table.insert(keyValues,vv);
                     end
                 end
+                local cnt = #keyTimes;
+                cur_animation:addChannel(node,propertyId,cnt,keyTimes,keyValues,curve_type);
             end
-
-            cur_animation:addChannel(node,propertyId,cnt,keyTimes,keyValues,curve_type);
         end
     end
     -- clear cur_channel_config
