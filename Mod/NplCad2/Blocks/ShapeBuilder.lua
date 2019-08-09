@@ -19,9 +19,13 @@ end);
 --]]
 NPL.load("(gl)script/ide/System/Core/Color.lua");
 NPL.load("(gl)script/ide/math/Matrix4.lua");
+NPL.load("(gl)script/ide/math/Quaternion.lua");
+NPL.load("(gl)script/ide/math/vector.lua");
 local Color = commonlib.gettable("System.Core.Color");
 local Matrix4 = commonlib.gettable("mathlib.Matrix4");
 local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
+local Quaternion = commonlib.gettable("mathlib.Quaternion");
+local vector3d = commonlib.gettable("mathlib.vector3d");
 
 local ShapeBuilder = NPL.export();
 ShapeBuilder.Precision_Confusion = 0.0000001
@@ -31,8 +35,9 @@ ShapeBuilder.cur_node = nil; -- for boolean/add node
 ShapeBuilder.selected_node = nil; -- for transforming node
 ShapeBuilder.root_joint = nil; -- for binding bones
 ShapeBuilder.cur_joint = nil; -- for binding bones
-ShapeBuilder.y_up = nil; 
 ShapeBuilder.print_dialog = nil; 
+ShapeBuilder.cur_animation = nil; 
+ShapeBuilder.cur_channel_config = {}; 
 
 function ShapeBuilder.print3d(v)
     ShapeBuilder.print_dialog = v; 
@@ -40,15 +45,136 @@ end
 function ShapeBuilder.getPrint3d()
     return ShapeBuilder.print_dialog;
 end
-function ShapeBuilder.setYUp(v)
-    ShapeBuilder.y_up = v; 
+-- create a animation
+function ShapeBuilder.createAnimation(name)
+    local name = name or ShapeBuilder.generateId();
+    local animation_manager = NplOce.AnimationManager.getInstance();
+    local animation = animation_manager:createAnimation(name);
+    ShapeBuilder.cur_animation = animation; 
 end
-function ShapeBuilder.swapYZ(y,z)
-    if(ShapeBuilder.y_up)then
-        return z,y;
-    else
-        return y,z;
+-- create a config table before add a channel to cur_animation
+function ShapeBuilder.addChannel(name,curve_type)
+    curve_type = ShapeBuilder.getCurveType(curve_type)
+    ShapeBuilder.cur_channel_config = {
+        name = name,
+        curve_type = curve_type,
+        timeValues = {},
+    }; 
+end
+-- create a really channel with the cur_channel_config
+function ShapeBuilder.endChannel()
+    local cur_channel_config = ShapeBuilder.cur_channel_config;
+    local cur_animation = ShapeBuilder.cur_animation; 
+    if(cur_channel_config and cur_animation)then
+        -- get target 
+        local name = cur_channel_config.name;
+        local node = ShapeBuilder.getRootNode():findNode(name);
+        if(node)then
+            local curve_type = cur_channel_config.curve_type;
+            local timeValues = cur_channel_config.timeValues or {};
+
+            local key_values_map = {};
+            for k,v in ipairs(timeValues) do
+                local propertyId = v.propertyId;
+                local key_values = key_values_map[propertyId];
+                -- filter time/value by propertyId which value is ANIMATE_TRANSLATE or ANIMATE_SCALE or ANIMATE_ROTATE
+                if(not key_values)then
+                    key_values = {};
+                    key_values_map[propertyId] = key_values;
+                end
+                table.insert(key_values,v);
+            end
+    
+            for propertyId,data in pairs (key_values_map) do
+                -- sort by time
+                table.sort(data,function(a,b)
+                    return a.time < b.time;
+                end)
+                local keyTimes = {};
+                local keyValues = {};
+                for __,v in ipairs (data) do
+                    local time = v.time;
+                    local value = v.value;
+                    table.insert(keyTimes,time);
+
+                    -- converte table to array
+                    for __,vv in ipairs(value) do
+                        table.insert(keyValues,vv);
+                    end
+                end
+                local cnt = #keyTimes;
+                cur_animation:addChannel(node,propertyId,cnt,keyTimes,keyValues,curve_type);
+            end
+        end
     end
+    -- clear cur_channel_config
+    ShapeBuilder.cur_channel_config = {};
+end
+function ShapeBuilder.getCurveType(type)
+    local curve_type;
+    if(type == "linear")then
+        curve_type = NplOce.Curve_Enum.LINEAR;
+    elseif(type == "step")then
+        curve_type = NplOce.Curve_Enum.STEP;
+    end
+    return curve_type;
+end
+-- get property id
+-- @param {string} [transform_type = "translate"] - the type of transformation, "translate" or "scale" or "rotate"
+function ShapeBuilder.getPropertyId(transform_type)
+    local propertyId;
+    if(transform_type == "translate")then
+        propertyId = NplOce.Transform_Enum.ANIMATE_TRANSLATE;
+    elseif(transform_type == "scale")then
+        propertyId = NplOce.Transform_Enum.ANIMATE_SCALE;
+    elseif(transform_type == "rotate")then
+        propertyId = NplOce.Transform_Enum.ANIMATE_ROTATE;
+    end
+    return propertyId;
+end
+-- insert time,value to a table of current channel with translation
+-- @param {string} [time = "0"] - key time
+-- @param {table} value - key value
+function ShapeBuilder.setAnimationTimeValue(transform_type, time, value)
+    local propertyId = ShapeBuilder.getPropertyId(transform_type);
+    local cur_channel_config = ShapeBuilder.cur_channel_config;
+    if(cur_channel_config and cur_channel_config.timeValues)then
+        local timeValues = cur_channel_config.timeValues;
+        table.insert(timeValues,{propertyId = propertyId, time = time, value = value })
+    end
+    
+end
+function ShapeBuilder.setAnimationTimeValue_Translate(time,x,y,z)
+    local value = {x,y,z};
+    ShapeBuilder.setAnimationTimeValue("translate", time, value);
+end
+function ShapeBuilder.setAnimationTimeValue_Scale(time,x,y,z)
+    local value = {x,y,z};
+    ShapeBuilder.setAnimationTimeValue("scale", time, value);
+end
+function ShapeBuilder.setAnimationTimeValue_Rotate(time,axis,angle)
+    local x,y,z;
+    angle = angle or 0;
+    angle = angle * math.pi * (1.0 / 180.0);
+    if(axis == "x")then
+        x = 1;
+        y = 0;
+        z = 0;
+    end
+    if(axis == "y")then
+        x = 0;
+        y = 1;
+        z = 0;
+    end
+    if(axis == "z")then
+        x = 0;
+        y = 0;
+        z = 1;
+    end
+    local rkAxis = vector3d:new(x,y,z)
+    local q = Quaternion:FromAngleAxis(angle, rkAxis);
+    local value = { q[1], q[2], q[3], q[4] }
+    ShapeBuilder.setAnimationTimeValue("rotate", time,value);
 end
 function ShapeBuilder.createJointRoot(name)
     local name = name or ShapeBuilder.generateId();
@@ -185,26 +311,14 @@ function ShapeBuilder.setRotationFromNode(node,axis,angle)
         z = 0;
     end
     if(axis == "y")then
-        if(ShapeBuilder.y_up)then
-            x = 0;
-            y = 0;
-            z = 1;
-        else
-            x = 0;
-            y = 1;
-            z = 0;
-        end
+        x = 0;
+        y = 1;
+        z = 0;
     end
     if(axis == "z")then
-        if(ShapeBuilder.y_up)then
-            x = 0;
-            y = 1;
-            z = 0;
-        else
-            x = 0;
-            y = 0;
-            z = 1;
-        end
+        x = 0;
+        y = 0;
+        z = 1;
     end
     node:setRotation(x,y,z,angle)
 end
@@ -232,24 +346,15 @@ function ShapeBuilder.SetRotationFromPivot(node,axis,angle,pivot_x,pivot_y,pivot
         return
     end
     angle = angle or 0;
-    pivot_y,pivot_z = ShapeBuilder.swapYZ(pivot_y,pivot_z);
     local rotate_matrix;
     if(axis == "x")then
         rotate_matrix = Matrix4.rotationX(angle);
     end
     if(axis == "y")then
-        if(ShapeBuilder.y_up)then
-            rotate_matrix = Matrix4.rotationZ(angle);
-        else
-            rotate_matrix = Matrix4.rotationY(angle);
-        end
+        rotate_matrix = Matrix4.rotationY(angle);
     end
     if(axis == "z")then
-        if(ShapeBuilder.y_up)then
-            rotate_matrix = Matrix4.rotationY(angle);
-        else
-            rotate_matrix = Matrix4.rotationZ(angle);
-        end
+        rotate_matrix = Matrix4.rotationZ(angle);
     end
     local world_matrix = Matrix4:new(node:getWorldMatrix());
     local matrix_1 = Matrix4.translation({-pivot_x,-pivot_y,-pivot_z})
@@ -286,8 +391,6 @@ function ShapeBuilder._mirrorNode(node,axis_plane,x,y,z)
     elseif(axis_plane == "yz")then
         dir_x = 1;
     end
-    y,z = ShapeBuilder.swapYZ(y,z);
-    dir_y,dir_z = ShapeBuilder.swapYZ(dir_y,dir_z);
     local parent = node:getParent();
     if(not parent)then
         return
@@ -338,9 +441,10 @@ function ShapeBuilder.getRootNode()
     return ShapeBuilder.root_node;
 end
 -- Create a scene
-function ShapeBuilder.create(zup)
-    ShapeBuilder.scene = NplOce.Scene.create();
-    ShapeBuilder.setYUp(not zup)
+function ShapeBuilder.create()
+    local animation_manager = NplOce.AnimationManager.getInstance();
+    animation_manager:clear();
+    ShapeBuilder.scene = NplOce.Scene.create(ShapeBuilder.generateId());
     ShapeBuilder.cur_node = ShapeBuilder.scene:addNode(ShapeBuilder.generateId());
     ShapeBuilder.root_node = ShapeBuilder.cur_node; 
     -- save binding relation temporarily before running boolean op in scene
@@ -585,22 +689,22 @@ function ShapeBuilder._wedge(op,x1, y1, z1, x3, z3, x2, y2, z2, x4, z4,color)
 end
 
 -- Create an ellipsoid
--- @param {number} [r1 = 2]
--- @param {number} [r2 = 4]
--- @param {number} [r3 = 0]
+-- @param {number} [y = 2]
+-- @param {number} [x = 4]
+-- @param {number} [z = 0]
 -- @param {number} [a1 = -90]
 -- @param {number} [a2 = 90]
 -- @param {number} [a3 = 360]
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder._ellipsoid(op,r1, r2, r3, a1, a2, a3,color) 
+function ShapeBuilder._ellipsoid(op,y, x, z, a1, a2, a3,color) 
     local node = NplOce.ShapeNodeEllipsoid.create();
-    node:setValue(r1, r2, r3, a1, a2, a3);
+    node:setValue(y, x, z, a1, a2, a3);
     ShapeBuilder.addShapeNode(node,op,color) 
     return node;
 end
-function ShapeBuilder.ellipsoid(op,r1, r2, r3, color) 
-    ShapeBuilder._ellipsoid(op,r1, r2, r3, -90, 90, 360,color) 
+function ShapeBuilder.ellipsoid(op,r_x, r_z, r_y, color) 
+    ShapeBuilder._ellipsoid(op,r_y, r_x, r_z, -90, 90, 360,color) 
 end
 
 
@@ -644,7 +748,6 @@ end
 -- @param {number} [z = 0]
 function ShapeBuilder.setTranslation(node,x,y,z) 
     if(node)then
-        y,z = ShapeBuilder.swapYZ(y,z);
         node:setTranslation(x,y,z);
     end
 end
@@ -655,7 +758,6 @@ end
 -- @param {number} [tz = 0]
 function ShapeBuilder.translate(node,tx,ty,tz)
     if(node)then
-        ty,tz = ShapeBuilder.swapYZ(ty,tz);
         node:translate(tx,ty,tz);
     end
 end
@@ -668,7 +770,6 @@ end
 -- @param {number} [z = 1]
 function ShapeBuilder.setScale(node,x,y,z)
     if(node)then
-        y,z = ShapeBuilder.swapYZ(y,z);
         node:setScale(x,y,z);
     end
 end

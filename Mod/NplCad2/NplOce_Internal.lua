@@ -9,6 +9,81 @@ NPL.load("Mod/NplCad2/NplOce_Internal.lua");
 ------------------------------------------------------------
 --]]
 local NplOce = NplOce;
+
+
+NplOce.Transform_Enum = {
+    ANIMATE_SCALE_UNIT = 0,
+    ANIMATE_SCALE = 1,
+    ANIMATE_SCALE_X = 2,
+    ANIMATE_SCALE_Y = 3,
+    ANIMATE_SCALE_Z = 4,
+    ANIMATE_ROTATE = 8,
+    ANIMATE_TRANSLATE = 9,
+    ANIMATE_TRANSLATE_X = 10,
+    ANIMATE_TRANSLATE_Y = 11,
+    ANIMATE_TRANSLATE_Z = 12,
+    ANIMATE_ROTATE_TRANSLATE = 16,
+    ANIMATE_SCALE_ROTATE_TRANSLATE = 17,
+    ANIMATE_SCALE_TRANSLATE = 18,
+    ANIMATE_SCALE_ROTATE = 19,
+
+}
+
+local curve_value = -1;
+local function get_next_value()
+    curve_value = curve_value + 1;
+    return curve_value;
+end
+        
+NplOce.Curve_Enum = {
+        BEZIER = get_next_value(),
+        BSPLINE = get_next_value(),
+        FLAT = get_next_value(),
+        HERMITE = get_next_value(),
+        LINEAR = get_next_value(), -- 4
+        SMOOTH = get_next_value(),
+        STEP = get_next_value(), -- 6
+        QUADRATIC_IN = get_next_value(),
+        QUADRATIC_OUT = get_next_value(),
+        QUADRATIC_IN_OUT = get_next_value(),
+        QUADRATIC_OUT_IN = get_next_value(),
+        CUBIC_IN = get_next_value(),
+        CUBIC_OUT = get_next_value(),
+        CUBIC_IN_OUT = get_next_value(), -- 13
+        CUBIC_OUT_IN = get_next_value(),
+        QUARTIC_IN = get_next_value(),
+        QUARTIC_OUT = get_next_value(),
+        QUARTIC_IN_OUT = get_next_value(),
+        QUARTIC_OUT_IN = get_next_value(),
+        QUINTIC_IN = get_next_value(),
+        QUINTIC_OUT = get_next_value(),
+        QUINTIC_IN_OUT = get_next_value(),
+        QUINTIC_OUT_IN = get_next_value(),
+        SINE_IN = get_next_value(),
+        SINE_OUT = get_next_value(),
+        SINE_IN_OUT = get_next_value(),
+        SINE_OUT_IN = get_next_value(),
+        EXPONENTIAL_IN = get_next_value(),
+        EXPONENTIAL_OUT = get_next_value(),
+        EXPONENTIAL_IN_OUT = get_next_value(),
+        EXPONENTIAL_OUT_IN = get_next_value(),
+        CIRCULAR_IN = get_next_value(),
+        CIRCULAR_OUT = get_next_value(),
+        CIRCULAR_IN_OUT = get_next_value(),
+        CIRCULAR_OUT_IN = get_next_value(),
+        ELASTIC_IN = get_next_value(),
+        ELASTIC_OUT = get_next_value(),
+        ELASTIC_IN_OUT = get_next_value(),
+        ELASTIC_OUT_IN = get_next_value(),
+        OVERSHOOT_IN = get_next_value(),
+        OVERSHOOT_OUT = get_next_value(),
+        OVERSHOOT_IN_OUT = get_next_value(),
+        OVERSHOOT_OUT_IN = get_next_value(),
+        BOUNCE_IN = get_next_value(),
+        BOUNCE_OUT = get_next_value(),
+        BOUNCE_IN_OUT = get_next_value(),
+        BOUNCE_OUT_IN = get_next_value(),
+}
 -- Export the scene to json string
 -- @param {NplOce.Scene} scene
 -- @return {string} s
@@ -41,7 +116,7 @@ function NplOce.exportSingleShape(shape,position,color)
 	return NplOce.export(scene)
 end
 
-function NplOce.exportToParaX(scene, isYUp)
+function NplOce.exportToParaX(scene)
 	if (scene == nil) then
 		return false;
 	end
@@ -58,7 +133,7 @@ function NplOce.exportToParaX(scene, isYUp)
 		end
 	end
 	local template = WriteTemplate() or "";
-	local data = scene:toParaX(isYUp);
+	local data = scene:toParaX();
 	if (template ~= "") then
         if(data ~= nil)then
             local Encoding = commonlib.gettable("System.Encoding");

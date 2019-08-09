@@ -9,7 +9,7 @@ local TestScene = NPL.load("Mod/NplCad2/Test/TestScene.lua");
 local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
 NplOceConnection.load({ npl_oce_dll = "plugins/nploce_d.dll" },function(msg)
     NPL.load("Mod/NplCad2/NplOce_Internal.lua");
-    TestScene.Test_Skin();
+    TestScene.Test_CreateAnimation();
 end);
 ------------------------------------------------------------
 --]]
@@ -113,7 +113,7 @@ function TestScene.Test_ShapePlus()
             local cur_node = scene:addNode("root");
             cur_node:addChild(node);
 
-            local s = NplOce.exportToParaX(scene,true) or "";
+            local s = NplOce.exportToParaX(scene) or "";
             local len = string.len(s);
             if(len > 0)then
                 ParaIO.CreateDirectory(filename);
@@ -152,10 +152,10 @@ function TestScene.Test_CustomShapeNode()
     
 
     TestScene.SaveFile("test/CustomShapeNode.before.xml",SceneHelper.getXml(scene))
-    TestScene.SaveFile("test/CustomShapeNode.before.x",NplOce.exportToParaX(scene,true))
+    TestScene.SaveFile("test/CustomShapeNode.before.x",NplOce.exportToParaX(scene))
     SceneHelper.run(scene,true)
     TestScene.SaveFile("test/CustomShapeNode.xml",SceneHelper.getXml(scene))
-    TestScene.SaveFile("test/CustomShapeNode.x",NplOce.exportToParaX(scene,true))
+    TestScene.SaveFile("test/CustomShapeNode.x",NplOce.exportToParaX(scene))
     
     _guihelper.MessageBox("done");
 end
@@ -216,7 +216,7 @@ function TestScene.Test_MirrorNode()
     cur_node:addChild(mirror_node);
 
 
-    TestScene.SaveFile("test/Test_MirrorNode.x",NplOce.exportToParaX(scene,true))
+    TestScene.SaveFile("test/Test_MirrorNode.x",NplOce.exportToParaX(scene))
 end
 function TestScene.Test_Skin()
     local scene = NplOce.Scene.create();
@@ -249,4 +249,125 @@ function TestScene.Test_Skin()
     end
 
     TestScene.SaveFile("test/Test_Skin.xml",SceneHelper.getXml(scene));
+end
+function TestScene.Test_LeftHandCoordinate()
+    local scene = NplOce.Scene.create();
+    local cur_node = scene:addNode("root");
+
+    local pos_value = 8;
+    -- create center
+    local node = NplOce.ShapeNodeSphere.create();
+    -- create topo_shape with default value
+    node:setValue(1);
+    node:setTranslation(0,0,0);
+    node:setColor({0,0,0,1});
+    cur_node:addChild(node);
+
+    --create axes
+    -- x red
+    local node = NplOce.ShapeNodeBox.create();
+    node:setValue(1,1,1);
+    node:setTranslation(pos_value,0,0)
+    node:setColor({1,0,0,1});
+    cur_node:addChild(node);
+
+    -- y green
+    local node = NplOce.ShapeNodeBox.create();
+    node:setValue(1,1,1);
+    node:setTranslation(0,pos_value,0)
+    node:setColor({0,1,0,1});
+    cur_node:addChild(node);
+
+    -- z blue
+    local node = NplOce.ShapeNodeBox.create();
+    node:setValue(1,1,1);
+    node:setTranslation(0,0,pos_value)
+    node:setColor({0,0,1,1});
+    cur_node:addChild(node);
+
+
+    -- check offset
+    local node = NplOce.ShapeNodeCylinder.create("node1");
+    node:setValue(1);
+    -- z is 10
+    node:setTranslation(10,0,10);
+    node:setColor({0,1,1,1});
+    cur_node:addChild(node);
+    
+    local path_x = "test/LeftHandCoordinate.x";
+    local path_gltf = "test/LeftHandCoordinate.gltf";
+    TestScene.SaveFile(path_x,NplOce.exportToParaX(scene));
+    TestScene.SaveFile(path_gltf,scene:toGltf_String(false));
+
+    local msg = string.format("save to: %s %s",path_x,path_gltf);
+    _guihelper.MessageBox(msg);
+end
+function TestScene.Test_XValue()
+    local scene = NplOce.Scene.create();
+    local cur_node = scene:addNode("root");
+
+--    -- create center
+--    local node = NplOce.ShapeNodeSphere.create();
+--    -- create topo_shape with default value
+--    node:setValue(1);
+--    node:setTranslation(0,0,0);
+--    node:setColor({0,0,0,1});
+--    cur_node:addChild(node);
+
+    local node = NplOce.ShapeNodeBox.create();
+    node:setValue(1,1,1);
+    node:setTranslation(10,0,0)
+    node:setColor({1,0,0,1});
+    cur_node:addChild(node);
+
+    local path_x = "test/XValue.x";
+    local path_gltf = "test/XValue.gltf";
+    TestScene.SaveFile(path_x,NplOce.exportToParaX(scene));
+    --TestScene.SaveFile(path_gltf,scene:toGltf_String(false));
+
+    local msg = string.format("save to: %s %s",path_x,path_gltf);
+    _guihelper.MessageBox(msg);
+end
+function TestScene.Test_CreateAnimation()
+    local animation_manager = NplOce.AnimationManager.getInstance();
+    animation_manager:clear();
+    local scene = NplOce.Scene.create();
+    local cur_node = scene:addNode("root");
+    local joint = NplOce.Joint.create("test_joint");
+    cur_node:addChild(joint);
+
+    local joint_node = cur_node:findNode("test_joint");
+    if(joint_node)then
+        commonlib.echo("===========found joint_node");
+    end
+
+    local animation_manager = NplOce.AnimationManager.getInstance();
+    local animation = animation_manager:createAnimation("anim1");
+
+    commonlib.echo("===========animation_manager:getCnt()");
+    commonlib.echo(animation_manager:getCnt());
+
+    commonlib.echo("===========animation:getChannelCnt() 111");
+    commonlib.echo(animation:getChannelCnt());
+
+    animation:addChannel(joint,NplOce.Transform_Enum.ANIMATE_TRANSLATE,3,{0,100,4000},{
+        0,0,0,
+        0,10,0,
+        0,20,0,
+    },NplOce.Curve_Enum.LINEAR);
+
+
+    commonlib.echo("===========animation:getChannelCnt() 222");
+    commonlib.echo(animation:getChannelCnt());
+    commonlib.echo("===========animation:getDuration()");
+    commonlib.echo(animation:getDuration());
+
+    local clip_1 = animation:addClip("idle",100,1000);
+    commonlib.echo(clip_1:getId());
+    local clip_2 = animation:addClip("run",1000,4000);
+    commonlib.echo(clip_2:getId());
+
+    commonlib.echo("===========animation:getClipCount()");
+    commonlib.echo(animation:getClipCount());
+
 end
