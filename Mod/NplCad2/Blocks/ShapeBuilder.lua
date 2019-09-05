@@ -35,15 +35,35 @@ ShapeBuilder.cur_node = nil; -- for boolean/add node
 ShapeBuilder.selected_node = nil; -- for transforming node
 ShapeBuilder.root_joint = nil; -- for binding bones
 ShapeBuilder.cur_joint = nil; -- for binding bones
-ShapeBuilder.print_dialog = nil; 
+ShapeBuilder.export_file_context = nil; -- for exporting .stl/.gltf file
 ShapeBuilder.cur_animation = nil; 
 ShapeBuilder.cur_channel_config = {}; 
 
-function ShapeBuilder.print3d(v)
-    ShapeBuilder.print_dialog = v; 
+function ShapeBuilder.exportFile(type)
+    if(not type)then
+        return
+    end
+    local export_file_context =  ShapeBuilder.export_file_context or {};
+    for k,v in ipairs(export_file_context) do
+        if(type == v)then
+            return
+        end
+    end
+    table.insert(export_file_context,type);
+    ShapeBuilder.export_file_context = export_file_context;
 end
-function ShapeBuilder.getPrint3d()
-    return ShapeBuilder.print_dialog;
+function ShapeBuilder.runExportFiles(filename)
+    local export_file_context =  ShapeBuilder.export_file_context;
+    if(not filename or not export_file_context)then
+        return
+    end
+    for k,v in ipairs(export_file_context) do
+        if(v == "stl")then
+        elseif(v == "gltf")then
+            filename = filename .. ".gltf";
+            SceneHelper.saveSceneToGltf(filename,ShapeBuilder.scene);
+        end
+    end
 end
 -- create a animation
 function ShapeBuilder.createAnimation(name)
@@ -449,6 +469,8 @@ function ShapeBuilder.create()
     ShapeBuilder.root_node = ShapeBuilder.cur_node; 
     -- save binding relation temporarily before running boolean op in scene
     ShapeBuilder.scene.joints_map = {}; 
+    -- clear export file context
+    ShapeBuilder.export_file_context = nil;
 end
 -- Set a scene for holding shapes
 -- @param {NplOce.Scene} scene

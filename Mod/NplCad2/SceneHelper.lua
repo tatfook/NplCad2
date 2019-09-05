@@ -334,22 +334,37 @@ function SceneHelper.bindJoints(root_node, joints_map)
         end)
     end
 end
+function SceneHelper.saveSceneToGltf(filename,scene,bRun)
+    if(not scene)then 
+        return
+    end
+    if(bRun)then
+        SceneHelper.run(scene,false);
+    end
+     local content = scene:toGltf_String();
+    return SceneHelper.saveFile(filename,content);
+end
 function SceneHelper.saveSceneToParaX(filename,scene)
     if(not scene)then 
         return
     end
     SceneHelper.run(scene,false);
-    local s = NplOce.exportToParaX(scene,true) or "";
-    local len = string.len(s);
+    local content = NplOce.exportToParaX(scene,true) or "";
+    return SceneHelper.saveFile(filename,content);
+end
+function SceneHelper.saveFile(filename,content)
     local result = false;
-    if(len > 0)then
-        ParaIO.CreateDirectory(filename);
-        local file = ParaIO.open(filename, "w");
-	    if(file:IsValid()) then
-		    file:write(s,len);
-		    file:close();
-            result = true;
-	    end
+    if(content)then
+        local len = string.len(content);
+        if(len > 0)then
+            ParaIO.CreateDirectory(filename);
+            local file = ParaIO.open(filename, "w");
+	        if(file:IsValid()) then
+		        file:write(content,len);
+		        file:close();
+                result = true;
+	        end
+        end
     end
     return result;
 end
