@@ -334,6 +334,17 @@ function SceneHelper.bindJoints(root_node, joints_map)
         end)
     end
 end
+function SceneHelper.saveSceneToStl(filename,scene,bRun,binary)
+    if(not scene)then 
+        return
+    end
+    if(bRun)then
+        SceneHelper.run(scene,false);
+    end
+     local content = scene:toStl_String(true,binary);
+     content = Encoding.unbase64(content);
+    return SceneHelper.saveFile(filename,content);
+end
 function SceneHelper.saveSceneToGltf(filename,scene,bRun)
     if(not scene)then 
         return
@@ -341,7 +352,7 @@ function SceneHelper.saveSceneToGltf(filename,scene,bRun)
     if(bRun)then
         SceneHelper.run(scene,false);
     end
-     local content = scene:toGltf_String();
+    local content = scene:toGltf_String();
     return SceneHelper.saveFile(filename,content);
 end
 function SceneHelper.saveSceneToParaX(filename,scene)

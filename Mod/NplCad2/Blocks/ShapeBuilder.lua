@@ -45,11 +45,14 @@ function ShapeBuilder.exportFile(type)
     end
     local export_file_context =  ShapeBuilder.export_file_context or {};
     for k,v in ipairs(export_file_context) do
-        if(type == v)then
+        if(type == v.type)then
             return
         end
     end
-    table.insert(export_file_context,type);
+    table.insert(export_file_context,{
+        type = type,
+        binary = true,
+    });
     ShapeBuilder.export_file_context = export_file_context;
 end
 function ShapeBuilder.runExportFiles(filename)
@@ -57,11 +60,14 @@ function ShapeBuilder.runExportFiles(filename)
     if(not filename or not export_file_context)then
         return
     end
+    filename = string.match(filename, [[(.+).(.+)$]]);
     for k,v in ipairs(export_file_context) do
-        if(v == "stl")then
-        elseif(v == "gltf")then
-            filename = filename .. ".gltf";
-            SceneHelper.saveSceneToGltf(filename,ShapeBuilder.scene);
+        local type = v.type;
+        local binary = v.binary;
+        if(type == "stl")then
+            SceneHelper.saveSceneToStl(filename .. ".stl",ShapeBuilder.scene,false,binary);
+        elseif(type == "gltf")then
+            SceneHelper.saveSceneToGltf(filename .. ".gltf",ShapeBuilder.scene);
         end
     end
 end

@@ -9,7 +9,8 @@ local TestScene = NPL.load("Mod/NplCad2/Test/TestScene.lua");
 local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
 NplOceConnection.load({ npl_oce_dll = "plugins/nploce_d.dll" },function(msg)
     NPL.load("Mod/NplCad2/NplOce_Internal.lua");
-    TestScene.Test_CreateAnimation();
+    --TestScene.Test_CreateAnimation();
+    TestScene.Test_ExportStl();
 end);
 ------------------------------------------------------------
 --]]
@@ -370,4 +371,22 @@ function TestScene.Test_CreateAnimation()
     commonlib.echo("===========animation:getClipCount()");
     commonlib.echo(animation:getClipCount());
 
+end
+function TestScene.Test_ExportStl()
+    local scene = NplOce.Scene.create();
+    local cur_node = scene:addNode("root");
+
+
+    local node = NplOce.ShapeNodeBox.create();
+    node:setValue(1,1,1);
+    cur_node:addChild(node);
+
+    local filename = "test/test.stl";
+    SceneHelper.saveSceneToStl(filename,scene,true)
+
+    local filename = "test/test.binary.stl";
+    SceneHelper.saveSceneToStl(filename,scene,true,true)
+
+    local msg = string.format("save to: %s",filename);
+    _guihelper.MessageBox(msg);
 end
