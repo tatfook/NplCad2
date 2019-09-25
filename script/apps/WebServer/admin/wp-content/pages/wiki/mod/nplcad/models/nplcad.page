@@ -8,6 +8,7 @@ http://localhost:8099/api/mod/nplcad/models/nplcad/check
 http://localhost:8099/api/mod/nplcad/models/nplcad/runcode
 http://localhost:8099/api/mod/nplcad/models/nplcad/loadblocklyeditor?blocktype=paracraft
 http://localhost:8099/api/mod/nplcad/models/nplcad/loadblocklyeditor?blocktype=blockcad
+http://localhost:8099/api/mod/nplcad/models/nplcad/loadblocklyeditor?blocktype=npl_microbit
 ]]
 
 include_once(WIKI_ROOT.."models/abstract/base.page");

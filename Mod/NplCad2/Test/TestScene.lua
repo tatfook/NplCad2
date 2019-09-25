@@ -11,6 +11,7 @@ NplOceConnection.load({ npl_oce_dll = "plugins/nploce_d.dll" },function(msg)
     NPL.load("Mod/NplCad2/NplOce_Internal.lua");
     --TestScene.Test_CreateAnimation();
     TestScene.Test_ExportStl();
+    TestScene.Test_ExportGltf();
 end);
 ------------------------------------------------------------
 --]]
@@ -386,6 +387,22 @@ function TestScene.Test_ExportStl()
 
     local filename = "test/test.binary.stl";
     SceneHelper.saveSceneToStl(filename,scene,true,true)
+
+    local msg = string.format("save to: %s",filename);
+    _guihelper.MessageBox(msg);
+end
+
+function TestScene.Test_ExportGltf()
+    local scene = NplOce.Scene.create();
+    local cur_node = scene:addNode("root");
+
+
+    local node = NplOce.ShapeNodeBox.create();
+    node:setValue(1,1,1);
+    cur_node:addChild(node);
+
+    local filename = "test/test.gltf";
+    SceneHelper.saveSceneToGltf(filename,scene,true)
 
     local msg = string.format("save to: %s",filename);
     _guihelper.MessageBox(msg);

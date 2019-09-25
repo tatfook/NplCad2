@@ -661,13 +661,13 @@ end
 function ShapeBuilder.trapezoid(op,top_w,bottom_w,hight,depth,color) 
     local xmin,ymin,zmin = 0,0,0;
     local w = (bottom_w - top_w)/2;
-    x2min = w;
-    z2min = 0;
-    xmax = bottom_w;
-    ymax = hight;
-    zmax = depth;
-    x2max = x2min + top_w;
-    z2max = depth;
+    local x2min = w;
+    local z2min = 0;
+    local xmax = bottom_w;
+    local ymax = hight;
+    local zmax = depth;
+    local x2max = x2min + top_w;
+    local z2max = depth;
 
     local node = NplOce.ShapeNodeWedge.create();
     node:setValue(xmin,ymin,zmin,x2min,z2min,xmax,ymax,zmax,x2max,z2max);
