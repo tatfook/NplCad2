@@ -72,10 +72,12 @@ function ShapeBuilder.runExportFiles(filename)
     end
 end
 -- create a animation
-function ShapeBuilder.createAnimation(name)
+function ShapeBuilder.createAnimation(name,is_enabled)
     local name = name or ShapeBuilder.generateId();
     local animation_manager = NplOce.AnimationManager.getInstance();
     local animation = animation_manager:createAnimation(name);
+    is_enabled = ShapeBuilder.getBoolean(is_enabled);
+    animation:setEnabled(is_enabled);
     ShapeBuilder.cur_animation = animation; 
 end
 -- create a config table before add a channel to cur_animation
@@ -198,13 +200,16 @@ function ShapeBuilder.setAnimationTimeValue_Rotate(time,axis,angle)
         z = 1;
     end
     local rkAxis = vector3d:new(x,y,z)
-    local q = Quaternion:FromAngleAxis(angle, rkAxis);
+    local q = Quaternion:new():FromAngleAxis(angle, rkAxis);
     local value = { q[1], q[2], q[3], q[4] }
     ShapeBuilder.setAnimationTimeValue("rotate", time,value);
 end
-function ShapeBuilder.createJointRoot(name)
+function ShapeBuilder.createJointRoot(name,is_enabled)
     local name = name or ShapeBuilder.generateId();
     local joint = NplOce.Joint.create(name);
+    is_enabled = ShapeBuilder.getBoolean(is_enabled)
+    joint:setEnabled(is_enabled);
+
     ShapeBuilder.getRootNode():addChild(joint)
     ShapeBuilder.root_joint = joint;
     ShapeBuilder.cur_joint = joint;
@@ -806,4 +811,17 @@ function ShapeBuilder.isEmpty(s)
         return true;
     end
     return false;
+end
+function ShapeBuilder.getBoolean(v)
+    if(ShapeBuilder.isEmpty(v))then
+        return false
+    end
+    if(type(v) == "string")then
+        if(string.lower(v) == "false")then
+            return false;
+        else    
+            return true;
+        end
+    end
+    return v;
 end
