@@ -16,6 +16,7 @@ include_once(WIKI_ROOT.."models/abstract/base.page");
 
 NPL.load("(gl)script/ide/System/Encoding/base64.lua");
 local Encoding = commonlib.gettable("System.Encoding");
+NPL.load("(gl)script/ide/log.lua");
 
 local nplcad = inherit(models.abstract.base, gettable("models.nplcad"));
 
@@ -25,6 +26,23 @@ local lastErrorCallstack = "";
 
 function nplcad:api_check()
     return {true}
+end
+-- convert the download path to lower case
+-- @param {string|array} input 
+function nplcad.tolowerPath(input)
+     if(not input)then
+        return
+     end
+     if(type(input) == "string")then
+        input = string.lower(input);
+     elseif(type(input) == "table")then
+        for k,v in ipairs(input) do
+            if(type(v) == "string")then
+                input[k] = string.lower(v);
+            end
+        end
+     end
+     return input;
 end
 function nplcad.copyFiles(input_files,output_root_folder)
     if(not input_files)then
@@ -38,7 +56,6 @@ function nplcad.copyFiles(input_files,output_root_folder)
     return result;
 end
 function nplcad.save_to_file(asset_file_name,output_root_folder)
-
     local content;
     local file = ParaIO.OpenAssetFile(asset_file_name);
     if(file:IsValid()) then	
@@ -46,13 +63,17 @@ function nplcad.save_to_file(asset_file_name,output_root_folder)
         file:close();
     end
     local filename = string.format("%s/%s",output_root_folder,asset_file_name);
+    LOG.std(nil,"info","nplcad.save_to_file", filename);
     if(content)then
+        LOG.std(nil,"info","nplcad.save_to_file content size", #content);
         ParaIO.CreateDirectory(filename);
         local file = ParaIO.open(filename, "w");
         if(file:IsValid()) then	
             file:WriteString(content,#content);
             file:close();
         end
+    else
+        LOG.std(nil,"info","nplcad.save_to_file content is null");
     end
     return filename;
 end
@@ -70,6 +91,37 @@ function nplcad.loadAssetFile(asset_file_name,callback)
     });
     loader:AddAssets(asset_file_name);
     loader:Start();
+end
+-- export bmax to parax
+function nplcad:api_exportBMaxToParaX(input)
+    local content = input.content;
+    if(not content)then
+        return
+    end
+    NPL.load("(gl)Mod/ParaXExporter/main.lua");
+    local ParaXExporter = commonlib.gettable("Mod.ParaXExporter");
+    local filename = "temp/temp.bmax"
+    local parax_filename = "temp/temp.x"
+
+    ParaIO.CreateDirectory(filename);
+    local file = ParaIO.open(filename, "w");
+    if(file:IsValid()) then	
+        file:WriteString(content,#content);
+        file:close();
+    end
+    ParaXExporter:Export(filename, parax_filename, false, true);
+
+    local file = ParaIO.open(parax_filename, "r");
+    local data;
+    if(file:IsValid()) then	
+        data = file:GetText(0,-1);
+        file:close();
+        data = Encoding.base64(data);
+    end
+
+    return {
+        data = data;
+    }
 end
 -- download .x and its textures from assets server and export to gltf
 -- @param input.content - asset path, like this: character/CC/03animals/treemonster/treemonster.x
@@ -104,20 +156,27 @@ end
 -- export .x buffter to gltf, make sure its textures are existed in right path
 -- @param input.content - the buffer of .x file
 function nplcad:api_exportLocalParaXToGltf(input)
+    ParaAsset.SetAssetServerUrl("http://cdn.keepwork.com/update61/assetdownload/update/");
     local content = input.content;
     if(content)then
         content = Encoding.unbase64(content);
         local size = #content;
         local textures = ParaScene.GetParaXTexturesFromBuffer(content,size);
 
-        -- testing write file
+         -- download textures
+        nplcad.loadAssetFile(textures,function()
+            resume();
+        end)
+        yield();
+        local raw_textures = textures;
+        
         local output_root_folder = "temp/parax_to_gltf";
-        ParaScene.ParaXBufferExportTo_glTF_File(content,size,output_root_folder .. "/test_buffer.gltf", textures, false,true);
+        textures = nplcad.copyFiles(textures,output_root_folder);
 
         local data = ParaScene.ParaXBufferExportTo_glTF_String(content,size,false,textures);
         return {
             data = data,
-            textures = textures,
+            textures = raw_textures,
         }
     end
 end
