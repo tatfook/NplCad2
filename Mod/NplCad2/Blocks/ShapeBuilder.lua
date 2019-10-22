@@ -742,6 +742,7 @@ end
 
 
 -- Convert from color string to rgba table, if the type of color is table return color directly
+-- NOTE: the color isn't supported alpha  in nploce 
 -- @param {string} color - can be "#ffffff" or "#ffffffff" with alpha
 -- @return {object} color
 -- @return {number} color[1] - [0-1]
@@ -767,8 +768,7 @@ function ShapeBuilder.converColorToRGBA(color)
         b = b/255;
         a = a/255;
 
-        local v = { r,g,b,a
-        }
+        local v = { r,g,b,a }
         return v;
     end
     return default_color;
