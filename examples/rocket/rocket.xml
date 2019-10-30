@@ -1,0 +1,312 @@
+<xml xmlns="http://www.w3.org/1999/xhtml">
+  <variables>
+    <variable type="" id="o6goBOirc-sC;lOPOA/z" islocal="false" iscloud="false">object0</variable>
+    <variable type="" id="l!k}NWAbAeDCL)TkCk[*" islocal="false" iscloud="false">object1</variable>
+    <variable type="" id="$hzDgkmfb%#s-xqG`oG0" islocal="false" iscloud="false">object2</variable>
+    <variable type="" id="`hm}Y.-%$0Z#t.._LjuG" islocal="false" iscloud="false">i</variable>
+    <variable type="" id="`]lQq(]B8AvkiGc0iK2A" islocal="false" iscloud="false">score</variable>
+  </variables>
+  <block type="createNode" id="%B/0!*8j4xmp`by.Ocdo" x="270" y="230">
+    <field name="var_name" id="l!k}NWAbAeDCL)TkCk[*" variabletype="">object1</field>
+    <field name="value">false</field>
+    <value name="color">
+      <shadow type="colour_picker" id="BSR}R=)A?RV#$6U*ysjY">
+        <field name="COLOUR">#ff0000</field>
+      </shadow>
+    </value>
+    <next>
+      <block type="cylinder" id="*39RdY3|A}o;u{`[4;3V">
+        <value name="op">
+          <shadow type="boolean_op" id="+k5-V.JfA:@{n1uytQ9q">
+            <field name="value">union</field>
+          </shadow>
+        </value>
+        <value name="radius">
+          <shadow type="math_number" id="z;-2,lX@vwAcPtm0^OxB">
+            <field name="NUM">0.8</field>
+          </shadow>
+        </value>
+        <value name="height">
+          <shadow type="math_number" id="l;V015Dc0Vh5{3P9bNT1">
+            <field name="NUM">9</field>
+          </shadow>
+        </value>
+        <value name="color">
+          <shadow type="colour_picker" id="=03}bda]h/(F~uKM|zG9">
+            <field name="COLOUR">#ffffff</field>
+          </shadow>
+        </value>
+        <next>
+          <block type="move" id="740n%D-HOzyG8E02Q+,P">
+            <value name="x">
+              <shadow type="math_number" id="RO.U#!eg{8+Q(.U)1tKT">
+                <field name="NUM">0</field>
+              </shadow>
+            </value>
+            <value name="y">
+              <shadow type="math_number" id="k[C0|]nbpuEvrg`@OzGZ">
+                <field name="NUM">3.5</field>
+              </shadow>
+            </value>
+            <value name="z">
+              <shadow type="math_number" id="r*.lyWYf9=r1r|Kp:$P]">
+                <field name="NUM">0</field>
+              </shadow>
+            </value>
+            <next>
+              <block type="cone" id="R!Z|,ORRUv:JLK){u+,7">
+                <value name="op">
+                  <shadow type="boolean_op" id="4bJvUr|!EX:u#hQ$azZ2">
+                    <field name="value">union</field>
+                  </shadow>
+                </value>
+                <value name="radius1">
+                  <shadow type="math_number" id="LT;$DK7*biLfk52QXru2">
+                    <field name="NUM">0.25</field>
+                  </shadow>
+                </value>
+                <value name="radius2">
+                  <shadow type="math_number" id="[S=|hBvdR)M$g+-)^E;=">
+                    <field name="NUM">0.55</field>
+                  </shadow>
+                </value>
+                <value name="height">
+                  <shadow type="math_number" id="0G|QV*T%9MV?8|#9,?1i">
+                    <field name="NUM">2.5</field>
+                  </shadow>
+                </value>
+                <value name="color">
+                  <shadow type="colour_picker" id="Ek/soe08f;:N,2#C:fxC">
+                    <field name="COLOUR">#ffffff</field>
+                  </shadow>
+                </value>
+                <next>
+                  <block type="move" id="~Xg^?ziPDhX?hLu}k#D2">
+                    <value name="x">
+                      <shadow type="math_number" id="#r.UZjqiothb^IuZras8">
+                        <field name="NUM">0</field>
+                      </shadow>
+                    </value>
+                    <value name="y">
+                      <shadow type="math_number" id="?Q}wRtCG0O_^+AFRAA6p">
+                        <field name="NUM">10.25</field>
+                      </shadow>
+                    </value>
+                    <value name="z">
+                      <shadow type="math_number" id="ib(CrKU715alDXf+HO$h">
+                        <field name="NUM">0</field>
+                      </shadow>
+                    </value>
+                    <next>
+                      <block type="sphere" id="SR4HOnYnTX+dt@U{AY[d">
+                        <value name="op">
+                          <shadow type="boolean_op" id="d|$U2+2btYJ=Ad?yZK(O">
+                            <field name="value">union</field>
+                          </shadow>
+                        </value>
+                        <value name="radius">
+                          <shadow type="math_number" id="DcSWmCgNPtypy{aa_8[7">
+                            <field name="NUM">0.25</field>
+                          </shadow>
+                        </value>
+                        <value name="color">
+                          <shadow type="colour_picker" id="Ib4G,poAE!V)Lzj1s8*?">
+                            <field name="COLOUR">#000000</field>
+                          </shadow>
+                        </value>
+                        <next>
+                          <block type="move" id="|g]KfUc/?X_7Ht6hn++T">
+                            <value name="x">
+                              <shadow type="math_number" id="VBo)s!^5p$S9^w(5E[/u">
+                                <field name="NUM">0</field>
+                              </shadow>
+                            </value>
+                            <value name="y">
+                              <shadow type="math_number" id="U7_m}=-t/R},q_1LrDKG">
+                                <field name="NUM">11.525</field>
+                              </shadow>
+                            </value>
+                            <value name="z">
+                              <shadow type="math_number" id="a1yY*$FK`#3z=J`Arg4_">
+                                <field name="NUM">0</field>
+                              </shadow>
+                            </value>
+                            <next>
+                              <block type="cone" id="`N_.=2W.96%uByNZ$Q8C">
+                                <value name="op">
+                                  <shadow type="boolean_op" id=",unF`0Xu^{9Jhqi!%/Re">
+                                    <field name="value">union</field>
+                                  </shadow>
+                                </value>
+                                <value name="radius1">
+                                  <shadow type="math_number" id="LUbWk+!`4fHG4c/7,xBf">
+                                    <field name="NUM">0.55</field>
+                                  </shadow>
+                                </value>
+                                <value name="radius2">
+                                  <shadow type="math_number" id="bG_S)r{@JGjnwqQWPYW[">
+                                    <field name="NUM">0.8</field>
+                                  </shadow>
+                                </value>
+                                <value name="height">
+                                  <shadow type="math_number" id="z)=!(Q71upCP;f(?YhF7">
+                                    <field name="NUM">1</field>
+                                  </shadow>
+                                </value>
+                                <value name="color">
+                                  <shadow type="colour_picker" id="aN1:V|Cfi)t-4`T~~(A6">
+                                    <field name="COLOUR">#0090ff</field>
+                                  </shadow>
+                                </value>
+                                <next>
+                                  <block type="move" id=")}?u|~Feegl3hpYBjb|2">
+                                    <value name="x">
+                                      <shadow type="math_number" id="j3?zHfzcCT7BwQBR`%;K">
+                                        <field name="NUM">0</field>
+                                      </shadow>
+                                    </value>
+                                    <value name="y">
+                                      <shadow type="math_number" id="M(Ng`Ac|{jN`_s7%.fOX">
+                                        <field name="NUM">8.5</field>
+                                      </shadow>
+                                    </value>
+                                    <value name="z">
+                                      <shadow type="math_number" id="^S;gGN*8HcHSN;b5RQTa">
+                                        <field name="NUM">0</field>
+                                      </shadow>
+                                    </value>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </next>
+  </block>
+  <block type="createNode" id="oJ7(ZmKFvauo1Baz`?1+" x="270" y="870">
+    <field name="var_name" id="$hzDgkmfb%#s-xqG`oG0" variabletype="">object2</field>
+    <field name="value">true</field>
+    <value name="color">
+      <shadow type="colour_picker" id="gNz-ZKtD.h.+Hoa:FS=U">
+        <field name="COLOUR">#ffffff</field>
+      </shadow>
+    </value>
+    <next>
+      <block type="repeat_count" id="77s30Azoh%T=$)%%Z3oz">
+        <field name="var" id="`hm}Y.-%$0Z#t.._LjuG" variabletype="">i</field>
+        <value name="start_index">
+          <shadow type="math_number" id="n1G.X+y.xq~GUV=l/}J@">
+            <field name="NUM">0</field>
+          </shadow>
+        </value>
+        <value name="end_index">
+          <shadow type="math_number" id="UfRM*8{^`+cxqFSMHrl;">
+            <field name="NUM">5</field>
+          </shadow>
+        </value>
+        <statement name="input">
+          <block type="wedge" id="Q/V2l9:f2Qrem{M?%XEZ">
+            <value name="op">
+              <shadow type="boolean_op" id="J]}Rw9@#}Ok4ihK)ql]q">
+                <field name="value">union</field>
+              </shadow>
+            </value>
+            <value name="x">
+              <shadow type="math_number" id="4p#V`I4iF+==D4*R7/4T">
+                <field name="NUM">0.2</field>
+              </shadow>
+            </value>
+            <value name="z">
+              <shadow type="math_number" id="xZ3%LI9.UCw2.U!%9@s7">
+                <field name="NUM">1.5</field>
+              </shadow>
+            </value>
+            <value name="h">
+              <shadow type="math_number" id=")rVmz-g$~C)%ir-M1ct[">
+                <field name="NUM">4</field>
+              </shadow>
+            </value>
+            <value name="color">
+              <shadow type="colour_picker" id="Z0EBNeuRUlE^YW=d9pv6">
+                <field name="COLOUR">#ff0000</field>
+              </shadow>
+            </value>
+            <next>
+              <block type="move" id="|@(EN[f!EdMyqpBOGuOx">
+                <value name="x">
+                  <shadow type="math_number" id="#Lbi[z,Mu4f7nwjkY3mm">
+                    <field name="NUM">0</field>
+                  </shadow>
+                </value>
+                <value name="y">
+                  <shadow type="math_number" id="5+c2s*VF@xeF`eNo$M6?">
+                    <field name="NUM">1</field>
+                  </shadow>
+                </value>
+                <value name="z">
+                  <shadow type="math_number" id="Y:)b_v}$~^G/!]s/?sCU">
+                    <field name="NUM">1</field>
+                  </shadow>
+                </value>
+                <next>
+                  <block type="rotateFromPivot" id="f#k:*O^L$RYsbNzaVh^l">
+                    <value name="axis">
+                      <shadow type="axis" id="}lSpFw^ox0Z[l8$(00f)">
+                        <field name="value">'y'</field>
+                      </shadow>
+                    </value>
+                    <value name="angle">
+                      <shadow type="math_number" id="[juV2{hniq@OjvY@W7+s">
+                        <field name="NUM">0</field>
+                      </shadow>
+                      <block type="math_op" id="wbPu*w0pp4*hLyvprHX8">
+                        <field name="op">*</field>
+                        <value name="left">
+                          <shadow type="math_number" id="#G}Y]9~}I{z:gJyH2ZET">
+                            <field name="NUM"></field>
+                          </shadow>
+                          <block type="getLocalVariable" id="0O.=4k#@TyT^`kKl.jqe">
+                            <field name="var" id="`hm}Y.-%$0Z#t.._LjuG" variabletype="">i</field>
+                          </block>
+                        </value>
+                        <value name="right">
+                          <shadow type="math_number" id="%+r6A@TxpQlJe+PsZF5H">
+                            <field name="NUM">72</field>
+                          </shadow>
+                        </value>
+                      </block>
+                    </value>
+                    <value name="tx">
+                      <shadow type="math_number" id="Y+]~_8R]|lTQSf{XavvT">
+                        <field name="NUM">0</field>
+                      </shadow>
+                    </value>
+                    <value name="ty">
+                      <shadow type="math_number" id=".4-|mayjc2/NN~.(t9/W">
+                        <field name="NUM">0</field>
+                      </shadow>
+                    </value>
+                    <value name="tz">
+                      <shadow type="math_number" id="hhoEKv$jGtgGsa`5sKiH">
+                        <field name="NUM">0</field>
+                      </shadow>
+                    </value>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </statement>
+      </block>
+    </next>
+  </block>
+</xml>
