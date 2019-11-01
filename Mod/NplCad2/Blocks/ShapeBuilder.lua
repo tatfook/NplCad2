@@ -505,10 +505,15 @@ function ShapeBuilder.toJson(indent)
     return json;
 end
 
-function ShapeBuilder.toParaX()
-    local json = ShapeBuilder.scene:toParaX();
-    return json;
+function ShapeBuilder.toStl(swapYZ,bBinary, bEncodeBase64, bIncludeColor)
+    local content = ShapeBuilder.scene:toStl_String(swapYZ,bBinary, bEncodeBase64, bIncludeColor);
+    return content;
 end
+
+--function ShapeBuilder.toParaX()
+--    local json = ShapeBuilder.scene:toParaX();
+--    return json;
+--end
 
 function ShapeBuilder.TestToGltf()
     if(ShapeBuilder.scene.toGltf_File)then

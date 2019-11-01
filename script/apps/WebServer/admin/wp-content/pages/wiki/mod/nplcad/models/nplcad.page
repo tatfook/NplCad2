@@ -245,6 +245,8 @@ function nplcad:api_runcode(input)
         local str;
         if(build_type == "parax")then
             str = nplcad.getcode_export_parax(code)
+        elseif(build_type == "stl")then
+            str = nplcad.getcode_export_stl(code)
         elseif(build_type == "before_scene_code_xml")then
             str = nplcad.getcode_export_before_scene_code_xml(code)
         elseif(build_type == "scene_code_xml")then
@@ -285,6 +287,21 @@ function nplcad.getcode(str)
         %s
         SceneHelper.run(ShapeBuilder.getScene(),false);
         local s = ShapeBuilder.toJson();
+        _G.ShapeBuilder = nil;
+        return s;
+    ]],str);
+    return s;
+end
+function nplcad.getcode_export_stl(str)
+    local s = string.format([[
+        local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
+        local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
+        _G.ShapeBuilder = ShapeBuilder;
+        ShapeBuilder.create()
+        SceneHelper.installMethods(_G, ShapeBuilder)
+        %s
+        SceneHelper.run(ShapeBuilder.getScene(),false);
+        local s = ShapeBuilder.toStl();
         _G.ShapeBuilder = nil;
         return s;
     ]],str);
