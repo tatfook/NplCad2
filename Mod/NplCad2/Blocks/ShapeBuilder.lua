@@ -745,7 +745,19 @@ function ShapeBuilder.ellipsoid(op,r_x, r_z, r_y, color)
     ShapeBuilder._ellipsoid(op,r_y, r_x, r_z, -90, 90, 360,color) 
 end
 
-
+function ShapeBuilder.createFromBrep_test(op,color) 
+    local brep = SceneHelper.readFile("Mod/NplCad2/BrepShapes/sphere.brep",true);
+    return ShapeBuilder.createFromBrep(op,brep,color)
+end
+function ShapeBuilder.createFromBrep(op,brep,color) 
+    if(not brep)then
+        return
+    end
+    local node = NplOce.ShapeNodeBrep.create();
+    node:setValue(brep);
+    ShapeBuilder.addShapeNode(node,op,color) 
+    return node;
+end
 -- Convert from color string to rgba table, if the type of color is table return color directly
 -- NOTE: the color isn't supported alpha  in nploce 
 -- @param {string} color - can be "#ffffff" or "#ffffffff" with alpha

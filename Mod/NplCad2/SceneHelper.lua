@@ -16,6 +16,7 @@ local Encoding = commonlib.gettable("System.Encoding");
 
 local SceneHelper = NPL.export();
 SceneHelper.traversal_nodes_map = {};
+SceneHelper.brep_shapes_cache = {};
 function SceneHelper._clearNodesMap()
     SceneHelper.traversal_nodes_map = {};
 end
@@ -396,3 +397,21 @@ function SceneHelper.installMethods(codeAPI, shape)
 		end
 	end
 end
+function SceneHelper.readFile(filename,forced_load)
+    if(not filename)then
+        return
+    end
+    local node = SceneHelper.brep_shapes_cache[filename] or {};
+    if(not forced_load and node.loaded)then
+        return node.content;
+    end
+    local file = ParaIO.open(filename, "r");
+	if(file:IsValid()) then
+        node.content = file:GetText();
+		file:close();
+	end
+    node.loaded = true;
+    SceneHelper.brep_shapes_cache[filename] = node;
+    return node.content
+end
+
