@@ -39,10 +39,7 @@ function NplCad2:init()
 				icon = "Mod/NplCad2/textures/icon.png",
 			}}
 			LOG.std(nil, "info", "NplCad2", "npl block cad  is registered");
-
-            -- load plugin
-            NplCad2.LoadPlugin(function()
-            end)
+            
 		end
 		return xmlRoot;
 	end)
@@ -72,18 +69,5 @@ end
 function NplCad2:OnDestroy()
 end
 
-function NplCad2.LoadPlugin(callback)
-    local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
-    if(not NplOceConnection)then
-        return
-    end
-    local plugin_path;
-	local debug = ParaEngine.GetAppCommandLineByParam("nplcad_debug", false);
-    if(debug)then
-        plugin_path = "plugins/nploce_d.dll";
-    else
-        plugin_path = "plugins/nploce.dll";
-    end
-    NplOceConnection.load({ npl_oce_dll = plugin_path, activate_callback = "Mod/NplCad2/NplOceConnection.lua", },callback);
-end
+
 

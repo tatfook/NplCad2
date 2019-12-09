@@ -160,6 +160,8 @@ function SceneHelper.visitNode(node,preVisitMethod, postVisitMethod)
 		postVisitMethod(node);
 	end
 end
+
+
 -- running boolean opration in scene if op is found on node
 function SceneHelper.run(scene,bUnionAll)
     if(not scene)then
@@ -415,3 +417,17 @@ function SceneHelper.readFile(filename,forced_load)
     return node.content
 end
 
+function SceneHelper.LoadPlugin(callback)
+    local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
+    if(not NplOceConnection)then
+        return
+    end
+    local plugin_path;
+	local debug = ParaEngine.GetAppCommandLineByParam("nplcad_debug", false);
+    if(debug)then
+        plugin_path = "plugins/nploce_d.dll";
+    else
+        plugin_path = "plugins/nploce.dll";
+    end
+    NplOceConnection.load({ npl_oce_dll = plugin_path, activate_callback = "Mod/NplCad2/NplOceConnection.lua", },callback);
+end
