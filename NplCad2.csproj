@@ -57,6 +57,14 @@
     <None Include="Mod\NplCad2\NplOceSceneDoc.lua" />
     <None Include="Mod\NplCad2\NplOce_Internal.lua" />
     <None Include="Mod\NplCad2\SceneHelper.lua" />
+    <None Include="Mod\NplCad2\stl\RobotArm\Arm01.stl" />
+    <None Include="Mod\NplCad2\stl\RobotArm\Arm02.stl" />
+    <None Include="Mod\NplCad2\stl\RobotArm\Arm03.stl" />
+    <None Include="Mod\NplCad2\stl\RobotArm\Base.stl" />
+    <None Include="Mod\NplCad2\stl\RobotArm\Gripper_Assembly.stl" />
+    <None Include="Mod\NplCad2\stl\RobotArm\Servo_Motor_MG996R.stl" />
+    <None Include="Mod\NplCad2\stl\RobotArm\Servo_Motor_Micro_9g.stl" />
+    <None Include="Mod\NplCad2\stl\RobotArm\Waist.stl" />
     <None Include="Mod\NplCad2\Test\TestScene.lua" />
     <None Include="script\apps\WebServer\admin\wp-content\pages\wiki\mod\nplcad\models\nplcad.page" />
   </ItemGroup>

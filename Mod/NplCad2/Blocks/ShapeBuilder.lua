@@ -563,6 +563,37 @@ function ShapeBuilder.addShapeNode(node,op,color)
     end
     return node;
 end
+-- Import stl file
+function ShapeBuilder.importStl(op,filename,color) 
+    if(not filename)then
+        return
+    end
+    local content;
+    local file = ParaIO.open(filename, "r");
+	if(file:IsValid()) then
+        content = file:GetText(0,-1);
+	end
+    filename = string.format("%stemp/%s",ParaIO.GetCurDirectory(0),filename);
+    if(content)then
+        ParaIO.CreateDirectory(filename);
+        local file = ParaIO.open(filename, "w");
+        if(file:IsValid()) then	
+            file:WriteString(content,#content);
+            file:close();
+        end
+    end
+    if(not ParaIO.DoesFileExist(filename))then
+        return
+    end
+    local shape = NplOce.importStlFile(filename);
+    local node = NplOce.ShapeNode.create();
+    local model = NplOce.ShapeModel.create();
+    model:setShape(shape);
+    node:setDrawable(model);
+    ShapeBuilder.addShapeNode(node,op,color) 
+    return node;
+end
+
 -- Create a cube
 function ShapeBuilder.cube(op,size,color) 
     local node = NplOce.ShapeNodeBox.create();
