@@ -17,6 +17,7 @@ NplOceConnection.load({ npl_oce_dll = "plugins/nploce/nploce_d.dll", activate_ca
 end);
 ------------------------------------------------------------
 --]]
+NPL.load("(gl)script/apps/Aries/Creator/Game/Common/Files.lua");
 NPL.load("(gl)script/ide/System/Core/Color.lua");
 NPL.load("(gl)script/ide/math/Matrix4.lua");
 NPL.load("(gl)script/ide/math/Quaternion.lua");
@@ -26,6 +27,7 @@ local Matrix4 = commonlib.gettable("mathlib.Matrix4");
 local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
 local Quaternion = commonlib.gettable("mathlib.Quaternion");
 local vector3d = commonlib.gettable("mathlib.vector3d");
+local Files = commonlib.gettable("MyCompany.Aries.Game.Common.Files");
 
 local ShapeBuilder = NPL.export();
 ShapeBuilder.Precision_Confusion = 0.0000001
@@ -568,12 +570,13 @@ function ShapeBuilder.importStl(op,filename,color)
     if(not filename)then
         return
     end
+    filename = Files.GetFilePath(filename) or filename;
     local content;
     local file = ParaIO.open(filename, "r");
 	if(file:IsValid()) then
         content = file:GetText(0,-1);
 	end
-    filename = string.format("%stemp/%s",ParaIO.GetCurDirectory(0),filename);
+    filename = string.format("%stemp/%s",ParaIO.GetWritablePath(),filename);
     if(content)then
         ParaIO.CreateDirectory(filename);
         local file = ParaIO.open(filename, "w");
