@@ -35,15 +35,13 @@ function ItemCADCodeBlock:TryCreate(itemStack, entityPlayer, x,y,z, side, data, 
 		local names = commonlib.gettable("MyCompany.Aries.Game.block_types.names");
 		local item = ItemClient.GetItem(names.CodeBlock);
 		if(item) then
-			NPL.load("(gl)script/apps/Aries/Creator/Game/Items/ItemStack.lua");
-			local ItemStack = commonlib.gettable("MyCompany.Aries.Game.Items.ItemStack");
-			local item_stack = ItemStack:new():Init(names.CodeBlock, 1);
-			item_stack:SetDataField("langConfigFile", "npl_cad");
-			--item_stack:SetDataField("nplCode", "-- sphere(1)");
+			itemStack = itemStack or ItemStack:new():Init(names.CodeBlock, 1);
+			itemStack:SetDataField("langConfigFile", "npl_cad");
 
 			-- add purple color to the code block using 8bit color data
 			local color8_data = 0x0800; 
-			return item:TryCreate(item_stack, entityPlayer, x,y,z, side, (data or 0)+color8_data, side_region);
+			data = mathlib.bit.band(0xff, (data or 0)) + color8_data;
+			return item:TryCreate(itemStack, entityPlayer, x,y,z, side, data, side_region);
 		end
 	end
 end
