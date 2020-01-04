@@ -575,8 +575,9 @@ function ShapeBuilder.importStl(op,filename,color)
     local file = ParaIO.open(filename, "r");
 	if(file:IsValid()) then
         content = file:GetText(0,-1);
-	end
-    filename = string.format("%stemp/%s",ParaIO.GetWritablePath(),filename);
+    end
+    
+    filename = string.format("%stemp/cad/import_stl/%s",ParaIO.GetWritablePath(),Files.GetRelativePath(filename));
     if(content)then
         ParaIO.CreateDirectory(filename);
         local file = ParaIO.open(filename, "w");
@@ -701,7 +702,7 @@ function ShapeBuilder.wedge_full(op,x1, y1, z1, x3, z3, x2, y2, z2, x4, z4,color
     ShapeBuilder.addShapeNode(node,op,color) 
     return node;
 end
--- ÌÝÐÎ
+-- ï¿½ï¿½ï¿½ï¿½
 function ShapeBuilder.trapezoid(op,top_w,bottom_w,hight,depth,color) 
     local xmin,ymin,zmin = 0,0,0;
     local w = (bottom_w - top_w)/2;
