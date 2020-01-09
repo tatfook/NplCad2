@@ -565,7 +565,7 @@ function ShapeBuilder.addShapeNode(node,op,color)
     return node;
 end
 -- Import stl file
-function ShapeBuilder.importStl(op,filename,color) 
+function ShapeBuilder.importStl(op,filename,color,swapYZ) 
     if(not filename)then
         return
     end
@@ -588,7 +588,7 @@ function ShapeBuilder.importStl(op,filename,color)
     if(not ParaIO.DoesFileExist(filename))then
         return
     end
-    local shape = NplOce.importStlFile(filename);
+    local shape = NplOce.importStlFile(filename,swapYZ);
     local node = NplOce.ShapeNode.create();
     local model = NplOce.ShapeModel.create();
     model:setShape(shape);
