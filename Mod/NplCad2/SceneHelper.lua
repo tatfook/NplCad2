@@ -9,6 +9,7 @@ local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
 ------------------------------------------------------------
 --]]
 NPL.load("(gl)script/ide/System/Encoding/base64.lua");
+NPL.load("(gl)script/ide/serialization.lua");
 NPL.load("(gl)script/ide/Json.lua");
 NPL.load("(gl)script/ide/math/Matrix4.lua");
 local Matrix4 = commonlib.gettable("mathlib.Matrix4");
@@ -174,6 +175,7 @@ function SceneHelper.run(scene,bUnionAll)
     end
     SceneHelper.runNode(scene_first_node);
     SceneHelper.bindJoints(scene_first_node,scene.joints_map);
+    SceneHelper.combineBoneName(scene_first_node, scene.bone_name_constraint, scene.joints_map)
     return scene;
 end
 function SceneHelper.runNode(top_node)
@@ -337,6 +339,18 @@ function SceneHelper.bindJoints(root_node, joints_map)
         end)
     end
 end
+function SceneHelper.combineBoneName(root_node, bone_name_constraint, joints_map)
+    if(not root_node or not bone_name_constraint or not joints_map)then
+        return
+    end
+    for joint,node_name in pairs(joints_map) do
+        local bone_name = joint:getId();
+        bone_name = SceneHelper.getBoneCombineName(bone_name,bone_name_constraint)
+        if(bone_name)then
+            joint:setId(bone_name);
+        end
+    end
+end
 function SceneHelper.saveSceneToStl(filename, scene, bRun, swapYZ, bBinary, bEncodeBase64, bIncludeColor)
     if(not scene)then 
         return
@@ -430,4 +444,27 @@ function SceneHelper.LoadPlugin(callback)
         plugin_path = "plugins/nploce.dll";
     end
     NplOceConnection.load({ npl_oce_dll = plugin_path, activate_callback = "Mod/NplCad2/NplOceConnection.lua", },callback);
+end
+
+function SceneHelper.getBoneNameConstraint(bone_name,bone_name_constraint)
+    if(not bone_name or not bone_name_constraint)then
+        return
+    end
+    for k,v in pairs(bone_name_constraint) do
+        local names = v.names; 
+        local values = v.values; 
+        for kk,vv in pairs(names) do
+            if(bone_name == vv)then
+                return v;
+            end
+        end
+    end
+end
+function SceneHelper.getBoneCombineName(bone_name,bone_name_constraint)
+    local constraint = SceneHelper.getBoneNameConstraint(bone_name,bone_name_constraint);
+   
+    if(constraint and constraint.values)then
+        bone_name = string.format("%s %s",bone_name,commonlib.serialize(constraint.values));
+    end
+    return bone_name;
 end

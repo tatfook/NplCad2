@@ -17,6 +17,7 @@ NplOceConnection.load({ npl_oce_dll = "plugins/nploce/nploce_d.dll", activate_ca
 end);
 ------------------------------------------------------------
 --]]
+NPL.load("(gl)script/apps/Aries/Creator/Game/game_logic.lua");
 NPL.load("(gl)script/apps/Aries/Creator/Game/Common/Files.lua");
 NPL.load("(gl)script/ide/System/Core/Color.lua");
 NPL.load("(gl)script/ide/math/Matrix4.lua");
@@ -243,6 +244,37 @@ function ShapeBuilder.bindNodeByName(name)
     ShapeBuilder.scene.joints_map[cur_joint] = name;
 end
 
+
+function ShapeBuilder.startBoneNameConstraint()
+    local name = ShapeBuilder.generateId();
+    ShapeBuilder.scene.bone_name_constraint[name] = {};    
+    ShapeBuilder.scene.cur_bone_name_constraint = ShapeBuilder.scene.bone_name_constraint[name];
+end
+function ShapeBuilder.endBoneNameConstraint()
+    if(ShapeBuilder.scene.cur_bone_name_constraint)then
+        ShapeBuilder.scene.cur_bone_name_constraint = nil;
+    end
+end
+-- bind a bone name
+function ShapeBuilder.setBoneConstraint_Name(name)
+    if(not ShapeBuilder.scene.cur_bone_name_constraint)then   
+        return
+    end
+    local names = ShapeBuilder.scene.cur_bone_name_constraint.names or {};
+    names[name] = name;
+    ShapeBuilder.scene.cur_bone_name_constraint.names = names;
+end
+function ShapeBuilder.setBoneConstraint(name,value)
+    if(not ShapeBuilder.scene.cur_bone_name_constraint)then   
+        return
+    end
+    if(name == "min" or name == "max" or name == "servoOffset")then
+        value = value * 3.1415926 / 180;
+    end
+    local values = ShapeBuilder.scene.cur_bone_name_constraint.values or {};
+    values[name] = value;
+    ShapeBuilder.scene.cur_bone_name_constraint.values = values;
+end
 function ShapeBuilder.createNode(name,color,bOp)
     local name = name or ShapeBuilder.generateId();
     local node = NplOce.ShapeNode.create(name);
@@ -483,6 +515,9 @@ function ShapeBuilder.create()
     ShapeBuilder.scene.joints_map = {}; 
     -- clear export file context
     ShapeBuilder.export_file_context = nil;
+
+    ShapeBuilder.scene.bone_name_constraint = {}; 
+
 end
 -- Set a scene for holding shapes
 -- @param {NplOce.Scene} scene
