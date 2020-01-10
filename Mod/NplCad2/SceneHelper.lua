@@ -450,21 +450,25 @@ function SceneHelper.getBoneNameConstraint(bone_name,bone_name_constraint)
     if(not bone_name or not bone_name_constraint)then
         return
     end
+    local result = {};
+    -- union all properties to one table
     for k,v in pairs(bone_name_constraint) do
         local names = v.names; 
         local values = v.values; 
         for kk,vv in pairs(names) do
             if(bone_name == vv)then
-                return v;
+                for kkk,vvv in pairs(values) do
+                    result[kkk] = vvv;
+                end
             end
         end
     end
+    return result;
 end
 function SceneHelper.getBoneCombineName(bone_name,bone_name_constraint)
     local constraint = SceneHelper.getBoneNameConstraint(bone_name,bone_name_constraint);
-   
-    if(constraint and constraint.values)then
-        bone_name = string.format("%s %s",bone_name,commonlib.serialize(constraint.values));
+    if(constraint)then
+        bone_name = string.format("%s %s",bone_name,commonlib.serialize(constraint));
     end
     return bone_name;
 end
