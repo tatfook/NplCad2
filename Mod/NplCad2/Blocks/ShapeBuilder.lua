@@ -224,6 +224,8 @@ function ShapeBuilder.createJoint(name,x,y,z)
 
     ShapeBuilder.setTranslation(joint,x,y,z) 
     ShapeBuilder.cur_joint = joint;
+    -- only map joint for bone constraint name
+    ShapeBuilder.scene.joints_map[joint] = "";
 end
 function ShapeBuilder.endJoint()
     local cur_joint = ShapeBuilder.cur_joint;

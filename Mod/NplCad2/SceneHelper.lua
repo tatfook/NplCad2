@@ -323,20 +323,22 @@ function SceneHelper.bindJoints(root_node, joints_map)
         return
     end
     for joint,node_name in pairs(joints_map) do
-        local top_node = root_node:findNode(node_name);
-        SceneHelper.visitNode(top_node,function(node)
-            local model = node:getDrawable();
-            if(model)then
-                local skin = model:getSkin();
-                if(not skin)then
-                    skin = NplOce.MeshSkin.create();
-                    -- only 1 joint can be bound
-                    skin:setJointCount(1);
-                    model:setSkin(skin);
+        if(node_name and node_name ~= "")then
+            local top_node = root_node:findNode(node_name);
+            SceneHelper.visitNode(top_node,function(node)
+                local model = node:getDrawable();
+                if(model)then
+                    local skin = model:getSkin();
+                    if(not skin)then
+                        skin = NplOce.MeshSkin.create();
+                        -- only 1 joint can be bound
+                        skin:setJointCount(1);
+                        model:setSkin(skin);
+                    end
+                    skin:setJoint(joint,0);
                 end
-                skin:setJoint(joint,0);
-            end
-        end)
+            end)
+        end
     end
 end
 function SceneHelper.combineBoneName(root_node, bone_name_constraint, joints_map)
