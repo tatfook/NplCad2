@@ -9,9 +9,10 @@ local TestScene = NPL.load("Mod/NplCad2/Test/TestScene.lua");
 local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
 NplOceConnection.load({ npl_oce_dll = "plugins/nploce_d.dll" },function(msg)
     NPL.load("Mod/NplCad2/NplOce_Internal.lua");
+	TestScene.Test_setLocalPivot();
     --TestScene.Test_CreateAnimation();
-    TestScene.Test_ExportStl();
-    TestScene.Test_ExportGltf();
+    --TestScene.Test_ExportStl();
+    --TestScene.Test_ExportGltf();
 end);
 ------------------------------------------------------------
 --]]
@@ -406,4 +407,15 @@ function TestScene.Test_ExportGltf()
 
     local msg = string.format("save to: %s",filename);
     _guihelper.MessageBox(msg);
+end
+function TestScene.Test_setLocalPivot()
+	local scene = NplOce.Scene.create();
+    local cur_node = scene:addNode("root");
+	local pivot = cur_node:getLocalPivot();
+	commonlib.echo("===========Test_setLocalPivot");
+	commonlib.echo({pivot[1],pivot[2],pivot[3]});
+	cur_node:setLocalPivot(1,1,1);
+	local pivot = cur_node:getLocalPivot();
+	commonlib.echo("===========Test_setLocalPivot 222");
+	commonlib.echo(pivot);
 end

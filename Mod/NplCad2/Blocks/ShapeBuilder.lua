@@ -245,8 +245,9 @@ function ShapeBuilder.bindNodeByName(name)
     -- binding joints at last
     ShapeBuilder.scene.joints_map[cur_joint] = name;
 end
-
-
+function ShapeBuilder.rotateJoint(axis,angle)
+	ShapeBuilder.multiRotationToNode(ShapeBuilder.cur_joint,axis,angle)
+end
 function ShapeBuilder.startBoneNameConstraint()
     local name = ShapeBuilder.generateId();
     ShapeBuilder.scene.bone_name_constraint[name] = {};    
@@ -325,6 +326,20 @@ function ShapeBuilder.deleteNode(name)
     end
 end
 
+function ShapeBuilder.setLocalPivotOffset(x,y,z)
+	local node = ShapeBuilder.getSelectedNode();
+	node:setLocalPivot(-x,-y,-z);
+end
+function ShapeBuilder.setLocalPivotOffset_Node(name,x,y,z)
+	if(ShapeBuilder.isEmpty(name))then
+        return
+    end
+    local node = ShapeBuilder.getRootNode():findNode(name);
+	if(node)then
+		node:setLocalPivot(-x,-y,-z);
+	end
+end
+
 function ShapeBuilder.move(x,y,z)
     local node = ShapeBuilder.getSelectedNode();
     ShapeBuilder.translate(node,x,y,z);
@@ -349,7 +364,7 @@ function ShapeBuilder.scaleNode(name,x,y,z)
 end
 
 function ShapeBuilder.rotate(axis,angle)
-    ShapeBuilder.setRotationFromNode(ShapeBuilder.getSelectedNode(),axis,angle);
+    ShapeBuilder.multiRotationToNode(ShapeBuilder.getSelectedNode(),axis,angle);
 end
 function ShapeBuilder.rotateNode(name,axis,angle)
     if(ShapeBuilder.isEmpty(name))then
@@ -357,14 +372,14 @@ function ShapeBuilder.rotateNode(name,axis,angle)
     end
     local node = ShapeBuilder.getRootNode():findNode(name);
     if(node)then
-        ShapeBuilder.setRotationFromNode(node,axis,angle);
+        ShapeBuilder.multiRotationToNode(node,axis,angle);
     end
 end
 -- Set rotation
 -- @param {NplOce.ShapeNode} node
 -- @param {string} axis - "x" or "y" or "z"
 -- @param {number} angle -degree
-function ShapeBuilder.setRotationFromNode(node,axis,angle)
+function ShapeBuilder.setRotationToNode(node,axis,angle)
     if(not node)then
         return
     end
@@ -388,6 +403,43 @@ function ShapeBuilder.setRotationFromNode(node,axis,angle)
     end
     node:setRotation(x,y,z,angle)
 end
+-- Set rotation
+-- @param {NplOce.ShapeNode} node
+-- @param {string} axis - "x" or "y" or "z"
+-- @param {number} angle -degree
+function ShapeBuilder.multiRotationToNode(node,axis,angle)
+    if(not node)then
+        return
+    end
+    angle = angle or 0;
+    angle = angle * math.pi * (1.0 / 180.0);
+	
+	if(axis == "x")then
+        x = 1;
+        y = 0;
+        z = 0;
+    end
+    if(axis == "y")then
+        x = 0;
+        y = 1;
+        z = 0;
+    end
+    if(axis == "z")then
+        x = 0;
+        y = 0;
+        z = 1;
+    end
+    local rkAxis = vector3d:new(x,y,z)
+    local q_input = Quaternion:new():FromAngleAxis(angle, rkAxis);
+	local matrix = Matrix4:new(node:getRotationMatrix());
+	local q = Quaternion:new();
+	q:FromRotationMatrix(matrix);
+	q = q_input * q;
+	matrix = q:ToRotationMatrix();
+	
+    node:setRotationMatrix(matrix)
+end
+
 function ShapeBuilder.rotateFromPivot(axis,angle,pivot_x,pivot_y,pivot_z)
     ShapeBuilder.SetRotationFromPivot(ShapeBuilder.getSelectedNode(),axis,angle,pivot_x or 0,pivot_y or 0,pivot_z or 0)
 end
@@ -422,6 +474,7 @@ function ShapeBuilder.SetRotationFromPivot(node,axis,angle,pivot_x,pivot_y,pivot
     if(axis == "z")then
         rotate_matrix = Matrix4.rotationZ(angle);
     end
+
     local world_matrix = Matrix4:new(node:getWorldMatrix());
     local matrix_1 = Matrix4.translation({-pivot_x,-pivot_y,-pivot_z})
     local matrix_2 = Matrix4.translation({pivot_x,pivot_y,pivot_z})

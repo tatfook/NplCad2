@@ -239,7 +239,7 @@ function nplcad:api_runcode(input)
         end
     end);
     yield();
-    if(code)then
+    if(code and code ~= "")then
         local build_type = input.build_type
         local func_str = nplcad.do_string;
         local str;
