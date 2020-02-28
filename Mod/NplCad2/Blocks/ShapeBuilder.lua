@@ -278,6 +278,30 @@ function ShapeBuilder.setBoneConstraint(name,value)
     values[name] = value;
     ShapeBuilder.scene.cur_bone_name_constraint.values = values;
 end
+function ShapeBuilder.pushNode(op,name,color,bOp)
+	local name = name or ShapeBuilder.generateId();
+    local node = NplOce.ShapeNode.create(name);
+	node:setOp(op);
+    node:setOpEnabled(bOp);
+    node:setColor(ShapeBuilder.converColorToRGBA(color));
+
+	local parent = ShapeBuilder.cur_node or ShapeBuilder.getRootNode();
+    parent:addChild(node)
+	ShapeBuilder.cur_node = node;
+    ShapeBuilder.selected_node = node;
+
+	table.insert(ShapeBuilder.scene.pushed_node_list,node);
+    return node
+end
+function ShapeBuilder.popNode()
+	local len = #ShapeBuilder.scene.pushed_node_list;
+	local node = ShapeBuilder.scene.pushed_node_list[len];
+	local parent = node:getParent() or ShapeBuilder.getRootNode();
+
+	table.remove(ShapeBuilder.scene.pushed_node_list,len);
+    ShapeBuilder.cur_node = parent;
+    ShapeBuilder.selected_node = node;
+end
 function ShapeBuilder.createNode(name,color,bOp)
     local name = name or ShapeBuilder.generateId();
     local node = NplOce.ShapeNode.create(name);
@@ -573,6 +597,7 @@ function ShapeBuilder.create()
 
     ShapeBuilder.scene.bone_name_constraint = {}; 
 
+	ShapeBuilder.scene.pushed_node_list = {};
 end
 -- Set a scene for holding shapes
 -- @param {NplOce.Scene} scene
