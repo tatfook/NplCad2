@@ -590,6 +590,8 @@ function ShapeBuilder.create()
     ShapeBuilder.scene = NplOce.Scene.create(ShapeBuilder.generateId());
     ShapeBuilder.cur_node = ShapeBuilder.scene:addNode(ShapeBuilder.generateId());
     ShapeBuilder.root_node = ShapeBuilder.cur_node; 
+    ShapeBuilder.selected_node = ShapeBuilder.cur_node;
+
     -- save binding relation temporarily before running boolean op in scene
     ShapeBuilder.scene.joints_map = {}; 
     -- clear export file context
