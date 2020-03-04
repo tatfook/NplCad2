@@ -318,8 +318,9 @@ function nplcad.getcode_export_parax(str)
         ShapeBuilder.create()
         SceneHelper.installMethods(_G, ShapeBuilder)
         %s
-        SceneHelper.run(ShapeBuilder.getScene(),false);
-        local s = NplOce.exportToParaX(ShapeBuilder.getScene())
+        local scene = ShapeBuilder.getScene();
+        SceneHelper.run(scene,false);
+        local s = SceneHelper.toParaX(scene);
         s = Encoding.base64(s);
         _G.ShapeBuilder = nil;
         return s;

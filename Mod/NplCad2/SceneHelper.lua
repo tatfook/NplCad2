@@ -376,12 +376,28 @@ function SceneHelper.saveSceneToGltf(filename,scene,bRun)
     local content = scene:toGltf_String();
     return SceneHelper.saveFile(filename,content);
 end
+function SceneHelper.toParaX(scene)
+    if(not scene)then 
+        return
+    end
+    local template = SceneHelper.loadParaXTemplateFromDisc();
+    local max_triangle_cnt = scene.max_triangle_cnt or 0;
+    local data = scene:toParaX(max_triangle_cnt);
+	if (template ~= "") then
+        if(data ~= nil)then
+            local Encoding = commonlib.gettable("System.Encoding");
+		    data = Encoding.unbase64(data);
+		    template = template..data;
+            return template;
+        end
+	end
+end
 function SceneHelper.saveSceneToParaX(filename,scene)
     if(not scene)then 
         return
     end
     SceneHelper.run(scene,false);
-    local content = NplOce.exportToParaX(scene,true) or "";
+    local content = SceneHelper.toParaX(scene) or "";
     return SceneHelper.saveFile(filename,content);
 end
 function SceneHelper.saveFile(filename,content)
@@ -473,4 +489,21 @@ function SceneHelper.getBoneCombineName(bone_name,bone_name_constraint)
         bone_name = string.format("%s %s",bone_name,commonlib.serialize(constraint));
     end
     return bone_name;
+end
+-- load parax template 
+function SceneHelper.loadParaXTemplateFromDisc()
+    local parax_template_data = SceneHelper.parax_template_data;
+    if(parax_template_data)then
+        return parax_template_data;
+    end
+    local templateName = "Mod/NplCad2/template.txt";
+	if(ParaIO.DoesFileExist(templateName, true)) then
+		local template_file = ParaIO.open(templateName, "r");
+		if(template_file:IsValid()) then
+			parax_template_data = template_file:GetText(0, -1);
+			template_file:close();
+		end
+	end
+    SceneHelper.parax_template_data = parax_template_data;
+    return parax_template_data;
 end

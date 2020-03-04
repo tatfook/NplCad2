@@ -463,7 +463,16 @@ function ShapeBuilder.multiRotationToNode(node,axis,angle)
 	
     node:setRotationMatrix(matrix)
 end
-
+function ShapeBuilder.setRotationQuaternion(x,y,z,w)
+    local node = ShapeBuilder.getSelectedNode();
+    ShapeBuilder.setRotationQuaternionToNode(node,x,y,z,w);
+end
+function ShapeBuilder.setRotationQuaternionToNode(node,x,y,z,w)
+    if(not node)then
+        return
+    end
+    node:setRotationQuaternion({x,y,z,w});
+end
 function ShapeBuilder.rotateFromPivot(axis,angle,pivot_x,pivot_y,pivot_z)
     ShapeBuilder.SetRotationFromPivot(ShapeBuilder.getSelectedNode(),axis,angle,pivot_x or 0,pivot_y or 0,pivot_z or 0)
 end
@@ -588,10 +597,10 @@ function ShapeBuilder.create()
     local animation_manager = NplOce.AnimationManager.getInstance();
     animation_manager:clear();
     ShapeBuilder.scene = NplOce.Scene.create(ShapeBuilder.generateId());
+    ShapeBuilder.scene.max_triangle_cnt = 0;
     ShapeBuilder.cur_node = ShapeBuilder.scene:addNode(ShapeBuilder.generateId());
     ShapeBuilder.root_node = ShapeBuilder.cur_node; 
     ShapeBuilder.selected_node = ShapeBuilder.cur_node;
-
     -- save binding relation temporarily before running boolean op in scene
     ShapeBuilder.scene.joints_map = {}; 
     -- clear export file context
@@ -628,10 +637,9 @@ function ShapeBuilder.toStl(swapYZ,bBinary, bEncodeBase64, bIncludeColor)
     return content;
 end
 
---function ShapeBuilder.toParaX()
---    local json = ShapeBuilder.scene:toParaX();
---    return json;
---end
+function ShapeBuilder.toParaX()
+    return SceneHelper.toParaX(ShapeBuilder.scene)
+end
 
 function ShapeBuilder.TestToGltf()
     if(ShapeBuilder.scene.toGltf_File)then
@@ -993,3 +1001,11 @@ function ShapeBuilder.getBoolean(v)
     end
     return v;
 end
+-- limit triangle number for exporting model
+function ShapeBuilder.setMaxTrianglesCnt(v)
+    if(v < 0)then
+        v = 0;
+    end
+    ShapeBuilder.scene.max_triangle_cnt = v;
+end
+ 

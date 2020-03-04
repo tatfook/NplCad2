@@ -9,15 +9,18 @@ local TestScene = NPL.load("Mod/NplCad2/Test/TestScene.lua");
 local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
 NplOceConnection.load({ npl_oce_dll = "plugins/nploce_d.dll" },function(msg)
     NPL.load("Mod/NplCad2/NplOce_Internal.lua");
-	TestScene.Test_setLocalPivot();
+    TestScene.Test_setRotationQuaternion();
+	--TestScene.Test_setLocalPivot();
     --TestScene.Test_CreateAnimation();
     --TestScene.Test_ExportStl();
     --TestScene.Test_ExportGltf();
 end);
 ------------------------------------------------------------
 --]]
+NPL.load("(gl)script/ide/math/Quaternion.lua");
 NPL.load("(gl)script/ide/math/Matrix4.lua");
 local Matrix4 = commonlib.gettable("mathlib.Matrix4");
+local Quaternion = commonlib.gettable("mathlib.Quaternion");
 
 local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
 
@@ -44,12 +47,6 @@ function TestScene.Test1(filename)
 		file:WriteString(s);
 		file:close();
 	end
-end
-function TestScene.Test_toParaX(filename)
-    local cube = NplOce.cube(1,1,1);
-   
-    local mesh = NplOce.Mesh.create(cube,1,0,0,1);
-    NplOce.exportToParaX(mesh, filename)
 end
 
 
@@ -116,7 +113,7 @@ function TestScene.Test_ShapePlus()
             local cur_node = scene:addNode("root");
             cur_node:addChild(node);
 
-            local s = NplOce.exportToParaX(scene) or "";
+            local s = SceneHelper.toParaX(scene) or "";
             local len = string.len(s);
             if(len > 0)then
                 ParaIO.CreateDirectory(filename);
@@ -155,10 +152,10 @@ function TestScene.Test_CustomShapeNode()
     
 
     TestScene.SaveFile("test/CustomShapeNode.before.xml",SceneHelper.getXml(scene))
-    TestScene.SaveFile("test/CustomShapeNode.before.x",NplOce.exportToParaX(scene))
+    TestScene.SaveFile("test/CustomShapeNode.before.x",SceneHelper.toParaX(scene))
     SceneHelper.run(scene,true)
     TestScene.SaveFile("test/CustomShapeNode.xml",SceneHelper.getXml(scene))
-    TestScene.SaveFile("test/CustomShapeNode.x",NplOce.exportToParaX(scene))
+    TestScene.SaveFile("test/CustomShapeNode.x",SceneHelper.toParaX(scene))
     
     _guihelper.MessageBox("done");
 end
@@ -219,7 +216,7 @@ function TestScene.Test_MirrorNode()
     cur_node:addChild(mirror_node);
 
 
-    TestScene.SaveFile("test/Test_MirrorNode.x",NplOce.exportToParaX(scene))
+    TestScene.SaveFile("test/Test_MirrorNode.x",SceneHelper.toParaX(scene))
 end
 function TestScene.Test_Skin()
     local scene = NplOce.Scene.create();
@@ -299,7 +296,7 @@ function TestScene.Test_LeftHandCoordinate()
     
     local path_x = "test/LeftHandCoordinate.x";
     local path_gltf = "test/LeftHandCoordinate.gltf";
-    TestScene.SaveFile(path_x,NplOce.exportToParaX(scene));
+    TestScene.SaveFile(path_x,SceneHelper.toParaX(scene));
     TestScene.SaveFile(path_gltf,scene:toGltf_String(false));
 
     local msg = string.format("save to: %s %s",path_x,path_gltf);
@@ -325,7 +322,7 @@ function TestScene.Test_XValue()
 
     local path_x = "test/XValue.x";
     local path_gltf = "test/XValue.gltf";
-    TestScene.SaveFile(path_x,NplOce.exportToParaX(scene));
+    TestScene.SaveFile(path_x,SceneHelper.toParaX(scene));
     --TestScene.SaveFile(path_gltf,scene:toGltf_String(false));
 
     local msg = string.format("save to: %s %s",path_x,path_gltf);
@@ -418,4 +415,36 @@ function TestScene.Test_setLocalPivot()
 	local pivot = cur_node:getLocalPivot();
 	commonlib.echo("===========Test_setLocalPivot 222");
 	commonlib.echo(pivot);
+end
+
+function TestScene.Test_setRotationQuaternion()
+    local scene = NplOce.Scene.create();
+    local cur_node = scene:addNode("root");
+
+    local node = NplOce.ShapeNodeBox.create();
+    node:setValue(1,1,1);
+    cur_node:addChild(node);
+
+    local node2 = NplOce.ShapeNodeBox.create();
+    node2:setValue(1,1,1);
+    node2:setColor({1,1,0,1});
+    cur_node:addChild(node2);
+
+    local matrix = Matrix4.rotationX(45)
+    local q = Quaternion:new();
+    q:FromRotationMatrix(matrix);
+    local v = {q[1],q[2],q[3],q[4]}
+    commonlib.echo("=============setRotationQuaternion");
+    commonlib.echo(v);
+    node2:setRotationQuaternion(v);
+    
+    local result = node2:getRotationQuaternion();
+    commonlib.echo("=============getRotationQuaternion");
+    commonlib.echo(result);
+    local filename = "test/Test_setRotationQuaternion.gltf";
+    SceneHelper.saveSceneToGltf(filename,scene,true)
+
+    local msg = string.format("save to: %s",filename);
+    _guihelper.MessageBox(msg);
+    
 end
