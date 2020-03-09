@@ -99,7 +99,7 @@ function ShapeBuilder.endChannel()
     if(cur_channel_config and cur_animation)then
         -- get target 
         local name = cur_channel_config.name;
-        local node = ShapeBuilder.getRootNode():findNode(name);
+        local node = ShapeBuilder.getCurStage():findNode(name);
         if(node)then
             local curve_type = cur_channel_config.curve_type;
             local timeValues = cur_channel_config.timeValues or {};
@@ -278,6 +278,22 @@ function ShapeBuilder.setBoneConstraint(name,value)
     values[name] = value;
     ShapeBuilder.scene.cur_bone_name_constraint.values = values;
 end
+function ShapeBuilder.getCurStage()
+    return ShapeBuilder.cur_stage;
+end
+-- the stage node is in top of a single document
+function ShapeBuilder.pushStage(op,name,color,bOp)
+    local node = ShapeBuilder.pushNode(op,name,color,bOp)
+	ShapeBuilder.pre_stage = ShapeBuilder.cur_stage;
+	ShapeBuilder.cur_stage = node;
+
+    return node;
+end
+function ShapeBuilder.popStage()
+    ShapeBuilder.popNode()
+	ShapeBuilder.cur_stage = ShapeBuilder.pre_stage;
+    ShapeBuilder.pre_stage = nil;
+end
 function ShapeBuilder.pushNode(op,name,color,bOp)
 	local name = name or ShapeBuilder.generateId();
     local node = NplOce.ShapeNode.create(name);
@@ -301,14 +317,18 @@ function ShapeBuilder.popNode()
 	table.remove(ShapeBuilder.scene.pushed_node_list,len);
     ShapeBuilder.cur_node = parent;
     ShapeBuilder.selected_node = node;
+    
 end
+
+
 function ShapeBuilder.createNode(name,color,bOp)
     local name = name or ShapeBuilder.generateId();
     local node = NplOce.ShapeNode.create(name);
     node:setOpEnabled(bOp);
     node:setColor(ShapeBuilder.converColorToRGBA(color));
 
-    ShapeBuilder.getRootNode():addChild(node)
+    local parent = ShapeBuilder.getCurStage();
+    parent:addChild(node)
     ShapeBuilder.cur_node = node;
     ShapeBuilder.selected_node = node;
     return node
@@ -317,7 +337,7 @@ function ShapeBuilder.cloneNodeByName(op,name,color)
     if(ShapeBuilder.isEmpty(name))then
         return
     end
-    local node = ShapeBuilder.getRootNode():findNode(name);
+    local node = ShapeBuilder.getCurStage():findNode(name);
     return ShapeBuilder._cloneNode(node,op,color)
 end
 function ShapeBuilder.cloneNode(op,color)
@@ -340,7 +360,7 @@ function ShapeBuilder.deleteNode(name)
     if(ShapeBuilder.isEmpty(name))then
         return
     end
-    local node = ShapeBuilder.getRootNode():findNode(name);
+    local node = ShapeBuilder.getCurStage():findNode(name);
     if(node)then
         if(node == ShapeBuilder.cur_node or node == ShapeBuilder.selected_node )then
             return
@@ -358,7 +378,7 @@ function ShapeBuilder.setLocalPivotOffset_Node(name,x,y,z)
 	if(ShapeBuilder.isEmpty(name))then
         return
     end
-    local node = ShapeBuilder.getRootNode():findNode(name);
+    local node = ShapeBuilder.getCurStage():findNode(name);
 	if(node)then
 		node:setLocalPivot(-x,-y,-z);
 	end
@@ -372,7 +392,7 @@ function ShapeBuilder.moveNode(name,x,y,z)
     if(ShapeBuilder.isEmpty(name))then
         return
     end
-    local node = ShapeBuilder.getRootNode():findNode(name);
+    local node = ShapeBuilder.getCurStage():findNode(name);
     if(node)then
         ShapeBuilder.translate(node,x,y,z);
     end
@@ -383,7 +403,7 @@ function ShapeBuilder.scale(x,y,z)
     ShapeBuilder.setScale(node,x,y,z);
 end
 function ShapeBuilder.scaleNode(name,x,y,z)
-    local node = ShapeBuilder.getRootNode():findNode(name);
+    local node = ShapeBuilder.getCurStage():findNode(name);
     ShapeBuilder.setScale(node,x,y,z);
 end
 
@@ -394,7 +414,7 @@ function ShapeBuilder.rotateNode(name,axis,angle)
     if(ShapeBuilder.isEmpty(name))then
         return
     end
-    local node = ShapeBuilder.getRootNode():findNode(name);
+    local node = ShapeBuilder.getCurStage():findNode(name);
     if(node)then
         ShapeBuilder.multiRotationToNode(node,axis,angle);
     end
@@ -480,7 +500,7 @@ function ShapeBuilder.rotateNodeFromPivot(name,axis,angle,pivot_x,pivot_y,pivot_
     if(ShapeBuilder.isEmpty(name))then
         return
     end
-    local node = ShapeBuilder.getRootNode():findNode(name);
+    local node = ShapeBuilder.getCurStage():findNode(name);
     if(node)then
         ShapeBuilder.SetRotationFromPivot(node,axis,angle,pivot_x or 0,pivot_y or 0,pivot_z or 0)
     end
@@ -508,22 +528,16 @@ function ShapeBuilder.SetRotationFromPivot(node,axis,angle,pivot_x,pivot_y,pivot
         rotate_matrix = Matrix4.rotationZ(angle);
     end
 
-    local world_matrix = Matrix4:new(node:getWorldMatrix());
+    local matrix = Matrix4:new(node:getMatrix());
+
     local matrix_1 = Matrix4.translation({-pivot_x,-pivot_y,-pivot_z})
     local matrix_2 = Matrix4.translation({pivot_x,pivot_y,pivot_z})
-    local world_transform_matrix = world_matrix * matrix_1 * rotate_matrix * matrix_2;
+    local transform_matrix = matrix * matrix_1 * rotate_matrix * matrix_2;
+    node:setMatrix(transform_matrix)
 
-    local transform_matrix = world_transform_matrix;
-    local parent = node:getParent();
-    if(parent)then
-        local parent_world_matrix = Matrix4:new(parent:getWorldMatrix());
-        local inverse_matrix = parent_world_matrix:inverse();
-		transform_matrix = Matrix4.__mul(world_transform_matrix,inverse_matrix);
-    end
-    node:setMatrix(transform_matrix);
 end
 function ShapeBuilder.mirrorNode(name,axis_plane,x,y,z) 
-    local node = ShapeBuilder.getRootNode():findNode(name);
+    local node = ShapeBuilder.getCurStage():findNode(name);
     ShapeBuilder._mirrorNode(node,axis_plane,x,y,z);
 end
 function ShapeBuilder.mirror(axis_plane,x,y,z) 
@@ -555,7 +569,7 @@ function ShapeBuilder._mirrorNode(node,axis_plane,x,y,z)
         if(model)then
             local shape = model:getShape();
             if(shape)then
-                local w_matrix = SceneHelper.drawableTransform(model,parent);
+                local w_matrix = SceneHelper.getTranformMatrixFrom(node,top_node)
                 local matrix_shape = Matrix4:new(shape:getMatrix());
                 w_matrix = matrix_shape * w_matrix;
 
@@ -601,6 +615,7 @@ function ShapeBuilder.create()
     ShapeBuilder.cur_node = ShapeBuilder.scene:addNode(ShapeBuilder.generateId());
     ShapeBuilder.root_node = ShapeBuilder.cur_node; 
     ShapeBuilder.selected_node = ShapeBuilder.cur_node;
+    ShapeBuilder.cur_stage = ShapeBuilder.cur_node;
     -- save binding relation temporarily before running boolean op in scene
     ShapeBuilder.scene.joints_map = {}; 
     -- clear export file context

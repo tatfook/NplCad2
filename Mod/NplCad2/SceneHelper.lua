@@ -259,6 +259,23 @@ function SceneHelper.runOpSequence(node, action_params)
     end
 end
 
+function SceneHelper.getTranformMatrixFrom(from,to)
+    if(not from or not to)then
+        return
+    end
+    local m = Matrix4:new(from:getMatrix());
+    if(from == to)then
+        return m;
+    end
+    local parent = from:getParent();
+    while(parent)do
+        m = m * Matrix4:new(parent:getMatrix());
+        if(parent == to)then
+            return m
+        end
+        parent = parent:getParent();
+    end
+end
 function SceneHelper.drawableTransform(drawable,top_node)
     local operationWorldMatrix = Matrix4:new(top_node:getWorldMatrix());
     local node = drawable:getNode();
