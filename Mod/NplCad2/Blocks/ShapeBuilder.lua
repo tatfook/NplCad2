@@ -23,12 +23,15 @@ NPL.load("(gl)script/ide/System/Core/Color.lua");
 NPL.load("(gl)script/ide/math/Matrix4.lua");
 NPL.load("(gl)script/ide/math/Quaternion.lua");
 NPL.load("(gl)script/ide/math/vector.lua");
+NPL.load("(gl)script/ide/System/Encoding/base64.lua");
 local Color = commonlib.gettable("System.Core.Color");
 local Matrix4 = commonlib.gettable("mathlib.Matrix4");
 local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
 local Quaternion = commonlib.gettable("mathlib.Quaternion");
 local vector3d = commonlib.gettable("mathlib.vector3d");
 local Files = commonlib.gettable("MyCompany.Aries.Game.Common.Files");
+local Encoding = commonlib.gettable("System.Encoding");
+
 
 local ShapeBuilder = NPL.export();
 ShapeBuilder.Precision_Confusion = 0.0000001
@@ -704,7 +707,33 @@ function ShapeBuilder.addShapeNode(node,op,color)
     end
     return node;
 end
+-- Import brep file
+function ShapeBuilder.importBrepFromStr(op, color, swapYZ, isBase64, data) 
+    if(isBase64)then
+        data = Encoding.unbase64(data);
+    end
+    local shape = NplOce.import(data);
+    local node = NplOce.ShapeNode.create();
+    local model = NplOce.ShapeModel.create();
+    model:setShape(shape);
+    node:setDrawable(model);
+    ShapeBuilder.addShapeNode(node,op,color) 
+    return node;
+end
+
 -- Import stl file
+function ShapeBuilder.importStlFromStr(op, color, swapYZ, isBase64, data) 
+    if(isBase64)then
+        data = Encoding.unbase64(data);
+    end
+    local shape = NplOce.importStlBuffer(data,#data,swapYZ);
+    local node = NplOce.ShapeNode.create();
+    local model = NplOce.ShapeModel.create();
+    model:setShape(shape);
+    node:setDrawable(model);
+    ShapeBuilder.addShapeNode(node,op,color) 
+    return node;
+end
 function ShapeBuilder.importStl(op,filename,color,swapYZ) 
     if(not filename)then
         return
@@ -715,26 +744,7 @@ function ShapeBuilder.importStl(op,filename,color,swapYZ)
 	if(file:IsValid()) then
         content = file:GetText(0,-1);
     end
-    
-    filename = string.format("%stemp/cad/import_stl/%s",ParaIO.GetWritablePath(),Files.GetRelativePath(filename));
-    if(content)then
-        ParaIO.CreateDirectory(filename);
-        local file = ParaIO.open(filename, "w");
-        if(file:IsValid()) then	
-            file:WriteString(content,#content);
-            file:close();
-        end
-    end
-    if(not ParaIO.DoesFileExist(filename))then
-        return
-    end
-    local shape = NplOce.importStlFile(filename,swapYZ);
-    local node = NplOce.ShapeNode.create();
-    local model = NplOce.ShapeModel.create();
-    model:setShape(shape);
-    node:setDrawable(model);
-    ShapeBuilder.addShapeNode(node,op,color) 
-    return node;
+    return ShapeBuilder.importStlFromStr(op, color, swapYZ, false, content);
 end
 
 -- Create a cube
