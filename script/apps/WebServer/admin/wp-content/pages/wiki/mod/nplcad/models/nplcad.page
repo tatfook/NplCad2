@@ -9,10 +9,18 @@ http://localhost:8099/api/mod/nplcad/models/nplcad/runcode
 http://localhost:8099/api/mod/nplcad/models/nplcad/loadblocklyeditor?blocktype=paracraft
 http://localhost:8099/api/mod/nplcad/models/nplcad/loadblocklyeditor?blocktype=blockcad
 http://localhost:8099/api/mod/nplcad/models/nplcad/loadblocklyeditor?blocktype=npl_microbit
+http://localhost:8099/api/mod/nplcad/models/nplcad/loadeditor
+http://localhost:8099/api/mod/nplcad/models/nplcad/saveeditor
 ]]
 
 include_once(WIKI_ROOT.."models/abstract/base.page");
 
+
+NPL.load("(gl)script/ide/System/localserver/UrlHelper.lua");
+local UrlHelper = commonlib.gettable("System.localserver.UrlHelper");
+
+NPL.load("(gl)Mod/NplCad2/main.lua");
+local NplCad2 = commonlib.gettable("Mod.NplCad2")
 
 NPL.load("(gl)script/ide/System/Encoding/base64.lua");
 local Encoding = commonlib.gettable("System.Encoding");
@@ -179,6 +187,53 @@ function nplcad:api_exportLocalParaXToGltf(input)
             textures = raw_textures,
         }
     end
+end
+-- load editor with json
+function nplcad:api_loadeditor(input)
+    local editor_id = input.editor_id;
+    if(not editor_id or editor_id == "")then
+        return { success = false }
+    end
+    editor_id = UrlHelper.url_decode(editor_id)
+    local content;
+    local filename = string.format("%snplcad_editor/%s.json",GameLogic.GetWorldDirectory(), editor_id)
+	if(not ParaIO.DoesFileExist(filename)) then
+        return { success = false }
+    end
+
+     local file = ParaIO.open(filename, "r");
+	if(file:IsValid()) then
+		content = file:GetText();
+		file:close();
+		resume();
+	end
+    yield();
+    return {
+        success = true,
+        data = content,
+    }
+end
+-- save editor with json
+function nplcad:api_saveeditor(input)
+    local content = input.content;
+    local editor_id = input.editor_id;
+    if(not editor_id or editor_id == "")then
+        return { success = false}
+    end
+    editor_id = UrlHelper.url_decode(editor_id)
+
+    local filename = string.format("%snplcad_editor/%s.json",GameLogic.GetWorldDirectory(), editor_id)
+	ParaIO.CreateDirectory(filename);
+    local file = ParaIO.open(filename, "w");
+	if(file:IsValid()) then
+		file:WriteString(content);
+		file:close();
+		resume();
+	end
+    yield();
+     return {
+        success = true,
+    }
 end
 -- load blockly config
 function nplcad:api_loadblocklyeditor(input)
