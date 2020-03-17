@@ -9,7 +9,10 @@ local TestScene = NPL.load("Mod/NplCad2/Test/TestScene.lua");
 local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
 NplOceConnection.load({ npl_oce_dll = "plugins/nploce_d.dll" },function(msg)
     NPL.load("Mod/NplCad2/NplOce_Internal.lua");
-    TestScene.Test_setRotationQuaternion();
+    TestScene.Test_setLocalPivotMatrix()
+    --TestScene.Test_ShapeNodeChamferBox()
+    --TestScene.Test_ShapeNodeFilletBox();
+    --TestScene.Test_setRotationQuaternion();
 	--TestScene.Test_setLocalPivot();
     --TestScene.Test_CreateAnimation();
     --TestScene.Test_ExportStl();
@@ -442,6 +445,86 @@ function TestScene.Test_setRotationQuaternion()
     commonlib.echo("=============getRotationQuaternion");
     commonlib.echo(result);
     local filename = "test/Test_setRotationQuaternion.gltf";
+    SceneHelper.saveSceneToGltf(filename,scene,true)
+
+    local msg = string.format("save to: %s",filename);
+    _guihelper.MessageBox(msg);
+    
+end
+
+function TestScene.Test_ShapeNodeFilletBox()
+    local scene = NplOce.Scene.create();
+    local cur_node = scene:addNode("root");
+
+    local node = NplOce.ShapeNodeFilletBox.create();
+    local len = 12;
+    local edges = {}
+    local radius = {}
+    for k = 1,len do
+        table.insert(edges,k);
+        table.insert(radius,0.2);
+    end
+    node:setValue(1,1,1,len,edges,radius);
+    cur_node:addChild(node);
+    
+
+
+    local filename = "test/Test_ShapeNodeFilletBox.gltf";
+    SceneHelper.saveSceneToGltf(filename,scene,true)
+
+    local msg = string.format("save to: %s",filename);
+    _guihelper.MessageBox(msg);
+    
+end
+
+function TestScene.Test_ShapeNodeChamferBox()
+    local scene = NplOce.Scene.create();
+    local cur_node = scene:addNode("root");
+
+    local node = NplOce.ShapeNodeChamferBox.create();
+    local len = 12;
+    local edges = {}
+    local values = {}
+    for k = 1,len do
+        table.insert(edges,k);
+        table.insert(values,0.1);
+    end
+    node:setValue(1,1,1,len,edges,values);
+    cur_node:addChild(node);
+    
+
+
+    local filename = "test/ShapeNodeChamferBox.gltf";
+    SceneHelper.saveSceneToGltf(filename,scene,true)
+
+    local msg = string.format("save to: %s",filename);
+    _guihelper.MessageBox(msg);
+    
+
+end
+
+function TestScene.Test_setLocalPivotMatrix()
+    local scene = NplOce.Scene.create();
+    local cur_node = scene:addNode("root");
+
+    local node = NplOce.ShapeNodeBox.create();
+    node:setValue(1,1,1);
+    cur_node:addChild(node);
+    
+    local node = NplOce.ShapeNodeBox.create();
+    node:setColor({0,1,0,1});
+    node:setValue(1,1,1);
+    cur_node:addChild(node);
+
+
+    local matrix = Matrix4:new():identity();
+    matrix:setTrans(5,0,0);
+    node:setLocalPivotMatrix(matrix);
+    local result = node:getLocalPivotMatrix();
+    commonlib.echo("============result");
+    commonlib.echo(result);
+
+    local filename = "test/setLocalPivotMatrix.gltf";
     SceneHelper.saveSceneToGltf(filename,scene,true)
 
     local msg = string.format("save to: %s",filename);

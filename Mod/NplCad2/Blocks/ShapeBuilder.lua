@@ -251,6 +251,10 @@ end
 function ShapeBuilder.rotateJoint(axis,angle)
 	ShapeBuilder.multiRotationToNode(ShapeBuilder.cur_joint,axis,angle)
 end
+function ShapeBuilder.rotateJointQuaternion(x,y,z,w)
+    ShapeBuilder.setRotationQuaternionToNode(ShapeBuilder.cur_joint,x,y,z,w);
+end
+
 function ShapeBuilder.startBoneNameConstraint()
     local name = ShapeBuilder.generateId();
     ShapeBuilder.scene.bone_name_constraint[name] = {};    
@@ -371,6 +375,34 @@ function ShapeBuilder.deleteNode(name)
         local parent = node:getParent();
         parent:removeChild(node);
     end
+end
+
+function ShapeBuilder.setLocalPivotMatrix(matrix_arr)
+	local node = ShapeBuilder.getSelectedNode();
+	node:setLocalPivotMatrix(matrix_arr);
+end
+function ShapeBuilder.setLocalPivotMatrix_Node(name,matrix_arr)
+	if(ShapeBuilder.isEmpty(name))then
+        return
+    end
+    local node = ShapeBuilder.getCurStage():findNode(name);
+	if(node)then
+		node:setLocalPivotMatrix(matrix_arr);
+	end
+end
+
+function ShapeBuilder.setLocalPivot(x,y,z)
+	local node = ShapeBuilder.getSelectedNode();
+	node:setLocalPivot(x,y,z);
+end
+function ShapeBuilder.setLocalPivot_Node(name,x,y,z)
+	if(ShapeBuilder.isEmpty(name))then
+        return
+    end
+    local node = ShapeBuilder.getCurStage():findNode(name);
+	if(node)then
+		node:setLocalPivot(x,y,z);
+	end
 end
 
 function ShapeBuilder.setLocalPivotOffset(x,y,z)
