@@ -799,6 +799,44 @@ function ShapeBuilder.box(op,x,y,z,color)
     return node;
 end
 
+-- Create a fillet box
+-- @param {number} [x = 10]
+-- @param {number} [y = 10]
+-- @param {number} [z = 10]
+-- @param {table} edges
+-- @param {values} values
+-- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
+-- @return {NplOce.Node} node
+
+function ShapeBuilder.box_fillet(op, x, y, z, edges, values, color) 
+    local node = NplOce.ShapeNodeFilletBox.create();
+    edges = edges or {};
+    local len = #edges;
+    node:setValue(x,y,z,len,edges,values);
+    ShapeBuilder.addShapeNode(node,op,color) 
+    return node;
+end
+
+-- Create a chamfer box
+-- @param {number} [x = 10]
+-- @param {number} [y = 10]
+-- @param {number} [z = 10]
+-- @param {table} edges
+-- @param {values} values
+-- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
+-- @return {NplOce.Node} node
+
+function ShapeBuilder.box_chamfer(op, x, y, z, edges, values, color) 
+    local node = NplOce.ShapeNodeChamferBox.create();
+    edges = edges or {};
+    local len = #edges;
+    node:setValue(x,y,z,len,edges,values);
+    ShapeBuilder.addShapeNode(node,op,color) 
+    return node;
+end
+
+
+
 -- Create a cylinder
 -- @param {number} [radius = 2]
 -- @param {number} [height = 10]
@@ -813,6 +851,40 @@ function ShapeBuilder._cylinder(op,radius,height,angle,color)
 end
 function ShapeBuilder.cylinder(op,radius,height,color) 
     ShapeBuilder._cylinder(op,radius,height,360,color);
+end
+
+-- Create a fillet cylinder
+-- @param {number} [radius = 2]
+-- @param {number} [height = 10]
+-- @param {number} [angle = 360]
+-- @param {table} edges
+-- @param {values} values
+-- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
+-- @return {NplOce.Node} node
+function ShapeBuilder.cylinder_fillet(op, radius, height, edges, values, color) 
+    local node = NplOce.ShapeNodeFilletCylinder.create();
+    edges = edges or {};
+    local len = #edges;
+    node:setValue(radius,height,360,len,edges,values);
+    ShapeBuilder.addShapeNode(node,op,color) 
+    return node;
+end
+
+-- Create a chamfer cylinder
+-- @param {number} [radius = 2]
+-- @param {number} [height = 10]
+-- @param {number} [angle = 360]
+-- @param {table} edges
+-- @param {values} values
+-- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
+-- @return {NplOce.Node} node
+function ShapeBuilder.cylinder_chamfer(op, radius, height, edges, values, color) 
+    local node = NplOce.ShapeNodeChamferCylinder.create();
+    edges = edges or {};
+    local len = #edges;
+    node:setValue(radius,height,360,len,edges,values);
+    ShapeBuilder.addShapeNode(node,op,color) 
+    return node;
 end
 
 -- Create a sphere
@@ -847,6 +919,45 @@ end
 function ShapeBuilder.cone(op,top_radius,bottom_radius,height,color) 
     ShapeBuilder._cone(op,top_radius,bottom_radius,height,360,color);
 end
+
+-- Create a fillet cone
+-- @param {number} [top_radius = 2]
+-- @param {number} [bottom_radius = 4]
+-- @param {number} [height = 10]
+-- @param {number} [angle = 360]
+-- @param {table} edges
+-- @param {values} values
+-- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
+-- @return {NplOce.Node} node
+
+function ShapeBuilder.cone_fillet(op, top_radius, bottom_radius, height, edges, values, color) 
+    local node = NplOce.ShapeNodeFilletCone.create();
+    edges = edges or {};
+    local len = #edges;
+    node:setValue(top_radius,bottom_radius,height,360,len,edges,values);
+    ShapeBuilder.addShapeNode(node,op,color) 
+    return node;
+end
+
+-- Create a chamfer cone
+-- @param {number} [top_radius = 2]
+-- @param {number} [bottom_radius = 4]
+-- @param {number} [height = 10]
+-- @param {number} [angle = 360]
+-- @param {table} edges
+-- @param {values} values
+-- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
+-- @return {NplOce.Node} node
+
+function ShapeBuilder.cone_chamfer(op, top_radius, bottom_radius, height, edges, values, color) 
+    local node = NplOce.ShapeNodeChamferCone.create();
+    edges = edges or {};
+    local len = #edges;
+    node:setValue(top_radius,bottom_radius,height,360,len,edges,values);
+    ShapeBuilder.addShapeNode(node,op,color) 
+    return node;
+end
+
 -- Create a torus
 -- @param {number} [radius1 = 10]
 -- @param {number} [radius2 = 2]
