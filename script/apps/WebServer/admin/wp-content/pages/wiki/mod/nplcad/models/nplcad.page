@@ -18,6 +18,7 @@ include_once(WIKI_ROOT.."models/abstract/base.page");
 
 NPL.load("(gl)script/ide/System/localserver/UrlHelper.lua");
 local UrlHelper = commonlib.gettable("System.localserver.UrlHelper");
+NPL.load("(gl)script/ide/Files.lua");
 
 NPL.load("(gl)Mod/NplCad2/main.lua");
 local NplCad2 = commonlib.gettable("Mod.NplCad2")
@@ -188,6 +189,44 @@ function nplcad:api_exportLocalParaXToGltf(input)
         }
     end
 end
+function nplcad:api_loadeditorlist(input)
+    local filename = string.format("%snplcad_editor/editor_meta.json",GameLogic.GetWorldDirectory())
+    local editor_meta;
+    nplcad:_loadAllEditorMeta(function(data)
+        editor_meta = data;
+		resume();
+    end)
+    yield();
+    local filepath = string.format("%snplcad_editor/files",GameLogic.GetWorldDirectory());
+    local result = commonlib.Files.Find({}, filepath, 10, 5000, function(item)
+	    local ext = commonlib.Files.GetFileExtension(item.filename);
+	    if(ext) then
+		    return (ext == "json")
+	    end
+    end)
+    return { 
+        success = true,
+        data = result,
+        editor_meta = editor_meta,
+    }
+end
+function nplcad:api_deleteeditor(input)
+    local editor_id = input.editor_id;
+    if(not editor_id or editor_id == "")then
+        return { success = false }
+    end
+    editor_id = UrlHelper.url_decode(editor_id)
+    local filename = string.format("%snplcad_editor/files/%s.json",GameLogic.GetWorldDirectory(), editor_id)
+	if(not ParaIO.DoesFileExist(filename)) then
+        return { success = false }
+    end
+    if(ParaIO.DeleteFile(filename))then
+        nplcad:_saveEditorMeta(editor_id,nil,function()
+        end)
+        return { success = true}
+    end
+    return { success = false }
+end
 -- load editor with json
 function nplcad:api_loadeditor(input)
     local editor_id = input.editor_id;
@@ -196,12 +235,12 @@ function nplcad:api_loadeditor(input)
     end
     editor_id = UrlHelper.url_decode(editor_id)
     local content;
-    local filename = string.format("%snplcad_editor/%s.json",GameLogic.GetWorldDirectory(), editor_id)
+    local filename = string.format("%snplcad_editor/files/%s.json",GameLogic.GetWorldDirectory(), editor_id)
 	if(not ParaIO.DoesFileExist(filename)) then
         return { success = false }
     end
 
-     local file = ParaIO.open(filename, "r");
+    local file = ParaIO.open(filename, "r");
 	if(file:IsValid()) then
 		content = file:GetText();
 		file:close();
@@ -213,6 +252,52 @@ function nplcad:api_loadeditor(input)
         data = content,
     }
 end
+function nplcad:_saveEditorMeta(editor_id,v,callback)
+    if(not editor_id or not v)then
+        if(callback)then
+            callback()
+        end
+        return
+    end
+    self:_loadAllEditorMeta(function(result)
+        if(result)then
+            result[editor_id] = v;
+            local content = NPL.ToJson(result, true)
+            local filename = string.format("%snplcad_editor/editor_meta.json",GameLogic.GetWorldDirectory())
+            ParaIO.CreateDirectory(filename);
+            local file = ParaIO.open(filename, "w");
+	        if(file:IsValid()) then
+		        file:WriteString(content);
+		        file:close();
+                if(callback)then
+                    callback()
+                end
+	        end
+        end
+    end)
+end
+function nplcad:_loadAllEditorMeta(callback)
+    local filename = string.format("%snplcad_editor/editor_meta.json",GameLogic.GetWorldDirectory())
+    if(not ParaIO.DoesFileExist(filename)) then
+            if(callback)then
+                callback({})
+            end
+        return 
+    end
+    local file = ParaIO.open(filename, "r");
+    local content;
+	if(file:IsValid()) then
+		content = file:GetText();
+		file:close();
+        content = content or "{}";
+        local out={};
+        if(NPL.FromJson(content, out)) then
+            if(callback)then
+                callback(out)
+            end
+        end
+	end
+end
 -- save editor with json
 function nplcad:api_saveeditor(input)
     local content = input.content;
@@ -221,8 +306,20 @@ function nplcad:api_saveeditor(input)
         return { success = false}
     end
     editor_id = UrlHelper.url_decode(editor_id)
+    local name = input.name or "";
+    local version = input.version;
+    local preview_png = input.preview_png;
 
-    local filename = string.format("%snplcad_editor/%s.json",GameLogic.GetWorldDirectory(), editor_id)
+    local editor_meta = {
+        version = version,
+        name = name,
+    }
+    nplcad:_saveEditorMeta(editor_id,editor_meta,function()
+		resume();
+    end)
+    yield();
+
+    local filename = string.format("%snplcad_editor/files/%s.json",GameLogic.GetWorldDirectory(), editor_id)
 	ParaIO.CreateDirectory(filename);
     local file = ParaIO.open(filename, "w");
 	if(file:IsValid()) then
