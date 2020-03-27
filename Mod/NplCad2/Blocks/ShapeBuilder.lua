@@ -593,7 +593,7 @@ end
 function ShapeBuilder._fillet(node, axis_axis_plane, radius) 
 	local axis_x, axis_y, axis_z = 0, 0, 0;
 	local dir_x, dir_y, dir_z = 0, 0, 0;
-	local edgeId = 0;
+	local edges = {};
 	if (axis_axis_plane == "xyz") then
 		axis_x, axis_y, axis_z = 1, 1, 1;
 	elseif(axis_axis_plane == "x")then
@@ -608,10 +608,12 @@ function ShapeBuilder._fillet(node, axis_axis_plane, radius)
 		dir_y = 1;
 	elseif(axis_axis_plane == "yz")then
 		dir_x = 1;
-	elseif(type(edgeId) == "number") then
-		edgeId = axis_axis_plane;
+	elseif(type(axis_axis_plane) == "number") then
+		edges[1] = axis_axis_plane
+	elseif(type(axis_axis_plane) == "table") then
+		edges = axis_axis_plane;
 	else
-		-- invalid axis_axis_plane
+		-- invalid param, axis_axis_plane
 		return;
 	end
 
@@ -620,7 +622,7 @@ function ShapeBuilder._fillet(node, axis_axis_plane, radius)
 	if (model ~= nil) then
 		local shape = model:getShape();
 		if (shape ~= nil) then
-			local fillet_shape = NplOce.fillet(shape, radius, {axis_x, axis_y, axis_z}, {dir_x, dir_y, dir_z}, edgeId);
+			local fillet_shape = NplOce.fillet(shape, radius, {axis_x, axis_y, axis_z}, {dir_x, dir_y, dir_z}, #edges, edges);
 			if (not fillet_shape:IsNull()) then
 				model:setShape(fillet_shape);
 			end
@@ -649,7 +651,7 @@ end
 function ShapeBuilder._chamfer(node, axis_axis_plane, radius) 
 	local axis_x, axis_y, axis_z = 0, 0, 0;
 	local dir_x, dir_y, dir_z = 0, 0, 0;
-	local edgeId = 0;
+	local edges = {};
 	if (axis_axis_plane == "xyz") then
 		axis_x, axis_y, axis_z = 1, 1, 1;
 	elseif(axis_axis_plane == "x")then
@@ -664,10 +666,12 @@ function ShapeBuilder._chamfer(node, axis_axis_plane, radius)
 		dir_y = 1;
 	elseif(axis_axis_plane == "yz")then
 		dir_x = 1;
-	elseif(type(edgeId) == "number") then
-		edgeId = axis_axis_plane;
+	elseif(type(axis_axis_plane) == "number") then
+		edges[1] = axis_axis_plane
+	elseif(type(axis_axis_plane) == "table") then
+		edges = axis_axis_plane;
 	else
-		-- invalid axis_axis_plane
+		-- invalid param, axis_axis_plane
 		return;
 	end
 
@@ -676,7 +680,7 @@ function ShapeBuilder._chamfer(node, axis_axis_plane, radius)
 	if (model ~= nil) then
 		local shape = model:getShape();
 		if (shape ~= nil) then
-			local fillet_shape = NplOce.chamfer(shape, radius, {axis_x, axis_y, axis_z}, {dir_x, dir_y, dir_z}, edgeId);
+			local fillet_shape = NplOce.chamfer(shape, radius, {axis_x, axis_y, axis_z}, {dir_x, dir_y, dir_z}, #edges, edges);
 			if (not fillet_shape:IsNull()) then
 				model:setShape(fillet_shape);
 			end
