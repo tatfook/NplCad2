@@ -1202,6 +1202,22 @@ function ShapeBuilder.createFromBrep(op,brep,color)
     ShapeBuilder.addShapeNode(node,op,color) 
     return node;
 end
+
+-- Create text
+-- @param {text}
+-- @param {font}
+-- @param {size}
+-- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
+-- @return {NplOce.Node} node
+function ShapeBuilder.text3d(op, text, font, size, color) 
+	local height = 0.1;
+    local node = NplOce.ShapeNodeText.create();
+	font_path = Files.GetFilePath(font);
+    node:setValue(text, font, size, height);
+    ShapeBuilder.addShapeNode(node,op,color) 
+    return node;
+end
+
 -- Convert from color string to rgba table, if the type of color is table return color directly
 -- NOTE: the color isn't supported alpha  in nploce 
 -- @param {string} color - can be "#ffffff" or "#ffffffff" with alpha
