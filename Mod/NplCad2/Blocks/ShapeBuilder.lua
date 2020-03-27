@@ -571,6 +571,119 @@ function ShapeBuilder.SetRotationFromPivot(node,axis,angle,pivot_x,pivot_y,pivot
     node:setMatrix(transform_matrix)
 
 end
+
+-- make fillet
+-- @param {number} [radius = 0.1]
+-- @param {axis_axis_plane} xyz|xy|xz|yz
+-- @param {select_all} true|false 
+function ShapeBuilder.fillet(axis_axis_plane, radius)
+	local node = ShapeBuilder.getSelectedNode();
+	if (node ~= nil) then
+		ShapeBuilder._fillet(node, axis_axis_plane, radius)
+	end
+end
+
+function ShapeBuilder.filletNode(name, axis_axis_plane, radius)
+    local node = ShapeBuilder.getCurStage():findNode(name);
+	if (node ~= nil) then
+		ShapeBuilder._fillet(node, axis_axis_plane, radius)
+	end
+end
+
+function ShapeBuilder._fillet(node, axis_axis_plane, radius) 
+	local axis_x, axis_y, axis_z = 0, 0, 0;
+	local dir_x, dir_y, dir_z = 0, 0, 0;
+	local edgeId = 0;
+	if (axis_axis_plane == "xyz") then
+		axis_x, axis_y, axis_z = 1, 1, 1;
+	elseif(axis_axis_plane == "x")then
+		axis_x = 1;
+	elseif(axis_axis_plane == "y")then
+		axis_y = 1;
+	elseif(axis_axis_plane == "z")then
+		axis_z = 1;
+	elseif(axis_axis_plane == "xy")then
+		dir_z = 1;
+	elseif(axis_axis_plane == "xz")then
+		dir_y = 1;
+	elseif(axis_axis_plane == "yz")then
+		dir_x = 1;
+	elseif(type(edgeId) == "number") then
+		edgeId = axis_axis_plane;
+	else
+		-- invalid axis_axis_plane
+		return;
+	end
+
+    SceneHelper.runNode(node);
+	local model = node:getDrawable();
+	if (model ~= nil) then
+		local shape = model:getShape();
+		if (shape ~= nil) then
+			local fillet_shape = NplOce.fillet(shape, radius, {axis_x, axis_y, axis_z}, {dir_x, dir_y, dir_z}, edgeId);
+			if (not fillet_shape:IsNull()) then
+				model:setShape(fillet_shape);
+			end
+		end
+	end
+end
+
+-- make chamfer
+-- @param {number} [radius = 0.1]
+-- @param {axis_axis_plane} xyz|xy|xz|yz
+-- @param {select_all} true|false 
+function ShapeBuilder.chamfer(axis_axis_plane, radius)
+	local node = ShapeBuilder.getSelectedNode();
+	if (node ~= nil) then
+		ShapeBuilder._chamfer(node, axis_axis_plane, radius)
+	end
+end
+
+function ShapeBuilder.chamferNode(name, axis_axis_plane, radius)
+    local node = ShapeBuilder.getCurStage():findNode(name);
+	if (node ~= nil) then
+		ShapeBuilder._chamfer(node, axis_axis_plane, radius)
+	end
+end
+
+function ShapeBuilder._chamfer(node, axis_axis_plane, radius) 
+	local axis_x, axis_y, axis_z = 0, 0, 0;
+	local dir_x, dir_y, dir_z = 0, 0, 0;
+	local edgeId = 0;
+	if (axis_axis_plane == "xyz") then
+		axis_x, axis_y, axis_z = 1, 1, 1;
+	elseif(axis_axis_plane == "x")then
+		axis_x = 1;
+	elseif(axis_axis_plane == "y")then
+		axis_y = 1;
+	elseif(axis_axis_plane == "z")then
+		axis_z = 1;
+	elseif(axis_axis_plane == "xy")then
+		dir_z = 1;
+	elseif(axis_axis_plane == "xz")then
+		dir_y = 1;
+	elseif(axis_axis_plane == "yz")then
+		dir_x = 1;
+	elseif(type(edgeId) == "number") then
+		edgeId = axis_axis_plane;
+	else
+		-- invalid axis_axis_plane
+		return;
+	end
+
+    SceneHelper.runNode(node);
+	local model = node:getDrawable();
+	if (model ~= nil) then
+		local shape = model:getShape();
+		if (shape ~= nil) then
+			local fillet_shape = NplOce.chamfer(shape, radius, {axis_x, axis_y, axis_z}, {dir_x, dir_y, dir_z}, edgeId);
+			if (not fillet_shape:IsNull()) then
+				model:setShape(fillet_shape);
+			end
+		end
+	end
+end
+
 function ShapeBuilder.mirrorNode(name,axis_plane,x,y,z) 
     local node = ShapeBuilder.getCurStage():findNode(name);
     ShapeBuilder._mirrorNode(node,axis_plane,x,y,z);
@@ -1177,3 +1290,13 @@ function ShapeBuilder.setMaxTrianglesCnt(v)
     ShapeBuilder.scene.max_triangle_cnt = v;
 end
  
+function ShapeBuilder.getEdgeCount()
+	local node = ShapeBuilder.getSelectedNode();
+	if (node ~= nil and node:getDrawable() ~= nil) then
+		local shape = node:getDrawable():getShape();
+		if (shape ~= nil) then
+			return shape:getEdgeCount();
+		end
+	end
+	return 0;
+end
