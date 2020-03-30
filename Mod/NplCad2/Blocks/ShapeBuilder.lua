@@ -1229,6 +1229,41 @@ function ShapeBuilder.createFromBrep(op,brep,color)
 	return node;
 end
 
+function ShapeBuilder.line(op, x1, y1, z1, x2, y2, z2, color)
+	local node = NplOce.ShapeNodeLine.create();
+	node:setValue(x1, y1, z1, x2, y2, z2);
+	ShapeBuilder.addShapeNode(node, op, color);
+	return node;
+end
+
+function ShapeBuilder.plane(op, length, width, color)
+	local node = NplOce.ShapeNodePlane.create();
+	node:setValue(length, width);
+	ShapeBuilder.addShapeNode(node, op, color);
+	return node;
+end
+
+function ShapeBuilder.circle(op, radius, a0, a1, color)
+	local node = NplOce.ShapeNodeCircle.create();
+	node:setValue(radius, a0, a1);
+	ShapeBuilder.addShapeNode(node, op, color);
+	return node;
+end
+
+function ShapeBuilder.ellipse(op, radius1, radius2, a0, a1, color)
+	local node = NplOce.ShapeNodeEllipse.create();
+	node:setValue(radius1, radius2, a0, a1);
+	ShapeBuilder.addShapeNode(node, op, color);
+	return node;
+end
+
+function ShapeBuilder.polygon(op, p, r, color)
+	local node = NplOce.ShapeNodePolygon.create();
+	node:setValue(p, r);
+	ShapeBuilder.addShapeNode(node, op, color);
+	return node;
+end
+
 -- Create text
 -- @param {text}
 -- @param {font}
