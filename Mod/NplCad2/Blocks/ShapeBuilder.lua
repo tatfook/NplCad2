@@ -1235,8 +1235,7 @@ end
 -- @param {size}
 -- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
 -- @return {NplOce.Node} node
-function ShapeBuilder.text3d(op, text, font, size, color) 
-	local height = 0.1;
+function ShapeBuilder.text3d(op, text, font, size, height, color) 
 	local node = NplOce.ShapeNodeText.create();
 	font_path = Files.GetFilePath(font);
 	node:setValue(text, font, size, height);
