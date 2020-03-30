@@ -868,6 +868,9 @@ function ShapeBuilder.addShapeNode(node,op,color)
 			ShapeBuilder.selected_node = node;
 		else
 			local child = node:getFirstChild();
+			if (child) then
+				ShapeBuilder.selected_node = child;
+			end
 			while (child) do
 				local next = child:getNextSibling();
 				child:setOp(op);
@@ -875,8 +878,6 @@ function ShapeBuilder.addShapeNode(node,op,color)
 				cur_node:addChild(child);
 				child = next;
 			end
-			child = cur_node:getFirstChild();
-			ShapeBuilder.selected_node = child;
 		end
 	end
 	return ShapeBuilder.selected_node;
