@@ -324,7 +324,7 @@ function SceneHelper.operateTwoNodes(model,next_model,top_node)
 		else
 			LOG.std(nil, "error", "NplCad2", "unsupported op: %s", op);
 		end
-		if(not shape)then
+		if(not shape or shape:IsNull())then
 			LOG.std(nil, "error", "NplCad2", "the result of boolean is null");
 			return
 		end
@@ -377,10 +377,12 @@ function SceneHelper.saveSceneToStl(filename, scene, bRun, swapYZ, bBinary, bEnc
 	if(bRun)then
 		SceneHelper.run(scene,false);
 	end
-	 local content = scene:toStl_String(swapYZ,bBinary, bEncodeBase64, bIncludeColor);
-	 if(bEncodeBase64)then
-		content = Encoding.unbase64(content);
-	 end
+	-- set liner and angular deflection
+	NplOce.deflection(1.0, 28.5);
+	local content = scene:toStl_String(swapYZ,bBinary, bEncodeBase64, bIncludeColor);
+	if(bEncodeBase64)then
+	content = Encoding.unbase64(content);
+	end
 	return SceneHelper.saveFile(filename,content);
 end
 function SceneHelper.saveSceneToGltf(filename,scene,bRun)
@@ -390,6 +392,8 @@ function SceneHelper.saveSceneToGltf(filename,scene,bRun)
 	if(bRun)then
 		SceneHelper.run(scene,false);
 	end
+	-- set liner and angular deflection
+	NplOce.deflection(1.0, 28.5);
 	local content = scene:toGltf_String();
 	return SceneHelper.saveFile(filename,content);
 end
@@ -397,6 +401,9 @@ function SceneHelper.toParaX(scene)
 	if(not scene)then 
 		return
 	end
+	-- set liner and angular deflection
+	NplOce.deflection(2.0, 45);
+
 	local template = SceneHelper.loadParaXTemplateFromDisc();
 	local max_triangle_cnt = scene.max_triangle_cnt or 0;
 	local data = scene:toParaX(max_triangle_cnt);
