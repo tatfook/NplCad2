@@ -700,6 +700,62 @@ function ShapeBuilder._chamfer(node, axis_axis_plane, radius)
 	end
 end
 
+-- extrude
+-- @param {number} height
+function ShapeBuilder.extrude(height)
+	local node = ShapeBuilder.getSelectedNode();
+	if (node ~= nil) then
+		SceneHelper.runNode(node);
+		local model = node:getDrawable();
+		if (model ~= nil) then
+			local shape = model:getShape();
+			if (shape ~= nil) then
+				local extrude_shape = NplOce.extrude(shape, height);
+				if (not extrude_shape:IsNull()) then
+					model:setShape(extrude_shape);
+				end
+			end
+		end
+	end
+end
+
+-- revolve
+-- @param {string} axis
+-- @param {number} angle
+function ShapeBuilder.revolve(axis, angle)
+	local axis_x, axis_y, axis_z = 0, 0, 0;
+	if(axis == "x")then
+		axis_x = 1;
+	elseif(axis == "y")then
+		axis_y = 1;
+	elseif(axis == "z")then
+		axis_z = 1;
+	else
+		-- invalid param, axis
+		return;
+	end
+
+	local node = ShapeBuilder.getSelectedNode();
+	if (node ~= nil) then
+		SceneHelper.runNode(node);
+		local model = node:getDrawable();
+		if (model ~= nil) then
+			local shape = model:getShape();
+			if (shape ~= nil) then
+				local w_matrix = SceneHelper.getTranformMatrixFrom(node, node);
+				local matrix_shape = Matrix4:new(shape:getMatrix());
+				local clone_shape = shape:clone();
+				clone_shape:setMatrix(matrix_shape * w_matrix);
+				local extrude_shape = NplOce.revolve(clone_shape, axis_x, axis_y, axis_z, angle);
+				if (not extrude_shape:IsNull()) then
+					model:setShape(extrude_shape);
+					node:setMatrix(Matrix4:new():identity());
+				end
+			end
+		end
+	end
+end
+
 function ShapeBuilder.mirrorNode(name,axis_plane,x,y,z) 
 	local node = ShapeBuilder.getCurStage():findNode(name);
 	ShapeBuilder._mirrorNode(node,axis_plane,x,y,z);
@@ -1257,9 +1313,16 @@ function ShapeBuilder.ellipse(op, radius1, radius2, a0, a1, color)
 	return node;
 end
 
-function ShapeBuilder.polygon(op, p, r, color)
-	local node = NplOce.ShapeNodePolygon.create();
+function ShapeBuilder.regularPolygon(op, p, r, color)
+	local node = NplOce.ShapeNodeRegularPolygon.create();
 	node:setValue(p, r);
+	ShapeBuilder.addShapeNode(node, op, color);
+	return node;
+end
+
+function ShapeBuilder.polygon(op, p, color)
+	local node = NplOce.ShapeNodePolygon.create();
+	node:setValue(p);
 	ShapeBuilder.addShapeNode(node, op, color);
 	return node;
 end
