@@ -517,12 +517,14 @@ function ShapeBuilder.multiRotationToNode(node,axis,angle)
 	matrix = q:ToRotationMatrix();
 	
 	node:setRotationMatrix(matrix)
+	--[[
 	-- for text shape node, all letters are sibling
 	local next = node:getNextSibling();
 	while (next) do
 		next:setRotationMatrix(matrix);
 		next = next:getNextSibling();
 	end
+	]]
 end
 function ShapeBuilder.setRotationQuaternion(x,y,z,w)
 	local node = ShapeBuilder.getSelectedNode();
@@ -575,13 +577,14 @@ function ShapeBuilder.SetRotationFromPivot(node,axis,angle,pivot_x,pivot_y,pivot
 	local matrix_2 = Matrix4.translation({pivot_x,pivot_y,pivot_z})
 	local transform_matrix = matrix * matrix_1 * rotate_matrix * matrix_2;
 	node:setMatrix(transform_matrix)
+	--[[
 	-- for text shape node, all letters are sibling
 	local next = node:getNextSibling();
 	while (next) do
 		next:setMatrix(transform_matrix);
 		next = next:getNextSibling();
 	end
-
+	]]
 end
 
 -- make fillet
@@ -916,6 +919,12 @@ function ShapeBuilder.addShapeNode(node,op,color)
 	end
 	local cur_node = ShapeBuilder.getCurNode();
 	if(cur_node)then
+		node:setOp(op);
+		node:setColor(ShapeBuilder.converColorToRGBA(color));
+		cur_node:addChild(node);
+
+		ShapeBuilder.selected_node = node;
+		--[[
 		if (node:getDrawable()) then
 			node:setOp(op);
 			node:setColor(ShapeBuilder.converColorToRGBA(color));
@@ -935,8 +944,9 @@ function ShapeBuilder.addShapeNode(node,op,color)
 				child = next;
 			end
 		end
+		]]
 	end
-	return ShapeBuilder.selected_node;
+	return node;
 end
 -- Import brep file
 function ShapeBuilder.importBrepFromStr(op, color, swapYZ, isBase64, data) 
@@ -1392,12 +1402,14 @@ end
 function ShapeBuilder.translate(node,tx,ty,tz)
 	if(node)then
 		node:translate(tx,ty,tz);
+		--[[
 		-- for text shape node, all letters are sibling
 		local next = node:getNextSibling();
 		while (next) do
 			next:translate(tx, ty, tz);
 			next = next:getNextSibling();
 		end
+		]]
 	end
 end
 
@@ -1410,12 +1422,14 @@ end
 function ShapeBuilder.setScale(node,x,y,z)
 	if(node)then
 		node:setScale(x,y,z);
+		--[[
 		-- for text shape node, all letters are sibling
 		local next = node:getNextSibling();
 		while (next) do
 			next:setScale(x,y,z);
 			next = next:getNextSibling();
 		end
+		]]
 	end
 end
 function ShapeBuilder.isEmpty(s)
