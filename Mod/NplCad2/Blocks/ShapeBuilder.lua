@@ -75,8 +75,6 @@ function ShapeBuilder.runExportFiles(filename)
 		if(type == "stl")then
 			SceneHelper.saveSceneToStl(filename .. ".stl",ShapeBuilder.scene,false, false,binary, false, false, ShapeBuilder.liner, ShapeBuilder.angular);
 		elseif(type == "gltf")then
-			commonlib.echo(ShapeBuilder.liner);
-			commonlib.echo(ShapeBuilder.angular);
 			SceneHelper.saveSceneToGltf(filename .. ".gltf",ShapeBuilder.scene, false, ShapeBuilder.liner, ShapeBuilder.angular);
 		end
 	end
@@ -1475,6 +1473,8 @@ function ShapeBuilder.getEdgeCount()
 end
 
 function ShapeBuilder.deflection(liner, angular)
-	ShapeBuilder.liner = liner;
-	ShapeBuilder.angular = angular;
+	ShapeBuilder.liner = math.max(liner, 0.001);
+	ShapeBuilder.liner = math.min(ShapeBuilder.liner, 0.5);
+	ShapeBuilder.angular = math.max(angular, 1.0);
+	ShapeBuilder.angular = math.min(ShapeBuilder.angular, 28.5);
 end

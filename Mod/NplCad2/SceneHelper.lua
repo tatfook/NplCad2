@@ -393,9 +393,7 @@ function SceneHelper.saveSceneToGltf(filename,scene,bRun, liner, angular)
 		SceneHelper.run(scene,false);
 	end
 	-- set liner and angular deflection
-	commonlib.echo(liner);
-	commonlib.echo(angular);
-	--NplOce.deflection(liner, angular);
+	NplOce.deflection(liner, angular);
 	local content = scene:toGltf_String();
 	return SceneHelper.saveFile(filename,content);
 end
