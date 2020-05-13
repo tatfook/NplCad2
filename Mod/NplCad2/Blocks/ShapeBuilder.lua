@@ -44,6 +44,8 @@ ShapeBuilder.cur_joint = nil; -- for binding bones
 ShapeBuilder.export_file_context = nil; -- for exporting .stl/.gltf file
 ShapeBuilder.cur_animation = nil; 
 ShapeBuilder.cur_channel_config = {}; 
+ShapeBuilder.liner = 0.5;
+ShapeBuilder.angular = 28.5;
 
 function ShapeBuilder.exportFile(type)
 	if(not type)then
@@ -71,9 +73,11 @@ function ShapeBuilder.runExportFiles(filename)
 		local type = v.type;
 		local binary = v.binary;
 		if(type == "stl")then
-			SceneHelper.saveSceneToStl(filename .. ".stl",ShapeBuilder.scene,false,binary);
+			SceneHelper.saveSceneToStl(filename .. ".stl",ShapeBuilder.scene,false, false,binary, false, false, ShapeBuilder.liner, ShapeBuilder.angular);
 		elseif(type == "gltf")then
-			SceneHelper.saveSceneToGltf(filename .. ".gltf",ShapeBuilder.scene);
+			commonlib.echo(ShapeBuilder.liner);
+			commonlib.echo(ShapeBuilder.angular);
+			SceneHelper.saveSceneToGltf(filename .. ".gltf",ShapeBuilder.scene, false, ShapeBuilder.liner, ShapeBuilder.angular);
 		end
 	end
 end
@@ -1468,4 +1472,9 @@ function ShapeBuilder.getEdgeCount()
 		end
 	end
 	return 0;
+end
+
+function ShapeBuilder.deflection(liner, angular)
+	ShapeBuilder.liner = liner;
+	ShapeBuilder.angular = angular;
 end

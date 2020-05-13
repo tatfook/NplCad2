@@ -370,7 +370,7 @@ function SceneHelper.combineBoneName(root_node, bone_name_constraint, joints_map
 		end
 	end
 end
-function SceneHelper.saveSceneToStl(filename, scene, bRun, swapYZ, bBinary, bEncodeBase64, bIncludeColor)
+function SceneHelper.saveSceneToStl(filename, scene, bRun, swapYZ, bBinary, bEncodeBase64, bIncludeColor, liner, angular)
 	if(not scene)then 
 		return
 	end
@@ -378,14 +378,14 @@ function SceneHelper.saveSceneToStl(filename, scene, bRun, swapYZ, bBinary, bEnc
 		SceneHelper.run(scene,false);
 	end
 	-- set liner and angular deflection
-	NplOce.deflection(1.0, 28.5);
+	NplOce.deflection(liner, angular);
 	local content = scene:toStl_String(swapYZ,bBinary, bEncodeBase64, bIncludeColor);
 	if(bEncodeBase64)then
 	content = Encoding.unbase64(content);
 	end
 	return SceneHelper.saveFile(filename,content);
 end
-function SceneHelper.saveSceneToGltf(filename,scene,bRun)
+function SceneHelper.saveSceneToGltf(filename,scene,bRun, liner, angular)
 	if(not scene)then 
 		return
 	end
@@ -393,7 +393,9 @@ function SceneHelper.saveSceneToGltf(filename,scene,bRun)
 		SceneHelper.run(scene,false);
 	end
 	-- set liner and angular deflection
-	NplOce.deflection(1.0, 28.5);
+	commonlib.echo(liner);
+	commonlib.echo(angular);
+	--NplOce.deflection(liner, angular);
 	local content = scene:toGltf_String();
 	return SceneHelper.saveFile(filename,content);
 end
