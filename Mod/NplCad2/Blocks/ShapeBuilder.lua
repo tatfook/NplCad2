@@ -1236,7 +1236,7 @@ function ShapeBuilder.wedge(op,x, z, h, color)
 	local z3 = 0;
 
 	local x4 = x;
-	local z4 = ShapeBuilder.Precision_Confusion;
+	local z4 = 0;
 
 
 	local node = NplOce.ShapeNodeWedge.create();
