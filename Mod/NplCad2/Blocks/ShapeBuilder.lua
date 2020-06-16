@@ -1347,9 +1347,21 @@ end
 -- @return {NplOce.Node} node
 function ShapeBuilder.text3d(op, text, font, size, height, color) 
 	local node = NplOce.ShapeNodeText.create();
-	font_path = Files.GetFilePath(font);
-	node:setValue(text, font, size, height);
-	ShapeBuilder.addShapeNode(node,op,color) 
+	if (type(font) == "string") then
+		local font_path = Files.GetFilePath(font);
+		if (not font_path) then
+			local font_files = {
+				MSYH = "C:/WINDOWS/FONTS/MSYH.TTC",
+				SIMSUN = "C:/WINDOWS/FONTS/SIMSUN.TTC",
+				SIMFANG = "C:/WINDOWS/FONTS/SIMFANG.TTF",
+				SIMKAI = "C:/WINDOWS/FONTS/SIMKAI.TTF"};
+			font_path = font_files[font];
+		end
+		if (font_path) then
+			node:setValue(text, font_path, size, height);
+			ShapeBuilder.addShapeNode(node,op,color) 
+		end
+	end
 	return node;
 end
 
