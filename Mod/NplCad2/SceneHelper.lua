@@ -379,14 +379,16 @@ function SceneHelper.saveSceneToStl(filename, scene, bRun, swapYZ, bBinary, bEnc
 	end
 
 	-- set liner and angular deflection
-	NplOce.deflection(liner, angular);
+	if (liner and angular) then
+		NplOce.deflection(liner, angular);
+	end
 	local content = scene:toStl_String(swapYZ,bBinary, bEncodeBase64, bIncludeColor);
 	if(bEncodeBase64)then
 	content = Encoding.unbase64(content);
 	end
 	return SceneHelper.saveFile(filename,content);
 end
-function SceneHelper.saveSceneToIGES(filename, scene, bRun, swapYZ, bBinary, bEncodeBase64, bIncludeColor, liner, angular)
+function SceneHelper.saveSceneToIGES(filename, scene, bRun, swapYZ, bBinary, bEncodeBase64, bIncludeColor)
 	if(not scene)then 
 		return
 	end
@@ -396,7 +398,7 @@ function SceneHelper.saveSceneToIGES(filename, scene, bRun, swapYZ, bBinary, bEn
 
 	return scene:toIGES_File(filename);
 end
-function SceneHelper.saveSceneToStep(filename, scene, bRun, swapYZ, bBinary, bEncodeBase64, bIncludeColor, liner, angular)
+function SceneHelper.saveSceneToStep(filename, scene, bRun, swapYZ, bBinary, bEncodeBase64, bIncludeColor)
 	if(not scene)then 
 		return
 	end
@@ -414,7 +416,9 @@ function SceneHelper.saveSceneToGltf(filename,scene,bRun, liner, angular)
 		SceneHelper.run(scene,false);
 	end
 	-- set liner and angular deflection
-	NplOce.deflection(liner, angular);
+	if (liner and angular) then
+		NplOce.deflection(liner, angular);
+	end
 	local content = scene:toGltf_String();
 	return SceneHelper.saveFile(filename,content);
 end
