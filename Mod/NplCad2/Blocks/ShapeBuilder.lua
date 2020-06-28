@@ -1486,7 +1486,7 @@ end
 
 function ShapeBuilder.deflection(liner, angular)
 	ShapeBuilder.liner = math.max(liner, 0.001);
-	ShapeBuilder.liner = math.min(ShapeBuilder.liner, 0.5);
+	ShapeBuilder.liner = math.min(ShapeBuilder.liner, 10);
 	ShapeBuilder.angular = math.max(angular, 1.0);
-	ShapeBuilder.angular = math.min(ShapeBuilder.angular, 28.5);
+	ShapeBuilder.angular = math.min(ShapeBuilder.angular, 180);
 end

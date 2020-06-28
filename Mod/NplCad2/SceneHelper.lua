@@ -422,12 +422,15 @@ function SceneHelper.saveSceneToGltf(filename,scene,bRun, liner, angular)
 	local content = scene:toGltf_String();
 	return SceneHelper.saveFile(filename,content);
 end
-function SceneHelper.toParaX(scene)
+function SceneHelper.toParaX(scene, liner, angular)
 	if(not scene)then 
 		return
 	end
 	-- set liner and angular deflection
-	NplOce.deflection(2.0, 45);
+	if (liner and angular) then
+		NplOce.deflection(liner, angular);
+	end
+	--NplOce.deflection(2.0, 45);
 
 	local template = SceneHelper.loadParaXTemplateFromDisc();
 	local max_triangle_cnt = scene.max_triangle_cnt or 0;
@@ -441,12 +444,12 @@ function SceneHelper.toParaX(scene)
 		end
 	end
 end
-function SceneHelper.saveSceneToParaX(filename,scene)
+function SceneHelper.saveSceneToParaX(filename,scene, liner, angular)
 	if(not scene)then 
 		return
 	end
 	SceneHelper.run(scene,false);
-	local content = SceneHelper.toParaX(scene) or "";
+	local content = SceneHelper.toParaX(scene, liner, angular) or "";
 	return SceneHelper.saveFile(filename,content);
 end
 function SceneHelper.saveFile(filename,content)
