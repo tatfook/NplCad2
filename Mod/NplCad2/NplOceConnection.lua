@@ -23,6 +23,34 @@ end);
 NPL.load("(gl)script/ide/math/bit.lua");
 NPL.load("(gl)script/ide/System/os/os.lua");
 
+local function NplOce_StaticLoad()
+
+	local function check_C_func(func_name)
+		local func = loadstring([[local ffi = require("ffi"); local func = ffi.C.]]..func_name);
+		if(func) then
+			local result, msg = pcall(func);
+			if(result) then
+				return true;
+			end
+		end
+	end
+
+	if jit and jit.version then
+		local ffi = require("ffi");
+		ffi.cdef([[
+			bool NplOce_StaticLoad(void* pLuaState);
+			void* ParaGlobal_GetLuaState(const char* name);
+		]]);
+		
+		if check_C_func("NplOce_StaticLoad") then
+			return ffi.C.NplOce_StaticLoad(ffi.C.ParaGlobal_GetLuaState(""));
+		end
+	end
+	
+	return false;
+end
+
+
 local NplOceConnection = NPL.export();
 NplOceConnection.is_loaded = false;
 -- Install dll
@@ -40,23 +68,40 @@ function NplOceConnection.load(options,callback)
 	    LOG.std(nil, "info", "NplOceConnection", "nplcad isn't supported on %s",System.os.GetPlatform());
         return
     end
-    if(not NPL.GetLuaState)then
-		LOG.std(nil, "error", "NplOceConnection", "can't find the function of NPL.GetLuaState.\n");
-        return
-    end
+   
 	NplOceConnection.callback = callback;
     local npl_oce_dll = options.npl_oce_dll or "plugins/nploce_d.dll"
 	local activate_callback = options.activate_callback or "Mod/NplCad2/NplOceConnection.lua";
-    local lua_state = NPL.GetLuaState("",{});
-    local high = lua_state.high or 0;
-    local low = lua_state.low or 0;
-    local value = mathlib.bit.lshift(high, 32);
-    value = mathlib.bit.bor(value, low);
-	if(value == 0)then
-		LOG.std(nil, "error", "NplOceConnection", "lua state is wrong.\n");
-		return
+	
+	if NplOce_StaticLoad() then
+		NplOce.StaticInit(function()
+			if(not NplOceConnection.is_loaded)then
+				NplOceConnection.is_loaded = true;
+
+				NPL.load("Mod/NplCad2/NplOce_Internal.lua");
+
+				if(NplOceConnection.callback)then
+					NplOceConnection.callback(true);
+				end
+			end
+		end);
+	else
+		if(not NPL.GetLuaState)then
+			LOG.std(nil, "error", "NplOceConnection", "can't find the function of NPL.GetLuaState.\n");
+			return
+		end
+
+		local lua_state = NPL.GetLuaState("",{});
+		local high = lua_state.high or 0;
+		local low = lua_state.low or 0;
+		local value = mathlib.bit.lshift(high, 32);
+		value = mathlib.bit.bor(value, low);
+		if(value == 0)then
+			LOG.std(nil, "error", "NplOceConnection", "lua state is wrong.\n");
+			return
+		end
+		NPL.activate(npl_oce_dll, { lua_state = value, callback = activate_callback});
 	end
-	NPL.activate(npl_oce_dll, { lua_state = value, callback = activate_callback});
 end
 function NplOceConnection.OsSupported()
     local is_supported = (System.os.GetPlatform()=="win32" and not System.os.Is64BitsSystem());
