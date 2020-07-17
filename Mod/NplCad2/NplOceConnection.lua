@@ -1,4 +1,14 @@
---[[
+
+			if(result) then
+				return true;
+			end
+		end
+	end
+
+	if jit and jit.version then
+		local ffi = require("ffi");
+		ffi.cdef([[
+			bool NplOce_StaticLoad(void* pLuaState);--[[
 Title: NplOceConnection
 Author(s): leio
 Date: 2018/9/28
@@ -29,16 +39,6 @@ local function NplOce_StaticLoad()
 		local func = loadstring([[local ffi = require("ffi"); local func = ffi.C.]]..func_name);
 		if(func) then
 			local result, msg = pcall(func);
-			if(result) then
-				return true;
-			end
-		end
-	end
-
-	if jit and jit.version then
-		local ffi = require("ffi");
-		ffi.cdef([[
-			bool NplOce_StaticLoad(void* pLuaState);
 			void* ParaGlobal_GetLuaState(const char* name);
 		]]);
 		
@@ -64,11 +64,7 @@ function NplOceConnection.load(options,callback)
         end
         return
     end
-    if(not NplOceConnection.OsSupported())then
-	    LOG.std(nil, "info", "NplOceConnection", "nplcad isn't supported on %s",System.os.GetPlatform());
-        return
-    end
-   
+    
 	NplOceConnection.callback = callback;
     local npl_oce_dll = options.npl_oce_dll or "plugins/nploce_d.dll"
 	local activate_callback = options.activate_callback or "Mod/NplCad2/NplOceConnection.lua";
@@ -86,6 +82,11 @@ function NplOceConnection.load(options,callback)
 			end
 		end);
 	else
+		if(not NplOceConnection.OsSupported())then
+			LOG.std(nil, "info", "NplOceConnection", "nplcad isn't supported on %s",System.os.GetPlatform());
+			return
+		end
+
 		if(not NPL.GetLuaState)then
 			LOG.std(nil, "error", "NplOceConnection", "can't find the function of NPL.GetLuaState.\n");
 			return
