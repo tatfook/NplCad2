@@ -1,4 +1,4 @@
-
+--[[
 			if(result) then
 				return true;
 			end
@@ -33,24 +33,26 @@ end);
 NPL.load("(gl)script/ide/math/bit.lua");
 NPL.load("(gl)script/ide/System/os/os.lua");
 
+--local function NplOce_StaticLoad()
+--    
+--	local function check_C_func(func_name)
+--		local func = loadstring([[local ffi = require("ffi"); local func = ffi.C.]]..func_name);
+--		if(func) then
+--			local result, msg = pcall(func);
+--			void* ParaGlobal_GetLuaState(const char* name);
+--		]]);
+--		
+--		if check_C_func("NplOce_StaticLoad") then
+--			return ffi.C.NplOce_StaticLoad(ffi.C.ParaGlobal_GetLuaState(""));
+--		end
+--	end
+--	
+--	return false;
+--end
+
 local function NplOce_StaticLoad()
-
-	local function check_C_func(func_name)
-		local func = loadstring([[local ffi = require("ffi"); local func = ffi.C.]]..func_name);
-		if(func) then
-			local result, msg = pcall(func);
-			void* ParaGlobal_GetLuaState(const char* name);
-		]]);
-		
-		if check_C_func("NplOce_StaticLoad") then
-			return ffi.C.NplOce_StaticLoad(ffi.C.ParaGlobal_GetLuaState(""));
-		end
-	end
-	
-	return false;
+    return false;
 end
-
-
 local NplOceConnection = NPL.export();
 NplOceConnection.is_loaded = false;
 -- Install dll
