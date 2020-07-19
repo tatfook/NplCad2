@@ -1,14 +1,4 @@
 --[[
-			if(result) then
-				return true;
-			end
-		end
-	end
-
-	if jit and jit.version then
-		local ffi = require("ffi");
-		ffi.cdef([[
-			bool NplOce_StaticLoad(void* pLuaState);--[[
 Title: NplOceConnection
 Author(s): leio
 Date: 2018/9/28
@@ -33,26 +23,34 @@ end);
 NPL.load("(gl)script/ide/math/bit.lua");
 NPL.load("(gl)script/ide/System/os/os.lua");
 
---local function NplOce_StaticLoad()
---    
---	local function check_C_func(func_name)
---		local func = loadstring([[local ffi = require("ffi"); local func = ffi.C.]]..func_name);
---		if(func) then
---			local result, msg = pcall(func);
---			void* ParaGlobal_GetLuaState(const char* name);
---		]]);
---		
---		if check_C_func("NplOce_StaticLoad") then
---			return ffi.C.NplOce_StaticLoad(ffi.C.ParaGlobal_GetLuaState(""));
---		end
---	end
---	
---	return false;
---end
-
 local function NplOce_StaticLoad()
-    return false;
+
+	local function check_C_func(func_name)
+		local func = loadstring([[local ffi = require("ffi"); local func = ffi.C.]]..func_name);
+		if(func) then
+			local result, msg = pcall(func);
+			if(result) then
+				return true;
+			end
+		end
+	end
+
+	if jit and jit.version then
+		local ffi = require("ffi");
+		ffi.cdef([[
+			bool NplOce_StaticLoad(void* pLuaState);
+			void* ParaGlobal_GetLuaState(const char* name);
+		]]);
+		
+		if check_C_func("NplOce_StaticLoad") then
+			return ffi.C.NplOce_StaticLoad(ffi.C.ParaGlobal_GetLuaState(""));
+		end
+	end
+	
+	return false;
 end
+
+
 local NplOceConnection = NPL.export();
 NplOceConnection.is_loaded = false;
 -- Install dll
@@ -67,6 +65,7 @@ function NplOceConnection.load(options,callback)
         return
     end
     
+   
 	NplOceConnection.callback = callback;
     local npl_oce_dll = options.npl_oce_dll or "plugins/nploce_d.dll"
 	local activate_callback = options.activate_callback or "Mod/NplCad2/NplOceConnection.lua";
@@ -88,7 +87,7 @@ function NplOceConnection.load(options,callback)
 			LOG.std(nil, "info", "NplOceConnection", "nplcad isn't supported on %s",System.os.GetPlatform());
 			return
 		end
-
+		
 		if(not NPL.GetLuaState)then
 			LOG.std(nil, "error", "NplOceConnection", "can't find the function of NPL.GetLuaState.\n");
 			return
@@ -107,7 +106,7 @@ function NplOceConnection.load(options,callback)
 	end
 end
 function NplOceConnection.OsSupported()
-    local is_supported = (System.os.GetPlatform()=="win32" and not System.os.Is64BitsSystem());
+	local is_supported = (System.os.GetPlatform()=="win32" and not System.os.Is64BitsSystem());
     return is_supported;
 end
 local function activate()
