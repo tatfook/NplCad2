@@ -1490,3 +1490,243 @@ function ShapeBuilder.deflection(liner, angular)
 	ShapeBuilder.angular = math.max(angular, 1.0);
 	ShapeBuilder.angular = math.min(ShapeBuilder.angular, 180);
 end
+
+--[[
+test codes
+
+
+local len = 3;
+-- draw points
+geom_point("union",len,len,0,"#ff0000",true)
+
+-- draw lines
+geom_lineSegment("union",0,0,0,len,0,0,"#ff0000",true);
+geom_lineSegment("union",0,0,0,0,len,0,"#00ff00",true);
+geom_lineSegment("union",0,0,0,0,0,len,"#0000ff",true);
+sphere("union",0.1,"#ffc658")
+
+geom_arcOfCircle("union", 0, 0, 0, 2, 0, 3.14, false, "#ff0000",true);
+geom_circle("union", 0, 0, 0, 2, "#ff0000",true);
+geom_arcOfEllipse("union", 0, 0, 0, 3, 1, 0, 3.14, false, "#ff0000",true);
+geom_ellipse("union", 0, 0, 0, 3, 1, "#ff0000",true);
+geom_arcOfHyperbola("union", 0, 0, 0, 3, 1, 0, 1.57, false, "#ff0000",true);
+geom_arcOfParabola("union", 0, 0, 0, 0.5, -1.57, 1.57, false, "#ff0000",true);
+
+-- draw rectangle
+local w = 3;
+local h = 1;
+geom_lineSegment("union",0,0,0,w,0,0,"#ff0000",true);
+geom_lineSegment("union",w,0,0,w,0,h,"#ff0000",true);
+geom_lineSegment("union",w,0,h,0,0,h,"#ff0000",true);
+geom_lineSegment("union",0,0,h,0,0,0,"#ff0000",true);
+
+-- extrude rectangle
+createSketch()
+    local w = 3;
+    local h = 1;
+    geom_lineSegment("union",0,0,0,w,0,0,"#ff0000");
+    geom_lineSegment("union",w,0,0,w,0,h,"#ff0000");
+    geom_lineSegment("union",w,0,h,0,0,h,"#ff0000");
+    geom_lineSegment("union",0,0,h,0,0,0,"#ff0000");
+endSketch()
+sketch_extrude(1);
+move(0,1,0)
+
+
+
+
+
+geom_circle("union", 0, 0, 0, 1, "#ff0000", true);
+createSketch()
+    geom_circle("union", 0, 0, 0, 1, "#ff0000");
+endSketch()
+sketch_extrude(1);
+
+geom_circle("union", 0, 0, 0, 1, "#ff0000", true);
+createSketch()
+    geom_circle("union", 0, 0, 0, 1, "#ff0000");
+    geom_circle("union", 0, 0, 0, 2, "#ff0000");
+    geom_circle("union", 1, 0, 1, 0.3, "#ff0000");
+    geom_ellipse("union", 1.5, 0, 0, 1, 0.3, "#ff0000");
+endSketch()
+sketch_extrude(1);
+
+
+geom_arcOfCircle("union", 0, 0, 0, 2, 0, 3.14, true, "#ff0000", true);
+createSketch()
+    geom_arcOfCircle("union", 0, 0, 0, 2, 0, 3.14, true, "#ff0000");
+endSketch()
+sketch_extrude(1);
+
+-- test directioin
+cube("union",1,"#ffc658")
+move(3,0,0)
+cube("union",1,"#ff0000")
+move(0,3,0)
+cube("union",1,"#00ff00")
+move(0,0,3)
+
+geom_circle("union", 0, 0, 0, 1, "#ffff00", true);
+
+createSketch()
+    geom_circle("union", 0, 0, 0, 1, "#ff0000");
+endSketch()
+sketch_extrude(1);
+move(0,0.5,0)
+--]]
+
+function ShapeBuilder.createSketch(name)
+    local name = name or ShapeBuilder.generateId();
+	local node = NplOce.SketchNode.create();
+	node:setOpEnabled(false);
+
+	local parent = ShapeBuilder.getCurStage();
+	parent:addChild(node)
+	ShapeBuilder.cur_node = node;
+	ShapeBuilder.selected_node = node;
+	return node
+end
+function ShapeBuilder.endSketch()
+	ShapeBuilder.selected_node = ShapeBuilder.cur_node;
+end
+
+function ShapeBuilder.geom_point(op, x, y, z, color, bAttach)
+    local node = NplOce.GeomPointNode.create();
+	node:setValue(x, y, z);
+    if(bAttach)then
+        node:attachGeometry();
+    end
+	ShapeBuilder.addShapeNode(node, op, color);
+	return node;
+end
+function ShapeBuilder.geom_lineSegment(op, start_x, start_y, start_z, end_x, end_y, end_z, color, bAttach)
+    local node = NplOce.GeomLineSegmentNode.create();
+	node:setValue(start_x, start_y, start_z, end_x, end_y, end_z);
+    if(bAttach)then
+        node:attachGeometry();
+    end
+	ShapeBuilder.addShapeNode(node, op, color);
+	return node;
+end
+function ShapeBuilder.geom_arcOfCircle(op, x, y, z, r, u, v, emulateCCWXY, color, bAttach)
+    local node = NplOce.GeomArcOfCircleNode.create();
+	node:setValue(x, y, z, r, u, v, emulateCCWXY);
+    if(bAttach)then
+        node:attachGeometry();
+    end
+	ShapeBuilder.addShapeNode(node, op, color);
+	return node;
+end
+function ShapeBuilder.geom_circle(op, x, y, z, r, color, bAttach)
+    local node = NplOce.GeomCircleNode.create();
+	node:setValue(x, y, z, r);
+    if(bAttach)then
+        node:attachGeometry();
+    end
+	ShapeBuilder.addShapeNode(node, op, color);
+	return node;
+end
+function ShapeBuilder.geom_arcOfEllipse(op, x, y, z, major_r, minor_r, u, v, emulateCCWXY, color, bAttach)
+    local node = NplOce.GeomArcOfEllipseNode.create();
+	node:setValue(x, y, z, major_r, minor_r, u, v, emulateCCWXY);
+    if(bAttach)then
+        node:attachGeometry();
+    end
+	ShapeBuilder.addShapeNode(node, op, color);
+	return node;
+end
+function ShapeBuilder.geom_ellipse(op, x, y, z, major_r, minor_r, color, bAttach)
+    local node = NplOce.GeomEllipseNode.create();
+	node:setValue(x, y, z, major_r, minor_r);
+    if(bAttach)then
+        node:attachGeometry();
+    end
+	ShapeBuilder.addShapeNode(node, op, color);
+	return node;
+end
+function ShapeBuilder.geom_arcOfHyperbola(op, x, y, z, major_r, minor_r, u, v, emulateCCWXY, color, bAttach)
+    local node = NplOce.GeomArcOfHyperbolaNode.create();
+	node:setValue(x, y, z, major_r, minor_r, u, v, emulateCCWXY);
+    if(bAttach)then
+        node:attachGeometry();
+    end
+	ShapeBuilder.addShapeNode(node, op, color);
+	return node;
+end
+function ShapeBuilder.geom_arcOfParabola(op, x, y, z, focal, u, v, emulateCCWXY, color, bAttach)
+    local node = NplOce.GeomArcOfParabolaNode.create();
+	node:setValue(x, y, z, focal, u, v, emulateCCWXY);
+    if(bAttach)then
+        node:attachGeometry();
+    end
+	ShapeBuilder.addShapeNode(node, op, color);
+	return node;
+end
+--[[
+local poles = {
+        { 0, 0, 0 },
+        { 1.1, 0, 3 },
+        { 2.1, 0, 0 },
+        { 3.1, 0, 3 },
+        { 4.1, 0, 0 },
+        { 5.1, 0, 5 },
+    }
+local degree = 3;
+geom_bspline("union", poles, degree, "#ff0000", true);
+--]]
+function ShapeBuilder.geom_bspline(op, poles, degree, color, bAttach)
+    local node = NplOce.GeomBSplineCurveNode.create();
+    degree = degree or 3;
+    
+    local number_of_poles = #poles;
+
+    local number_of_knots;
+    if (number_of_poles <= degree) then
+        degree = number_of_poles-1;
+    end
+    number_of_knots = number_of_poles - degree + 1;
+
+    local weights = {};
+    local multiplicities = {};
+    local knots = {};
+    for k = 1, number_of_poles do
+        table.insert(weights, 1);
+    end
+    for k = 1, number_of_knots do
+        table.insert(multiplicities, 1);
+        table.insert(knots, (k - 1) / (number_of_knots - 1));
+    end
+    local periodic = false;
+    local checkrational = true;
+    local len_multi = #multiplicities;
+    if(not periodic and len_multi > 0)then
+        multiplicities[1] = degree + 1;
+        multiplicities[len_multi] = degree + 1;
+    end
+	node:setValue(poles, weights, knots, multiplicities, degree, periodic, checkrational);
+    if(bAttach)then
+        node:attachGeometry();
+    end
+	ShapeBuilder.addShapeNode(node, op, color);
+	return node;
+end
+
+function ShapeBuilder.sketch_extrude(height)
+	local node = ShapeBuilder.getSelectedNode();
+	if (node and node.toShape) then
+        local parent = node:getParent();
+        local shape = node:toShape();
+		if (shape ~= nil) then
+			local extrude_shape = NplOce.extrudeShape(shape, height);
+			if (not extrude_shape:IsNull()) then
+                    local model = NplOce.ShapeModel.create(extrude_shape);
+                    local extrude_node = NplOce.ShapeNode.create();
+		            extrude_node:setDrawable(model);
+                    parent:addChild(extrude_node);
+
+                    ShapeBuilder.cur_node = extrude_node;
+	                ShapeBuilder.selected_node = extrude_node;
+			end
+		end
+	end
+end
