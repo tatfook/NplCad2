@@ -559,3 +559,82 @@ function SceneHelper.loadParaXTemplateFromDisc()
 	SceneHelper.parax_template_data = parax_template_data;
 	return parax_template_data;
 end
+-- create polygon
+-- this is in right-hand coordinate
+-- @param plane: "xy" or "yz" or "xz"
+-- @param sides: the number of edge
+-- @param center_h: horizontal axis
+-- @param center_v: vertical axis
+-- @param radius: 
+-- @return pointList
+function SceneHelper.createRegularPolygonPointsInPlane(plane, sides, center_h, center_v, radius)
+    local result = SceneHelper.createRegularPolygonPoints(sides, center_h, center_v, radius);
+    local x = 0;
+    local y = 0;
+    local z = 0;
+    local temp = {};
+    local pointList = {};
+    for k,pos in ipairs(result) do
+        local h = pos.h; 
+        local v = pos.v; 
+
+        if(plane == "xy")then
+            x = h;
+            y = v;
+            z = 0;
+        elseif(plane == "yz")then
+            x = 0;
+            y = h;
+            z = v;
+        elseif(plane == "xz")then
+            x = h;
+            y = 0;
+            z = v;
+        end
+
+        table.insert(temp,{
+            x = x,
+            y = y,
+            z = z,
+        })
+    end
+    for k=1, sides-1 do
+        local from_pos = temp[k];
+        local to_pos = temp[k+1];
+        table.insert(pointList,{
+            from_pos = from_pos,
+            to_pos = to_pos,
+        })
+    end
+    table.insert(pointList,{
+        from_pos = temp[sides],
+        to_pos = temp[1],
+    })
+    return pointList
+end
+-- create polygon
+-- this is in right-hand coordinate
+-- @param sides: the number of edge
+-- @param center_h: horizontal axis
+-- @param center_v: vertical axis
+-- @param radius: 
+-- @return pointList
+function SceneHelper.createRegularPolygonPoints(sides, center_h, center_v, radius)
+    sides = sides or 3;
+    if(sides < 3)then
+        sides = 3;    
+    end
+    if(radius < 0)then
+        radius = 1;
+    end
+    local angular_diff = 2 * math.pi/ sides;
+    local pointList = {};
+    for k = 1, sides do
+        local cos_v = math.cos(angular_diff * (k - 1));
+        local sin_v = math.sin(angular_diff * (k - 1));
+        local h = center_h + radius * cos_v;
+        local v = center_v + radius * sin_v;
+        table.insert(pointList, { h = h, v = v });
+    end
+    return pointList;
+end

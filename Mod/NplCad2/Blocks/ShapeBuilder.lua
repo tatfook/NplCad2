@@ -1575,11 +1575,12 @@ sketch_extrude(1);
 move(0,0.5,0)
 --]]
 
-function ShapeBuilder.createSketch(name)
+function ShapeBuilder.createSketch(name, plane)
     local name = name or ShapeBuilder.generateId();
+    plane = plane or "xz";
 	local node = NplOce.SketchNode.create();
 	node:setOpEnabled(false);
-
+    node:setPlaneString(plane)
 	local parent = ShapeBuilder.getCurStage();
 	parent:addChild(node)
 	ShapeBuilder.cur_node = node;
@@ -1590,72 +1591,80 @@ function ShapeBuilder.endSketch()
 	ShapeBuilder.selected_node = ShapeBuilder.cur_node;
 end
 
-function ShapeBuilder.geom_point(op, x, y, z, color, bAttach)
+function ShapeBuilder.geom_point(op, x, y, z, color, bAttach, plane)
     local node = NplOce.GeomPointNode.create();
-	node:setValue(x, y, z);
+    plane = plane or ShapeBuilder.get_sketch_plane();
+	node:setValue(x, y, z, plane);
     if(bAttach)then
         node:attachGeometry();
     end
 	ShapeBuilder.addShapeNode(node, op, color);
 	return node;
 end
-function ShapeBuilder.geom_lineSegment(op, start_x, start_y, start_z, end_x, end_y, end_z, color, bAttach)
+function ShapeBuilder.geom_lineSegment(op, start_x, start_y, start_z, end_x, end_y, end_z, color, bAttach, plane)
     local node = NplOce.GeomLineSegmentNode.create();
-	node:setValue(start_x, start_y, start_z, end_x, end_y, end_z);
+    plane = plane or ShapeBuilder.get_sketch_plane();
+	node:setValue(start_x, start_y, start_z, end_x, end_y, end_z, plane);
     if(bAttach)then
         node:attachGeometry();
     end
 	ShapeBuilder.addShapeNode(node, op, color);
 	return node;
 end
-function ShapeBuilder.geom_arcOfCircle(op, x, y, z, r, u, v, emulateCCWXY, color, bAttach)
+function ShapeBuilder.geom_arcOfCircle(op, x, y, z, r, u, v, emulateCCWXY, color, bAttach, plane)
     local node = NplOce.GeomArcOfCircleNode.create();
-	node:setValue(x, y, z, r, u, v, emulateCCWXY);
+    plane = plane or ShapeBuilder.get_sketch_plane();
+	node:setValue(x, y, z, r, u, v, emulateCCWXY, plane);
     if(bAttach)then
         node:attachGeometry();
     end
 	ShapeBuilder.addShapeNode(node, op, color);
 	return node;
 end
-function ShapeBuilder.geom_circle(op, x, y, z, r, color, bAttach)
+function ShapeBuilder.geom_circle(op, x, y, z, r, color, bAttach, plane)
     local node = NplOce.GeomCircleNode.create();
-	node:setValue(x, y, z, r);
+    plane = plane or ShapeBuilder.get_sketch_plane();
+	node:setValue(x, y, z, r, plane);
     if(bAttach)then
         node:attachGeometry();
     end
 	ShapeBuilder.addShapeNode(node, op, color);
 	return node;
 end
-function ShapeBuilder.geom_arcOfEllipse(op, x, y, z, major_r, minor_r, u, v, emulateCCWXY, color, bAttach)
+function ShapeBuilder.geom_arcOfEllipse(op, x, y, z, major_r, minor_r, u, v, emulateCCWXY, color, bAttach, plane)
     local node = NplOce.GeomArcOfEllipseNode.create();
-	node:setValue(x, y, z, major_r, minor_r, u, v, emulateCCWXY);
+    plane = plane or ShapeBuilder.get_sketch_plane();
+	node:setValue(x, y, z, major_r, minor_r, u, v, emulateCCWXY, plane);
     if(bAttach)then
         node:attachGeometry();
     end
 	ShapeBuilder.addShapeNode(node, op, color);
 	return node;
 end
-function ShapeBuilder.geom_ellipse(op, x, y, z, major_r, minor_r, color, bAttach)
+function ShapeBuilder.geom_ellipse(op, x, y, z, major_r, minor_r, color, bAttach, plane)
     local node = NplOce.GeomEllipseNode.create();
-	node:setValue(x, y, z, major_r, minor_r);
+    plane = plane or ShapeBuilder.get_sketch_plane();
+	node:setValue(x, y, z, major_r, minor_r, plane);
     if(bAttach)then
         node:attachGeometry();
     end
 	ShapeBuilder.addShapeNode(node, op, color);
 	return node;
 end
-function ShapeBuilder.geom_arcOfHyperbola(op, x, y, z, major_r, minor_r, u, v, emulateCCWXY, color, bAttach)
+function ShapeBuilder.geom_arcOfHyperbola(op, x, y, z, major_r, minor_r, u, v, emulateCCWXY, color, bAttach, plane)
     local node = NplOce.GeomArcOfHyperbolaNode.create();
-	node:setValue(x, y, z, major_r, minor_r, u, v, emulateCCWXY);
+    plane = plane or ShapeBuilder.get_sketch_plane();
+	node:setValue(x, y, z, major_r, minor_r, u, v, emulateCCWXY, plane);
     if(bAttach)then
         node:attachGeometry();
     end
 	ShapeBuilder.addShapeNode(node, op, color);
 	return node;
 end
-function ShapeBuilder.geom_arcOfParabola(op, x, y, z, focal, u, v, emulateCCWXY, color, bAttach)
+function ShapeBuilder.geom_arcOfParabola(op, x, y, z, focal, u, v, emulateCCWXY, color, bAttach, plane)
     local node = NplOce.GeomArcOfParabolaNode.create();
-	node:setValue(x, y, z, focal, u, v, emulateCCWXY);
+    plane = plane or ShapeBuilder.get_sketch_plane();
+	node:setValue(x, y, z, focal, u, v, emulateCCWXY, plane);
     if(bAttach)then
         node:attachGeometry();
     end
@@ -1674,9 +1683,10 @@ local poles = {
 local degree = 3;
 geom_bspline("union", poles, degree, "#ff0000", true);
 --]]
-function ShapeBuilder.geom_bspline(op, poles, degree, color, bAttach)
+function ShapeBuilder.geom_bspline(op, poles, degree, color, bAttach, plane)
     local node = NplOce.GeomBSplineCurveNode.create();
     degree = degree or 3;
+    plane = plane or ShapeBuilder.get_sketch_plane();
     
     local number_of_poles = #poles;
 
@@ -1703,7 +1713,7 @@ function ShapeBuilder.geom_bspline(op, poles, degree, color, bAttach)
         multiplicities[1] = degree + 1;
         multiplicities[len_multi] = degree + 1;
     end
-	node:setValue(poles, weights, knots, multiplicities, degree, periodic, checkrational);
+	node:setValue(poles, weights, knots, multiplicities, degree, periodic, checkrational, plane);
     if(bAttach)then
         node:attachGeometry();
     end
@@ -1711,6 +1721,30 @@ function ShapeBuilder.geom_bspline(op, poles, degree, color, bAttach)
 	return node;
 end
 
+--[[
+geom_regularPolygon("union", "xz", 3, 0, 0, 2, "#ff0000", true);
+
+createSketch("","xy")
+    geom_regularPolygon("union", 3, 0, 0, 2, "#ff0000");
+endSketch()
+sketch_extrude(1);
+]]
+function ShapeBuilder.geom_regularPolygon(op, sides, center_h, center_v, radius, color, bAttach, plane)
+    plane = plane or ShapeBuilder.get_sketch_plane();
+    local pointList = SceneHelper.createRegularPolygonPointsInPlane(plane, sides, center_h, center_v, radius)
+    for k,v in ipairs(pointList) do
+        local from_pos = v.from_pos;
+        local to_pos = v.to_pos;
+        if(from_pos and to_pos)then
+            local node = NplOce.GeomLineSegmentNode.create();
+	        node:setValue(from_pos.x, from_pos.y, from_pos.z, to_pos.x, to_pos.y, to_pos.z, plane);
+            if(bAttach)then
+                node:attachGeometry();
+            end  
+	        ShapeBuilder.addShapeNode(node, op, color);
+        end
+    end
+end
 function ShapeBuilder.sketch_extrude(height)
 	local node = ShapeBuilder.getSelectedNode();
 	if (node and node.toShape) then
@@ -1729,4 +1763,11 @@ function ShapeBuilder.sketch_extrude(height)
 			end
 		end
 	end
+end
+function ShapeBuilder.get_sketch_plane()
+    local cur_node = ShapeBuilder.cur_node;
+    if(cur_node and cur_node.getPlaneString)then
+        return cur_node:getPlaneString();
+    end
+    return "xz";
 end
