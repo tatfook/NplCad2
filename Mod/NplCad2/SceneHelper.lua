@@ -562,11 +562,23 @@ end
 -- create polygon
 -- this is in right-hand coordinate
 -- @param plane: "xy" or "yz" or "xz"
+
+
 -- @param sides: the number of edge
 -- @param center_h: horizontal axis
 -- @param center_v: vertical axis
 -- @param radius: 
 -- @return pointList
+--[[
+            z
+            *
+            *      y
+            *     *
+            *   *
+            * *
+            * * * * * * * x
+
+--]]
 function SceneHelper.createRegularPolygonPointsInPlane(plane, sides, center_h, center_v, radius)
     local result = SceneHelper.createRegularPolygonPoints(sides, center_h, center_v, radius);
     local x = 0;

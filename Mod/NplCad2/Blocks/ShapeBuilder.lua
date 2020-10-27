@@ -1556,7 +1556,7 @@ geom_arcOfCircle("union", 0, 0, 0, 2, 0, 3.14, true, "#ff0000", true);
 createSketch()
     geom_arcOfCircle("union", 0, 0, 0, 2, 0, 3.14, true, "#ff0000");
 endSketch()
-sketch_extrude(1);
+sketch_extrude_wire(2,0,1,0,false);
 
 -- test directioin
 cube("union",1,"#ffc658")
@@ -1745,13 +1745,19 @@ function ShapeBuilder.geom_regularPolygon(op, sides, center_h, center_v, radius,
         end
     end
 end
-function ShapeBuilder.sketch_extrude(height)
+function ShapeBuilder.sketch_extrude(length)
+    ShapeBuilder.sketch_extrude_internal(length, true, 0, 1, 0, true)
+end
+function ShapeBuilder.sketch_extrude_wire(length, dir_x, dir_y, dir_z)
+    ShapeBuilder.sketch_extrude_internal(length, false, dir_x, dir_y, dir_z, false)
+end
+function ShapeBuilder.sketch_extrude_internal(length, bAutoCheckDir, dir_x, dir_y, dir_z, bSolid)
 	local node = ShapeBuilder.getSelectedNode();
 	if (node and node.toShape) then
         local parent = node:getParent();
         local shape = node:toShape();
 		if (shape ~= nil) then
-			local extrude_shape = NplOce.extrudeShape(shape, height);
+			local extrude_shape = NplOce.extrudeShape(shape, length, bAutoCheckDir, dir_x, dir_y, dir_z, bSolid);
 			if (not extrude_shape:IsNull()) then
                     local model = NplOce.ShapeModel.create(extrude_shape);
                     local extrude_node = NplOce.ShapeNode.create();
