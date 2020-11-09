@@ -24,6 +24,7 @@ NPL.load("(gl)script/ide/math/Matrix4.lua");
 NPL.load("(gl)script/ide/math/Quaternion.lua");
 NPL.load("(gl)script/ide/math/vector.lua");
 NPL.load("(gl)script/ide/System/Encoding/base64.lua");
+local SvgParser = NPL.load("Mod/NplCad2/Svg/SvgParser.lua");
 local Color = commonlib.gettable("System.Core.Color");
 local Matrix4 = commonlib.gettable("mathlib.Matrix4");
 local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
@@ -328,7 +329,20 @@ function ShapeBuilder.popNode()
 	ShapeBuilder.selected_node = node;
 	
 end
-
+function ShapeBuilder.getNode(name)
+    if(not name or name == "")then
+        return ShapeBuilder.getRootNode();
+    end
+	local node = ShapeBuilder.getCurStage():findNode(name);
+    return node
+end
+function ShapeBuilder.getChildCount(name)
+	local node = ShapeBuilder.getNode(name);
+    if(node)then
+        return node:getChildCount();
+    end
+    return -1
+end
 
 function ShapeBuilder.createNode(name,color,bOp)
 	local name = name or ShapeBuilder.generateId();
@@ -849,6 +863,7 @@ function ShapeBuilder.create()
 	ShapeBuilder.scene.bone_name_constraint = {}; 
 
 	ShapeBuilder.scene.pushed_node_list = {};
+	ShapeBuilder.scene.pushed_sketch_node_list = {};
 end
 -- Set a scene for holding shapes
 -- @param {NplOce.Scene} scene
@@ -919,6 +934,7 @@ function ShapeBuilder.addShapeNode(node,op,color)
 	if(not node)then
 		return
 	end
+    op = op or "union"
 	local cur_node = ShapeBuilder.getCurNode();
 	if(cur_node)then
 		node:setOp(op);
@@ -1494,84 +1510,83 @@ end
 --[[
 test codes
 
-
 local len = 3;
 -- draw points
-geom_point("union",len,len,0,"#ff0000",true)
+geom_point(len,len,0,"#ff0000",true)
 
 -- draw lines
-geom_lineSegment("union",0,0,0,len,0,0,"#ff0000",true);
-geom_lineSegment("union",0,0,0,0,len,0,"#00ff00",true);
-geom_lineSegment("union",0,0,0,0,0,len,"#0000ff",true);
+geom_lineSegment(0,0,0,len,0,0,"#ff0000",true);
+geom_lineSegment(0,0,0,0,len,0,"#00ff00",true);
+geom_lineSegment(0,0,0,0,0,len,"#0000ff",true);
 sphere("union",0.1,"#ffc658")
 
-geom_arcOfCircle("union", 0, 0, 0, 2, 0, 3.14, false, "#ff0000",true);
-geom_circle("union", 0, 0, 0, 2, "#ff0000",true);
-geom_arcOfEllipse("union", 0, 0, 0, 3, 1, 0, 3.14, false, "#ff0000",true);
-geom_ellipse("union", 0, 0, 0, 3, 1, "#ff0000",true);
-geom_arcOfHyperbola("union", 0, 0, 0, 3, 1, 0, 1.57, false, "#ff0000",true);
-geom_arcOfParabola("union", 0, 0, 0, 0.5, -1.57, 1.57, false, "#ff0000",true);
+geom_arcOfCircle( 0, 0, 0, 2, 0, 3.14, false, "#ff0000",true);
+geom_circle( 0, 0, 0, 2, "#ff0000",true);
+geom_arcOfEllipse( 0, 0, 0, 3, 1, 0, 3.14, false, "#ff0000",true);
+geom_ellipse( 0, 0, 0, 3, 1, "#ff0000",true);
+geom_arcOfHyperbola( 0, 0, 0, 3, 1, 0, 1.57, false, "#ff0000",true);
+geom_arcOfParabola( 0, 0, 0, 0.5, -1.57, 1.57, false, "#ff0000",true);
 
 -- draw rectangle
 local w = 3;
 local h = 1;
-geom_lineSegment("union",0,0,0,w,0,0,"#ff0000",true);
-geom_lineSegment("union",w,0,0,w,0,h,"#ff0000",true);
-geom_lineSegment("union",w,0,h,0,0,h,"#ff0000",true);
-geom_lineSegment("union",0,0,h,0,0,0,"#ff0000",true);
+geom_lineSegment(0,0,0,w,0,0,"#ff0000",true);
+geom_lineSegment(w,0,0,w,0,h,"#ff0000",true);
+geom_lineSegment(w,0,h,0,0,h,"#ff0000",true);
+geom_lineSegment(0,0,h,0,0,0,"#ff0000",true);
 
 -- extrude rectangle
 createSketch()
     local w = 3;
     local h = 1;
-    geom_lineSegment("union",0,0,0,w,0,0,"#ff0000");
-    geom_lineSegment("union",w,0,0,w,0,h,"#ff0000");
-    geom_lineSegment("union",w,0,h,0,0,h,"#ff0000");
-    geom_lineSegment("union",0,0,h,0,0,0,"#ff0000");
+    geom_lineSegment(0,0,0,w,0,0,"#ff0000");
+    geom_lineSegment(w,0,0,w,0,h,"#ff0000");
+    geom_lineSegment(w,0,h,0,0,h,"#ff0000");
+    geom_lineSegment(0,0,h,0,0,0,"#ff0000");
 endSketch()
-sketch_extrude(1);
+sketch_extrude("union",1);
 move(0,1,0)
 
 
 
 
 
-geom_circle("union", 0, 0, 0, 1, "#ff0000", true);
+geom_circle( 0, 0, 0, 1, "#ff0000", true);
 createSketch()
-    geom_circle("union", 0, 0, 0, 1, "#ff0000");
+    geom_circle( 0, 0, 0, 1, "#ff0000");
 endSketch()
-sketch_extrude(1);
+sketch_extrude("union", 1);
 
-geom_circle("union", 0, 0, 0, 1, "#ff0000", true);
+geom_circle( 0, 0, 0, 1, "#ff0000", true);
 createSketch()
-    geom_circle("union", 0, 0, 0, 1, "#ff0000");
-    geom_circle("union", 0, 0, 0, 2, "#ff0000");
-    geom_circle("union", 1, 0, 1, 0.3, "#ff0000");
-    geom_ellipse("union", 1.5, 0, 0, 1, 0.3, "#ff0000");
+    geom_circle( 0, 0, 0, 1, "#ff0000");
+    geom_circle( 0, 0, 0, 2, "#ff0000");
+    geom_circle( 1, 0, 1, 0.3, "#ff0000");
+    geom_ellipse( 1.5, 0, 0, 1, 0.3, "#ff0000");
 endSketch()
-sketch_extrude(1);
+sketch_extrude("union", 1);
 
 
-geom_arcOfCircle("union", 0, 0, 0, 2, 0, 3.14, true, "#ff0000", true);
+geom_arcOfCircle( 0, 0, 0, 2, 0, 3.14, true, "#ff0000", true);
 createSketch()
-    geom_arcOfCircle("union", 0, 0, 0, 2, 0, 3.14, true, "#ff0000");
+    geom_arcOfCircle( 0, 0, 0, 2, 0, 3.14, true, "#ff0000");
 endSketch()
-sketch_extrude_wire(2,0,1,0,false);
+sketch_extrude_wire("union",2,"#ff0000",0,1,0,false);
 
--- test directioin
-cube("union",1,"#ffc658")
+-- test direction
+cube("union", 1,"#ffc658")
 move(3,0,0)
 cube("union",1,"#ff0000")
 move(0,3,0)
 cube("union",1,"#00ff00")
 move(0,0,3)
 
-geom_circle("union", 0, 0, 0, 1, "#ffff00", true);
+geom_circle( 0, 0, 0, 1, "#ffff00", true);
 
 createSketch()
-    geom_circle("union", 0, 0, 0, 1, "#ff0000");
+    geom_circle( 0, 0, 0, 1, "#ff0000");
 endSketch()
-sketch_extrude(1);
+sketch_extrude("union",1);
 move(0,0.5,0)
 --]]
 
@@ -1581,95 +1596,129 @@ function ShapeBuilder.createSketch(name, plane)
 	local node = NplOce.SketchNode.create();
 	node:setOpEnabled(false);
     node:setPlaneString(plane)
-	local parent = ShapeBuilder.getCurStage();
+	local parent = ShapeBuilder.getCurNode();
 	parent:addChild(node)
 	ShapeBuilder.cur_node = node;
 	ShapeBuilder.selected_node = node;
+
+	table.insert(ShapeBuilder.scene.pushed_sketch_node_list,node);
+
 	return node
 end
 function ShapeBuilder.endSketch()
-	ShapeBuilder.selected_node = ShapeBuilder.cur_node;
+    local len = #ShapeBuilder.scene.pushed_sketch_node_list;
+	local node = ShapeBuilder.scene.pushed_sketch_node_list[len];
+	local parent = node:getParent() or ShapeBuilder.getRootNode();
+
+	table.remove(ShapeBuilder.scene.pushed_sketch_node_list,len);
+	ShapeBuilder.cur_node = parent;
+	ShapeBuilder.selected_node = node;
+	
 end
 
-function ShapeBuilder.geom_point(op, x, y, z, color, bAttach, plane)
+function ShapeBuilder.geom_point(x, y, z, color, bAttach, plane)
     local node = NplOce.GeomPointNode.create();
     plane = plane or ShapeBuilder.get_sketch_plane();
 	node:setValue(x, y, z, plane);
     if(bAttach)then
         node:attachGeometry();
     end
-	ShapeBuilder.addShapeNode(node, op, color);
+	ShapeBuilder.addShapeNode(node, nil, color);
 	return node;
 end
-function ShapeBuilder.geom_lineSegment(op, start_x, start_y, start_z, end_x, end_y, end_z, color, bAttach, plane)
+function ShapeBuilder.geom_lineSegment(start_x, start_y, start_z, end_x, end_y, end_z, color, bAttach, plane)
     local node = NplOce.GeomLineSegmentNode.create();
     plane = plane or ShapeBuilder.get_sketch_plane();
 	node:setValue(start_x, start_y, start_z, end_x, end_y, end_z, plane);
     if(bAttach)then
         node:attachGeometry();
     end
-	ShapeBuilder.addShapeNode(node, op, color);
+	ShapeBuilder.addShapeNode(node, nil, color);
 	return node;
 end
-function ShapeBuilder.geom_arcOfCircle(op, x, y, z, r, u, v, emulateCCWXY, color, bAttach, plane)
+function ShapeBuilder.geom_arcOfCircle(x, y, z, r, u, v, emulateCCWXY, color, bAttach, plane)
     local node = NplOce.GeomArcOfCircleNode.create();
     plane = plane or ShapeBuilder.get_sketch_plane();
 	node:setValue(x, y, z, r, u, v, emulateCCWXY, plane);
     if(bAttach)then
         node:attachGeometry();
     end
-	ShapeBuilder.addShapeNode(node, op, color);
+	ShapeBuilder.addShapeNode(node, nil, color);
 	return node;
 end
-function ShapeBuilder.geom_circle(op, x, y, z, r, color, bAttach, plane)
+function ShapeBuilder.geom_circle(x, y, z, r, color, bAttach, plane)
     local node = NplOce.GeomCircleNode.create();
     plane = plane or ShapeBuilder.get_sketch_plane();
 	node:setValue(x, y, z, r, plane);
     if(bAttach)then
         node:attachGeometry();
     end
-	ShapeBuilder.addShapeNode(node, op, color);
+	ShapeBuilder.addShapeNode(node, nil, color);
 	return node;
 end
-function ShapeBuilder.geom_arcOfEllipse(op, x, y, z, major_r, minor_r, u, v, emulateCCWXY, color, bAttach, plane)
+function ShapeBuilder.geom_arcOfEllipse(x, y, z, major_r, minor_r, u, v, emulateCCWXY, color, bAttach, plane)
     local node = NplOce.GeomArcOfEllipseNode.create();
     plane = plane or ShapeBuilder.get_sketch_plane();
 	node:setValue(x, y, z, major_r, minor_r, u, v, emulateCCWXY, plane);
     if(bAttach)then
         node:attachGeometry();
     end
-	ShapeBuilder.addShapeNode(node, op, color);
+	ShapeBuilder.addShapeNode(node, nil, color);
 	return node;
 end
-function ShapeBuilder.geom_ellipse(op, x, y, z, major_r, minor_r, color, bAttach, plane)
+function ShapeBuilder.geom_ellipse(x, y, z, major_r, minor_r, color, bAttach, plane)
     local node = NplOce.GeomEllipseNode.create();
     plane = plane or ShapeBuilder.get_sketch_plane();
 	node:setValue(x, y, z, major_r, minor_r, plane);
     if(bAttach)then
         node:attachGeometry();
     end
-	ShapeBuilder.addShapeNode(node, op, color);
+	ShapeBuilder.addShapeNode(node, nil, color);
 	return node;
 end
-function ShapeBuilder.geom_arcOfHyperbola(op, x, y, z, major_r, minor_r, u, v, emulateCCWXY, color, bAttach, plane)
+function ShapeBuilder.geom_arcOfHyperbola(x, y, z, major_r, minor_r, u, v, emulateCCWXY, color, bAttach, plane)
     local node = NplOce.GeomArcOfHyperbolaNode.create();
     plane = plane or ShapeBuilder.get_sketch_plane();
 	node:setValue(x, y, z, major_r, minor_r, u, v, emulateCCWXY, plane);
     if(bAttach)then
         node:attachGeometry();
     end
-	ShapeBuilder.addShapeNode(node, op, color);
+	ShapeBuilder.addShapeNode(node, nil, color);
 	return node;
 end
-function ShapeBuilder.geom_arcOfParabola(op, x, y, z, focal, u, v, emulateCCWXY, color, bAttach, plane)
+function ShapeBuilder.geom_arcOfParabola(x, y, z, focal, u, v, emulateCCWXY, color, bAttach, plane)
     local node = NplOce.GeomArcOfParabolaNode.create();
     plane = plane or ShapeBuilder.get_sketch_plane();
 	node:setValue(x, y, z, focal, u, v, emulateCCWXY, plane);
     if(bAttach)then
         node:attachGeometry();
     end
-	ShapeBuilder.addShapeNode(node, op, color);
+	ShapeBuilder.addShapeNode(node, nil, color);
 	return node;
+end
+
+--[[
+local poles = {
+    { 0, 0, 0 },
+    { 0, 0, 3 },
+    { 2, 0, 3 },
+    { 2, 0, 0 },
+}
+geom_bezier( poles, "#ff0000", true);
+--]]
+
+function ShapeBuilder.geom_bezier(poles, color, bAttach, plane)
+    local node = NplOce.GeomBezierCurveNode.create();
+    local weights = {};
+    plane = plane or ShapeBuilder.get_sketch_plane();
+
+	node:setValue(poles, weights, plane);
+    if(bAttach)then
+        node:attachGeometry();
+    end
+	ShapeBuilder.addShapeNode(node, nil, color);
+	return node;
+
 end
 --[[
 local poles = {
@@ -1681,9 +1730,9 @@ local poles = {
         { 5.1, 0, 5 },
     }
 local degree = 3;
-geom_bspline("union", poles, degree, "#ff0000", true);
+geom_bspline( poles, degree, "#ff0000", true);
 --]]
-function ShapeBuilder.geom_bspline(op, poles, degree, color, bAttach, plane)
+function ShapeBuilder.geom_bspline(poles, degree, color, bAttach, plane)
     local node = NplOce.GeomBSplineCurveNode.create();
     degree = degree or 3;
     plane = plane or ShapeBuilder.get_sketch_plane();
@@ -1717,19 +1766,19 @@ function ShapeBuilder.geom_bspline(op, poles, degree, color, bAttach, plane)
     if(bAttach)then
         node:attachGeometry();
     end
-	ShapeBuilder.addShapeNode(node, op, color);
+	ShapeBuilder.addShapeNode(node, nil, color);
 	return node;
 end
 
 --[[
-geom_regularPolygon("union", "xz", 3, 0, 0, 2, "#ff0000", true);
+geom_regularPolygon(3, 0, 0, 2, "#ff0000", true);
 
 createSketch("","xy")
-    geom_regularPolygon("union", 3, 0, 0, 2, "#ff0000");
+    geom_regularPolygon( 3, 0, 0, 2, "#ff0000");
 endSketch()
-sketch_extrude(1);
+sketch_extrude("union",1);
 ]]
-function ShapeBuilder.geom_regularPolygon(op, sides, center_h, center_v, radius, color, bAttach, plane)
+function ShapeBuilder.geom_regularPolygon(sides, center_h, center_v, radius, color, bAttach, plane)
     plane = plane or ShapeBuilder.get_sketch_plane();
     local pointList = SceneHelper.createRegularPolygonPointsInPlane(plane, sides, center_h, center_v, radius)
     for k,v in ipairs(pointList) do
@@ -1741,33 +1790,47 @@ function ShapeBuilder.geom_regularPolygon(op, sides, center_h, center_v, radius,
             if(bAttach)then
                 node:attachGeometry();
             end  
-	        ShapeBuilder.addShapeNode(node, op, color);
+	        ShapeBuilder.addShapeNode(node, nil, color);
         end
     end
 end
-function ShapeBuilder.sketch_extrude(length)
-    ShapeBuilder.sketch_extrude_internal(length, true, 0, 1, 0, true)
+function ShapeBuilder.sketch_extrude(op, length, color)
+    ShapeBuilder.sketch_extrude_internal(op, length, color, true, 0, 1, 0, true)
 end
-function ShapeBuilder.sketch_extrude_wire(length, dir_x, dir_y, dir_z)
-    ShapeBuilder.sketch_extrude_internal(length, false, dir_x, dir_y, dir_z, false)
+function ShapeBuilder.sketch_extrude_wire(op, length, color, dir_x, dir_y, dir_z)
+    ShapeBuilder.sketch_extrude_internal(op, length, color, false, dir_x, dir_y, dir_z, false)
 end
-function ShapeBuilder.sketch_extrude_internal(length, bAutoCheckDir, dir_x, dir_y, dir_z, bSolid)
+function ShapeBuilder.sketch_extrude_internal(op, length, color, bAutoCheckDir, dir_x, dir_y, dir_z, bSolid)
+    -- this is a sketch node
 	local node = ShapeBuilder.getSelectedNode();
-	if (node and node.toShape) then
-        local parent = node:getParent();
-        local shape = node:toShape();
-		if (shape ~= nil) then
-			local extrude_shape = NplOce.extrudeShape(shape, length, bAutoCheckDir, dir_x, dir_y, dir_z, bSolid);
-			if (not extrude_shape:IsNull()) then
-                    local model = NplOce.ShapeModel.create(extrude_shape);
-                    local extrude_node = NplOce.ShapeNode.create();
-		            extrude_node:setDrawable(model);
-                    parent:addChild(extrude_node);
+	if (node and node.toShape and node.getTypeName) then
+        local type_name = node:getTypeName();
+        if(type_name == "Sketch")then
+            local parent = node:getParent();
+            local shape = node:toShape();
+		    if (shape ~= nil) then
+			    local extrude_shape = NplOce.extrudeShape(shape, length, bAutoCheckDir, dir_x, dir_y, dir_z, bSolid);
+			    if (not extrude_shape:IsNull()) then
+                        local model = NplOce.ShapeModel.create(extrude_shape);
+                        local extrude_node = NplOce.ShapeNode.create();
+		                extrude_node:setDrawable(model);
+                        parent:addChild(extrude_node);
 
-                    ShapeBuilder.cur_node = extrude_node;
-	                ShapeBuilder.selected_node = extrude_node;
-			end
-		end
+	                    extrude_node:setOpEnabled(true);
+                        extrude_node:setOp(op);
+                        extrude_node:setColor(ShapeBuilder.converColorToRGBA(color));
+
+	                    ShapeBuilder.selected_node = extrude_node;
+
+
+                        -- remove sketch node
+                        local parent = node:getParent();
+		                parent:removeChild(node);
+
+			    end
+		    end
+        end
+        
 	end
 end
 function ShapeBuilder.get_sketch_plane()
@@ -1776,4 +1839,111 @@ function ShapeBuilder.get_sketch_plane()
         return cur_node:getPlaneString();
     end
     return "xz";
+end
+--[[
+geom_svg_file( "Mod/NplCad2/Svg/SvgLibs/heart.svg.xml", 0.1, "#ff0000", true)
+
+createSketch("","xz")
+    geom_svg_file( "Mod/NplCad2/Svg/SvgLibs/heart.svg.xml", 0.1, "#ff0000")
+endSketch()
+sketch_extrude("union", 1, "#ffff00");
+
+createSketch("","xz")
+    geom_svg_file( "Mod/NplCad2/Svg/SvgLibs/diamond.svg.xml", 0.1, "#ff0000")
+endSketch()
+sketch_extrude("union", 1);
+--]]
+function ShapeBuilder.geom_svg_file(filename, scale, color, bAttach, plane)
+    plane = plane or ShapeBuilder.get_sketch_plane();
+    scale = scale or 1;
+    local svg_parser = SvgParser:new();
+    svg_parser:ParseFile(filename);
+    local result = svg_parser:GetResult();
+    ShapeBuilder.run_svg_codes(result, scale, color, bAttach, plane);
+end
+
+function ShapeBuilder.geom_svg_string_test()
+    local path_data = [[<svg>
+      <path d="m1.00059,299.00055
+            l0,-167.62497
+            l0,0
+            c0,-72.00411 58.37087,-130.37499 130.375,-130.37499
+            l0,0
+            l0,0
+            c34.57759,0 67.73898,13.7359 92.18906,38.18595
+            c24.45006,24.45005 38.18593,57.61144 38.18593,92.18904
+            l0,18.625
+            l37.24997,0
+            l-74.49995,74.50002
+            l-74.50002,-74.50002
+            l37.25,0
+            l0,-18.625c0,-30.8589 -25.0161,-55.87498 -55.87498,-55.87498
+            l0,0
+            l0,0
+            c-30.85892,0 -55.875,25.01608 -55.875,55.87498
+            l0,167.62497
+            z"/>
+    </svg>]]
+    createSketch("","xz")
+        geom_svg_string( path_data, 0.1, "#ff0000");
+    endSketch()
+    sketch_extrude("union",1);
+end
+--[[
+local SvgPathLibs = NPL.load("Mod/NplCad2/Svg/SvgPathLibs.lua");
+local path_data = SvgPathLibs.GetSvgByName("basic","arrow_u_turn");
+geom_svg_string( path_data, 0.1, "#ff0000", true);
+
+
+local SvgPathLibs = NPL.load("Mod/NplCad2/Svg/SvgPathLibs.lua");
+local path_data = SvgPathLibs.GetSvgByName("basic","arrow_u_turn");
+createSketch("","xz")
+    geom_svg_string( path_data, 0.1, "#ff0000");
+endSketch()
+sketch_extrude("union",1);
+--]]
+function ShapeBuilder.geom_svg_string(str, scale, color, bAttach, plane)
+    plane = plane or ShapeBuilder.get_sketch_plane();
+    scale = scale or 1;
+    local svg_parser = SvgParser:new()
+    svg_parser:ParseString(str);
+    local result = svg_parser:GetResult();
+    ShapeBuilder.run_svg_codes(result, scale, color, bAttach, plane);
+end
+function ShapeBuilder.run_svg_codes(result, scale, color, bAttach, plane)
+    if(result)then
+        for k,v in ipairs(result) do
+            local type = v.type;
+            local out_data = v.out_data;
+            if(type == "line")then
+                local from_x,from_y,from_z = SceneHelper.getPosition_HVInPlane(plane, out_data.from_x, out_data.from_y);
+                local to_x,to_y,to_z = SceneHelper.getPosition_HVInPlane(plane, out_data.to_x, out_data.to_y);
+
+                local bSame = ShapeBuilder.is_same_pos(from_x,from_y,from_z, to_x,to_y,to_z);
+                if(not bSame)then
+                    ShapeBuilder.geom_lineSegment(
+                        from_x * scale ,
+                        from_y * scale ,
+                        from_z * scale ,
+                        to_x * scale ,
+                        to_y * scale ,
+                        to_z * scale ,
+                        color,bAttach,plane);
+                end
+            elseif(type == "bezier_curve")then
+                local poles = out_data;
+                local result = {};
+                for __,pole in ipairs(poles) do
+                    local x,y,z = SceneHelper.getPosition_HVInPlane(plane, pole[1], pole[2]);
+                    table.insert(result,{x * scale ,y * scale ,z * scale });
+                end
+                ShapeBuilder.geom_bezier(result,color,bAttach,plane);
+            end
+        end
+    end
+end
+function ShapeBuilder.is_same_pos(start_x, start_y, start_z, end_x, end_y, end_z)
+    if( start_x == end_x and start_y == end_y and start_z == end_z )then
+        return true;
+    end
 end

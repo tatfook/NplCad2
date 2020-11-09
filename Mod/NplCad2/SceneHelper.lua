@@ -590,19 +590,7 @@ function SceneHelper.createRegularPolygonPointsInPlane(plane, sides, center_h, c
         local h = pos.h; 
         local v = pos.v; 
 
-        if(plane == "xy")then
-            x = h;
-            y = v;
-            z = 0;
-        elseif(plane == "yz")then
-            x = 0;
-            y = h;
-            z = v;
-        elseif(plane == "xz")then
-            x = h;
-            y = 0;
-            z = v;
-        end
+        x,y,z = SceneHelper.getPosition_HVInPlane(plane, h, v);
 
         table.insert(temp,{
             x = x,
@@ -649,4 +637,25 @@ function SceneHelper.createRegularPolygonPoints(sides, center_h, center_v, radiu
         table.insert(pointList, { h = h, v = v });
     end
     return pointList;
+end
+
+function SceneHelper.getPosition_HVInPlane(plane, h, v)
+    local x = 0;
+    local y = 0;
+    local z = 0;
+    if(plane == "xy")then
+        x = h;
+        y = v;
+        z = 0;
+    elseif(plane == "yz")then
+        x = 0;
+        y = h;
+        z = v;
+    elseif(plane == "xz")then
+        x = h;
+        y = 0;
+        z = v;
+    end
+    return x,y,z
+    
 end
