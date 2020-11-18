@@ -1861,7 +1861,6 @@ function ShapeBuilder.geom_svg_file(filename, scale, color, bAttach, plane)
     local result = svg_parser:GetResult();
     ShapeBuilder.run_svg_codes(result, scale, color, bAttach, plane);
 end
-
 function ShapeBuilder.geom_svg_string_test()
     local path_data = [[<svg>
       <path d="m1.00059,299.00055
@@ -1888,6 +1887,39 @@ function ShapeBuilder.geom_svg_string_test()
         geom_svg_string( path_data, 0.1, "#ff0000");
     endSketch()
     sketch_extrude("union",1);
+end
+function ShapeBuilder.geom_svg_string_test2()
+    local path_data = [[<svg>
+      <path d="M727.5,418.5
+        c
+        53.6
+        -52.27,
+        185.89
+        -10.14,
+        195,
+        39,
+        
+        6.8,
+        36.68
+        -52.58,
+        90.41
+        -114,
+        95
+        
+        -4.12
+        .31
+        -77.51,
+        4.77
+        -100
+        -44
+        
+        C694.44,478,706.1,439.37,727.5,418.5
+        Z" />
+    </svg>]]
+    createSketch("","xz")
+        geom_svg_string( path_data, 0.1);
+    endSketch()
+    sketch_extrude("union",1, "#ff0000");
 end
 --[[
 local SvgPathLibs = NPL.load("Mod/NplCad2/Svg/SvgPathLibs.lua");

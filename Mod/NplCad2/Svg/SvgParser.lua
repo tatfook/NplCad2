@@ -146,7 +146,7 @@ function SvgParser:Tags_Callback_path(xmlNode)
 
         -- parse command arguments
         if strargs ~= nil and #strargs > 0 then
-            for arg in string.gmatch(strargs, "%-?[^%s,%-]+") do
+            for arg in string.gmatch(strargs, "[%-%.]?[^%s,%-]+") do
                 table.insert(args, 1, tonumber(arg,10))
             end
         end
