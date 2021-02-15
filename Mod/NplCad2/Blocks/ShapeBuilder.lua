@@ -17,7 +17,6 @@ NplOceConnection.load({ npl_oce_dll = "plugins/nploce/nploce_d.dll", activate_ca
 end);
 ------------------------------------------------------------
 --]]
-NPL.load("(gl)script/apps/Aries/Creator/Game/game_logic.lua");
 NPL.load("(gl)script/apps/Aries/Creator/Game/Common/Files.lua");
 NPL.load("(gl)script/ide/System/Core/Color.lua");
 NPL.load("(gl)script/ide/math/Matrix4.lua");

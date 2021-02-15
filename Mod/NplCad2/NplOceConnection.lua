@@ -70,6 +70,11 @@ function NplOceConnection.load(options,callback)
     local npl_oce_dll = options.npl_oce_dll or "plugins/nploce_d.dll"
 	local activate_callback = options.activate_callback or "Mod/NplCad2/NplOceConnection.lua";
 	
+    local platform = System.os.GetPlatform();
+    if(platform == "linux")then
+        npl_oce_dll = "plugins/libnploce.so"
+    end
+
 	if NplOce_StaticLoad() then
 		NplOce.StaticInit(function()
 			if(not NplOceConnection.is_loaded)then
@@ -94,6 +99,8 @@ function NplOceConnection.load(options,callback)
 		end
 
 		local lua_state = NPL.GetLuaState("",{});
+		LOG.std(nil, "info", "NplOceConnection lua_state", lua_state);
+
 		local high = lua_state.high or 0;
 		local low = lua_state.low or 0;
 		local value = mathlib.bit.lshift(high, 32);
@@ -102,10 +109,18 @@ function NplOceConnection.load(options,callback)
 			LOG.std(nil, "error", "NplOceConnection", "lua state is wrong.\n");
 			return
 		end
+		LOG.std(nil, "info", "NplOceConnection", "lua state is %s.\n", tostring(value));
+        if(platform == "linux")then
+            value = lua_state.value;
+        end
 		NPL.activate(npl_oce_dll, { lua_state = value, callback = activate_callback});
 	end
 end
 function NplOceConnection.OsSupported()
+    local platform = System.os.GetPlatform();
+    if(platform == "linux")then
+        return true
+    end
 	local is_supported = (System.os.GetPlatform()=="win32" and not System.os.Is64BitsSystem());
     return is_supported;
 end
