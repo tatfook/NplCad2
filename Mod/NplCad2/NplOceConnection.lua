@@ -71,7 +71,7 @@ function NplOceConnection.load(options,callback)
 	local activate_callback = options.activate_callback or "Mod/NplCad2/NplOceConnection.lua";
 	
     local platform = System.os.GetPlatform();
-    if(platform == "linux")then
+    if(platform == "linux" or platform == "android")then
         npl_oce_dll = "plugins/libnploce.so"
     end
 
