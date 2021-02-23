@@ -118,7 +118,7 @@ function NplOceConnection.load(options,callback)
 end
 function NplOceConnection.OsSupported()
     local platform = System.os.GetPlatform();
-    if(platform == "linux")then
+    if(platform == "linux" or platform == "android")then
         return true
     end
 	local is_supported = (System.os.GetPlatform()=="win32" and not System.os.Is64BitsSystem());
