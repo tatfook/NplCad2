@@ -29,6 +29,8 @@ NPL.load("(gl)script/ide/log.lua");
 
 local nplcad = inherit(models.abstract.base, gettable("models.nplcad"));
 
+include_once("./nplcad_git_repo.page");
+
 NPL.load("(gl)script/ide/Json.lua");
 local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
 local lastErrorCallstack = "";

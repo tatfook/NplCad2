@@ -69,11 +69,6 @@ function NplOceConnection.load(options,callback)
 	NplOceConnection.callback = callback;
     local npl_oce_dll = options.npl_oce_dll or "plugins/nploce_d.dll"
 	local activate_callback = options.activate_callback or "Mod/NplCad2/NplOceConnection.lua";
-	
-    local platform = System.os.GetPlatform();
-    if(platform == "linux" or platform == "android")then
-        npl_oce_dll = "plugins/libnploce.so"
-    end
 
 	if NplOce_StaticLoad() then
 		NplOce.StaticInit(function()
@@ -110,7 +105,7 @@ function NplOceConnection.load(options,callback)
 			return
 		end
 		LOG.std(nil, "info", "NplOceConnection", "lua state is %s.\n", tostring(value));
-        if(platform == "linux")then
+        if(platform == "linux" or platform == "android" )then
             value = lua_state.value;
         end
 		NPL.activate(npl_oce_dll, { lua_state = value, callback = activate_callback});

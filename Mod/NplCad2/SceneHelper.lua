@@ -506,12 +506,21 @@ function SceneHelper.LoadPlugin(callback)
 	if(not NplOceConnection)then
 		return
 	end
+    local platform = System.os.GetPlatform();
 	local plugin_path;
 	local debug = ParaEngine.GetAppCommandLineByParam("nplcad_debug", false);
 	if(debug)then
-		plugin_path = "plugins/nploce_d.dll";
+        if(platform == "windows")then
+		    plugin_path = "plugins/nploce_d.dll";
+        else
+		    plugin_path = "plugins/libnploce_d.so";
+        end
 	else
-		plugin_path = "plugins/nploce.dll";
+        if(platform == "windows")then
+		    plugin_path = "plugins/nploce.dll";
+        else
+		    plugin_path = "plugins/libnploce.so";
+        end
 	end
 	NplOceConnection.load({ npl_oce_dll = plugin_path, activate_callback = "Mod/NplCad2/NplOceConnection.lua", },callback);
 end

@@ -68,6 +68,7 @@
     <None Include="Mod\NplCad2\Svg\SvgPathLibs.lua" />
     <None Include="Mod\NplCad2\Test\TestScene.lua" />
     <None Include="Mod\NplCad2\Svg\SvgParser.lua" />
+    <None Include="script\apps\WebServer\admin\wp-content\pages\wiki\mod\nplcad\models\nplcad_git_repo.page" />
     <None Include="script\apps\WebServer\admin\wp-content\pages\wiki\mod\nplcad\models\nplcad.page" />
   </ItemGroup>
   <ItemGroup>

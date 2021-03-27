@@ -1,0 +1,201 @@
+﻿<?npl
+--[[
+Title: local git storage api for nplcad
+Author: leio
+Date: 2021/3/24
+Desc: 
+
+test api:
+- GitRepoIsExisted
+http://localhost:8099/api/mod/nplcad/models/nplcad/GitRepoIsExisted?userid=leio&repopath=helloworld
+- GetFileInfoList
+http://localhost:8099/api/mod/nplcad/models/nplcad/GetFileInfoList?userid=leio&repopath=helloworld
+- GitRepoCreate
+http://localhost:8099/api/mod/nplcad/models/nplcad/GitRepoCreate?userid=leio&repopath=helloworld
+- AddOrUpdateFiles
+http://localhost:8099/api/mod/nplcad/models/nplcad/AddOrUpdateFiles?userid=leio&repopath=helloworld&filepath=a/b/c.txt&content=hello_nplcad
+- DeleteFile
+http://localhost:8099/api/mod/nplcad/models/nplcad/DeleteFile?userid=leio&repopath=helloworld&filepath=a/b/c.txt
+- GetFileRaw
+http://localhost:8099/api/mod/nplcad/models/nplcad/GetFileRaw?userid=leio&repopath=helloworld&oid=9cfee13ad3634ecc72b19f8b082b42e140755886
+]]
+NPL.load("(gl)script/apps/Aries/Creator/Game/Tasks/NplGit/NplGit.lua");
+local NplGit = commonlib.gettable("NplGit");
+
+local nplcad = gettable("models.nplcad");
+
+nplcad.git_base_dir = "nplcad_repo";
+ 
+-- GitRepoCreate
+-- create repo
+-- @param {table} input
+-- @param {string} input.userid
+-- @param {string} input.repopath
+function nplcad:api_GitRepoCreate(input)
+	local userid = input.userid;
+	local repopath = input.repopath;
+	if(not userid or not repopath)then
+		return {
+			success = false,
+		}
+	end
+	local user_repopath = commonlib.ResolvePath(nplcad.git_base_dir, userid, repopath);
+	if(NplGit.RepoIsExisted(user_repopath))then
+		return {
+			success = false,
+		}
+	end
+	local result = NplGit.CreateRepo(user_repopath);
+	return {
+		success = result,
+		userid = userid,
+		repopath = repopath,
+	}
+end
+-- GitRepoIsExisted
+-- check if repo is existed by user
+-- @param {table} input
+-- @param {string} input.userid
+-- @param {string} input.repopath
+function nplcad:api_GitRepoIsExisted(input)
+	local userid = input.userid;
+	local repopath = input.repopath;
+	if(not userid or not repopath)then
+		return {
+			success = false,
+		}
+	end
+	local user_repopath = commonlib.ResolvePath(nplcad.git_base_dir, userid, repopath);
+	local is_existed = NplGit.RepoIsExisted(user_repopath)
+	return {
+		success = true,
+		is_existed = is_existed,
+	}
+end
+-- AddOrUpdateFiles
+-- add a file to repo
+-- @param {table} input
+-- @param {string} input.userid
+-- @param {string} input.repopath
+-- @param {string} input.filepath
+-- @param {string} input.content
+function nplcad:api_AddOrUpdateFiles(input)
+	local userid = input.userid;
+	local repopath = input.repopath;
+	local filepath = input.filepath;
+	local content = input.content;
+	if(not userid or not repopath or not filepath or not content)then
+		return {
+			success = false,
+		}
+	end
+	local user_repopath = commonlib.ResolvePath(nplcad.git_base_dir, userid, repopath);
+	local is_existed = NplGit.RepoIsExisted(user_repopath)
+	if(not is_existed)then
+		return {
+			success = false,
+		}
+	end
+	local r = NplGit.AddOrUpdateFiles(user_repopath, {
+		{ filepath = filepath, content = content, },
+	})
+	return {
+		success = r,
+	}
+end
+-- DeleteFile
+-- delete a file from repo
+-- @param {table} input
+-- @param {string} input.userid
+-- @param {string} input.repopath
+-- @param {string} input.filepath
+function nplcad:api_DeleteFile(input)
+	local userid = input.userid;
+	local repopath = input.repopath;
+	local filepath = input.filepath;
+	if(not userid or not repopath or not filepath)then
+		return {
+			success = false,
+		}
+	end
+	local user_repopath = commonlib.ResolvePath(nplcad.git_base_dir, userid, repopath);
+	local is_existed = NplGit.RepoIsExisted(user_repopath)
+	if(not is_existed)then
+		return {
+			success = false,
+		}
+	end
+	local r = NplGit.DeleteFiles(user_repopath, {
+		filepath,
+	})
+	return {
+		success = r,
+	}
+end
+
+-- GetFileInfoList
+-- add fileinfo list from repo
+-- @param {table} input
+-- @param {string} input.userid
+-- @param {string} input.repopath
+function nplcad:api_GetFileInfoList(input)
+	local userid = input.userid;
+	local repopath = input.repopath;
+	if(not userid or not repopath)then
+		return {
+			success = false,
+		}
+	end
+	local user_repopath = commonlib.ResolvePath(nplcad.git_base_dir, userid, repopath);
+	local is_existed = NplGit.RepoIsExisted(user_repopath)
+	if(not is_existed)then
+		return {
+			success = false,
+		}
+	end
+	local repo = NplGit.GetRepo(user_repopath);
+	if(repo)then
+		local data = NplGit.GetFileInfoList(repo);
+		return {
+			success = true,
+			data = data,
+		}
+	end
+	return {
+		success = false,
+	}
+end
+-- GetFileRaw
+-- add fileinfo list from repo
+-- @param {table} input
+-- @param {string} input.userid
+-- @param {string} input.repopath
+-- @param {string} input.oid
+function nplcad:api_GetFileRaw(input)
+	local userid = input.userid;
+	local repopath = input.repopath;
+	local oid = input.oid;
+	if(not userid or not repopath or not oid)then
+		return {
+			success = false,
+		}
+	end
+	local user_repopath = commonlib.ResolvePath(nplcad.git_base_dir, userid, repopath);
+	local is_existed = NplGit.RepoIsExisted(user_repopath)
+	if(not is_existed)then
+		return {
+			success = false,
+		}
+	end
+	local repo = NplGit.GetRepo(user_repopath);
+	if(repo)then
+		local data = NplGit.GetFileRawByRepo(repo,oid);
+		return {
+			success = true,
+			data = data,
+		}
+	end
+	return {
+		success = false,
+	}
+end
