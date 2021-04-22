@@ -212,10 +212,14 @@ function ShapeBuilder.setAnimationTimeValue_Rotate(time,axis,angle)
 	local value = { q[1], q[2], q[3], q[4] }
 	ShapeBuilder.setAnimationTimeValue("rotate", time,value);
 end
-function ShapeBuilder.createJointRoot(name,is_enabled)
+function ShapeBuilder.createJointRoot(name,is_enabled,x,y,z)
 	local joint = NplOce.Joint.create("");
+	x = x or 0;
+	y = y or 0;
+	z = z or 0;
 	is_enabled = ShapeBuilder.getBoolean(is_enabled)
 	joint:setEnabled(is_enabled);
+	ShapeBuilder.setTranslation(joint,x,y,z) 
 
 	ShapeBuilder.getRootNode():addChild(joint)
 	ShapeBuilder.root_joint = joint;
