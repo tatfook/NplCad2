@@ -396,47 +396,54 @@ function ShapeBuilder.deleteNode(name)
 	end
 end
 
-function ShapeBuilder.setLocalPivotMatrix(matrix_arr)
+function ShapeBuilder.setDeltaMatrix(matrix_arr)
 	local node = ShapeBuilder.getSelectedNode();
-	node:setLocalPivotMatrix(matrix_arr);
+	node:setDeltaMatrix(matrix_arr);
 end
-function ShapeBuilder.setLocalPivotMatrix_Node(name,matrix_arr)
+function ShapeBuilder.setDeltaMatrix_Node(name,matrix_arr)
 	if(ShapeBuilder.isEmpty(name))then
 		return
 	end
 	local node = ShapeBuilder.getCurStage():findNode(name);
 	if(node)then
-		node:setLocalPivotMatrix(matrix_arr);
+		node:setDeltaMatrix(matrix_arr);
 	end
 end
 
-function ShapeBuilder.setLocalPivot(x,y,z)
-	local node = ShapeBuilder.getSelectedNode();
-	node:setLocalPivot(x,y,z);
-end
-function ShapeBuilder.setLocalPivot_Node(name,x,y,z)
-	if(ShapeBuilder.isEmpty(name))then
-		return
-	end
-	local node = ShapeBuilder.getCurStage():findNode(name);
-	if(node)then
-		node:setLocalPivot(x,y,z);
-	end
-end
-
-function ShapeBuilder.setLocalPivotOffset(x,y,z)
-	local node = ShapeBuilder.getSelectedNode();
-	node:setLocalPivot(-x,-y,-z);
-end
-function ShapeBuilder.setLocalPivotOffset_Node(name,x,y,z)
-	if(ShapeBuilder.isEmpty(name))then
-		return
-	end
-	local node = ShapeBuilder.getCurStage():findNode(name);
-	if(node)then
-		node:setLocalPivot(-x,-y,-z);
-	end
-end
+--function ShapeBuilder.setLocalPivotMatrix(matrix_arr)
+--	ShapeBuilder.setDeltaMatrix(matrix_arr)
+--end
+--function ShapeBuilder.setLocalPivotMatrix_Node(name,matrix_arr)
+--	ShapeBuilder.setDeltaMatrix_Node(name,matrix_arr)
+--end
+--
+--function ShapeBuilder.setLocalPivot(x,y,z)
+--	local node = ShapeBuilder.getSelectedNode();
+--	node:setLocalPivot(x,y,z);
+--end
+--function ShapeBuilder.setLocalPivot_Node(name,x,y,z)
+--	if(ShapeBuilder.isEmpty(name))then
+--		return
+--	end
+--	local node = ShapeBuilder.getCurStage():findNode(name);
+--	if(node)then
+--		node:setLocalPivot(x,y,z);
+--	end
+--end
+--
+--function ShapeBuilder.setLocalPivotOffset(x,y,z)
+--	local node = ShapeBuilder.getSelectedNode();
+--	node:setLocalPivot(-x,-y,-z);
+--end
+--function ShapeBuilder.setLocalPivotOffset_Node(name,x,y,z)
+--	if(ShapeBuilder.isEmpty(name))then
+--		return
+--	end
+--	local node = ShapeBuilder.getCurStage():findNode(name);
+--	if(node)then
+--		node:setLocalPivot(-x,-y,-z);
+--	end
+--end
 
 function ShapeBuilder.move(x,y,z)
 	local node = ShapeBuilder.getSelectedNode();
