@@ -1843,6 +1843,19 @@ function ShapeBuilder.sketch_extrude_internal(op, length, color, bAutoCheckDir, 
         
 	end
 end
+-- extrude svg path in a plane
+-- @param plane: "xy" or "xz" or "yz"
+-- @param length: 
+-- @param svg_data: 
+-- @param svg_scale: 
+-- @param color: 
+function ShapeBuilder.sketch_extrude_svg_in_plane(plane, length, svg_data, svg_scale, color)
+	svg_scale = svg_scale or 1;
+	ShapeBuilder.createSketch(nil, plane);
+		ShapeBuilder.geom_svg_string( svg_data, svg_scale);
+	ShapeBuilder.endSketch();
+	ShapeBuilder.sketch_extrude("union", length, color);
+end
 function ShapeBuilder.get_sketch_plane()
     local cur_node = ShapeBuilder.cur_node;
     if(cur_node and cur_node.getPlaneString)then
