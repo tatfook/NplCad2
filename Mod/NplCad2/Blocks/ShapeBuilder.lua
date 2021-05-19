@@ -2002,3 +2002,93 @@ function ShapeBuilder.is_same_pos(start_x, start_y, start_z, end_x, end_y, end_z
         return true;
     end
 end
+--[[
+local lineDeflection = 0.5
+local angularDeflection = 0.5
+cube("union",1,"#ffc658")
+findEdgesToString(lineDeflection, angularDeflection)
+findFacesToString(lineDeflection, angularDeflection)
+cylinder("union",1,10,"#ffc658")
+findEdgesToString(lineDeflection, angularDeflection)
+findFacesToString(lineDeflection, angularDeflection)
+--]]
+function ShapeBuilder.findEdgesToString(lineDeflection, angularDeflection)
+	if(lineDeflection == nil)then
+		lineDeflection = 0.5;
+	end
+	if(angularDeflection == nil)then
+		angularDeflection = 0.5;
+	end
+	local node = ShapeBuilder.getSelectedNode();
+	if(not node)then
+		return
+	end
+	local model = node:getDrawable();
+	if (model ~= nil) then
+		local shape = model:getShape();
+		if (shape ~= nil) then
+			local s = NplOce.findEdgesToString(shape, lineDeflection, angularDeflection);
+			
+			local out={};
+			if(NPL.FromJson(s, out)) then
+--				commonlib.echo("================edges");
+--				commonlib.echo(out,true);
+				local len = #out
+				commonlib.echo("================edges len");
+				commonlib.echo(len);
+				commonlib.echo("================edge");
+				for k,v in ipairs(out) do
+					commonlib.echo({
+						id = v.id,
+						geomType = v.geomType,
+						orientation = v.orientation,
+						points_len = #(v.points)
+					});
+					
+				end
+			end
+
+			
+		end
+	end
+end
+function ShapeBuilder.findFacesToString(lineDeflection, angularDeflection)
+	if(lineDeflection == nil)then
+		lineDeflection = 0.5;
+	end
+	if(angularDeflection == nil)then
+		angularDeflection = 0.5;
+	end
+	local node = ShapeBuilder.getSelectedNode();
+	if(not node)then
+		return
+	end
+	local model = node:getDrawable();
+	if (model ~= nil) then
+		local shape = model:getShape();
+		if (shape ~= nil) then
+			local s = NplOce.findFacesToString(shape, lineDeflection, angularDeflection);
+			
+			local out={};
+			if(NPL.FromJson(s, out)) then
+--				commonlib.echo("================faces");
+--				commonlib.echo(out,true);
+				local len = #out
+				commonlib.echo("================faces len");
+				commonlib.echo(len);
+				commonlib.echo("================face");
+				for k,v in ipairs(out) do
+					commonlib.echo({
+						id = v.id,
+						geomType = v.geomType,
+						orientation = v.orientation,
+						vertices_len = #(v.vertices)
+					});
+					
+				end
+			end
+
+			
+		end
+	end
+end
