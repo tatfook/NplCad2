@@ -47,7 +47,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
+    <None Include="Mod\NplCad2\Blocks\PartDesignTypes.lua" />
     <None Include="Mod\NplCad2\Blocks\ShapeBuilder.lua" />
+    <None Include="Mod\NplCad2\Blocks\ShapeBuilder.PartDesign.lua" />
     <None Include="Mod\NplCad2\BrepShapes\sphere.brep" />
     <None Include="Mod\NplCad2\Examples\Primitives.lua" />
     <None Include="Mod\NplCad2\ItemCADCodeBlock.lua" />

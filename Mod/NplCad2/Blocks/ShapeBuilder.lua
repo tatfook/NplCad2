@@ -47,6 +47,8 @@ ShapeBuilder.cur_channel_config = {};
 ShapeBuilder.liner = 0.5;
 ShapeBuilder.angular = 28.5;
 
+ShapeBuilder.default_red_color = { 1, 0, 0, 1, };
+ShapeBuilder.default_color = { 255/255, 198/255, 88/255, 1, };
 function ShapeBuilder.exportFile(type)
 	if(not type)then
 		return
@@ -1400,7 +1402,7 @@ end
 -- @return {number} color[3] - [0-1]
 -- @return {number} color[4] - [0-1]
 function ShapeBuilder.converColorToRGBA(color) 
-	local default_color = {1,0,0,1};
+	local default_color = ShapeBuilder.default_color;
 	if(not color)then
 		return default_color;
 	end
@@ -2002,93 +2004,5 @@ function ShapeBuilder.is_same_pos(start_x, start_y, start_z, end_x, end_y, end_z
         return true;
     end
 end
---[[
-local lineDeflection = 0.5
-local angularDeflection = 0.5
-cube("union",1,"#ffc658")
-findEdgesToString(lineDeflection, angularDeflection)
-findFacesToString(lineDeflection, angularDeflection)
-cylinder("union",1,10,"#ffc658")
-findEdgesToString(lineDeflection, angularDeflection)
-findFacesToString(lineDeflection, angularDeflection)
---]]
-function ShapeBuilder.findEdgesToString(lineDeflection, angularDeflection)
-	if(lineDeflection == nil)then
-		lineDeflection = 0.5;
-	end
-	if(angularDeflection == nil)then
-		angularDeflection = 0.5;
-	end
-	local node = ShapeBuilder.getSelectedNode();
-	if(not node)then
-		return
-	end
-	local model = node:getDrawable();
-	if (model ~= nil) then
-		local shape = model:getShape();
-		if (shape ~= nil) then
-			local s = NplOce.findEdgesToString(shape, lineDeflection, angularDeflection);
-			
-			local out={};
-			if(NPL.FromJson(s, out)) then
---				commonlib.echo("================edges");
---				commonlib.echo(out,true);
-				local len = #out
-				commonlib.echo("================edges len");
-				commonlib.echo(len);
-				commonlib.echo("================edge");
-				for k,v in ipairs(out) do
-					commonlib.echo({
-						id = v.id,
-						geomType = v.geomType,
-						orientation = v.orientation,
-						points_len = #(v.points)
-					});
-					
-				end
-			end
 
-			
-		end
-	end
-end
-function ShapeBuilder.findFacesToString(lineDeflection, angularDeflection)
-	if(lineDeflection == nil)then
-		lineDeflection = 0.5;
-	end
-	if(angularDeflection == nil)then
-		angularDeflection = 0.5;
-	end
-	local node = ShapeBuilder.getSelectedNode();
-	if(not node)then
-		return
-	end
-	local model = node:getDrawable();
-	if (model ~= nil) then
-		local shape = model:getShape();
-		if (shape ~= nil) then
-			local s = NplOce.findFacesToString(shape, lineDeflection, angularDeflection);
-			
-			local out={};
-			if(NPL.FromJson(s, out)) then
---				commonlib.echo("================faces");
---				commonlib.echo(out,true);
-				local len = #out
-				commonlib.echo("================faces len");
-				commonlib.echo(len);
-				commonlib.echo("================face");
-				for k,v in ipairs(out) do
-					commonlib.echo({
-						id = v.id,
-						geomType = v.geomType,
-						orientation = v.orientation,
-						vertices_len = #(v.vertices)
-					});
-					
-				end
-			end
-
-			
-		end
-	end
-end
+NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.PartDesign.lua");

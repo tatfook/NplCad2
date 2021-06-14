@@ -9,7 +9,8 @@ local TestScene = NPL.load("Mod/NplCad2/Test/TestScene.lua");
 local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
 NplOceConnection.load({ npl_oce_dll = "plugins/nploce_d.dll" },function(msg)
     NPL.load("Mod/NplCad2/NplOce_Internal.lua");
-    TestScene.Test_ShapeNodeFilletCone();
+	TestScene.Test_TopoOperation_onChamfer()
+    --TestScene.Test_ShapeNodeFilletCone();
     --TestScene.Test_ShapeNodeChamferCone();
     --TestScene.Test_ShapeNodeFilletCylinder();
     --TestScene.Test_ShapeNodeChamferCylinder();
@@ -24,6 +25,8 @@ NplOceConnection.load({ npl_oce_dll = "plugins/nploce_d.dll" },function(msg)
 end);
 ------------------------------------------------------------
 --]]
+NPL.load("(gl)script/ide/Json.lua");
+
 NPL.load("(gl)script/ide/math/Quaternion.lua");
 NPL.load("(gl)script/ide/math/Matrix4.lua");
 local Matrix4 = commonlib.gettable("mathlib.Matrix4");
@@ -656,4 +659,49 @@ function TestScene.Test_ShapeNodeChamferCone()
 
 end
 
+function TestScene.Test_TopoOperation_onChamfer()
+    local scene = NplOce.Scene.create();
+    local cur_node = scene:addNode("root");
 
+	local node = NplOce.ShapeNodeBox.create();
+	node:setValue(1,1,1);
+	local model = node:getDrawable();
+    local shape = model:getShape();
+
+	local types = { "edges", "faces", "shells", "solids", }
+	local result = ShapeBuilder.findAllTopos_Node(node, types, 0.5, 0.5) or {};
+	local r_edges = result.edges or {};
+	local input = {
+        type = "two_distances",
+		edges = {
+			r_edges[1],
+			r_edges[3],
+			r_edges[5],
+			r_edges[6],
+		},
+		distance1 = 0.2,
+        distance2 = 0.2,
+	}
+
+	local input_edges_str = NPL.ToJson(input);
+	local shape_chamfer = NplOce.TopoOperation_onRun("onChamfer", shape, input_edges_str)
+	if(not shape_chamfer or shape_chamfer:IsNull())then
+		_guihelper.MessageBox("shape_chamfer is null");
+		return
+	end
+	commonlib.echo(shape_chamfer:IsNull());
+    local node_chamfer = NplOce.ShapeNode.create();
+    local model = NplOce.ShapeModel.create();
+	model:setShape(shape_chamfer);
+    node_chamfer:setDrawable(model);
+
+    cur_node:addChild(node_chamfer);
+
+    local filename = "test/Test_TopoOperation_onChamfer.gltf";
+    SceneHelper.saveSceneToGltf(filename,scene,true)
+
+    local msg = string.format("save to: %s",filename);
+    _guihelper.MessageBox(msg);
+    
+
+end
