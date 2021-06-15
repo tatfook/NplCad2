@@ -98,6 +98,7 @@ function ShapeBuilder.onExtrudeToSurface_Node(node, input)
 end
 ----------------------------------------------------------onExtrude
 --[[
+-- extrude by face id and orientation
 cube("union",1,"#ffc658")
 local topos = findAllToposByName()
 onExtrude(
@@ -106,7 +107,22 @@ onExtrude(
     faces = {
 		topos.faces[1],
     },
-	depth = 1, 
+	depth = 3, 
+	direction = "blind",
+
+},"#ff0000")
+move(0,3,0)
+
+-- extrude by face index
+cube("union",1,"#ffc658")
+local topos = findAllToposByName()
+onExtrude(
+{
+    type = "solid_add",
+    faces = {
+		{index = 1,},
+    },
+	depth = 3, 
 	direction = "blind",
 
 },"#ff0000")
@@ -121,6 +137,7 @@ function ShapeBuilder.onExtrude(input, color)
 end
 
 --[[
+-- chamfer by edge id and orientation
 cube("union",1,"#ffc658")
 local topos = findAllToposByName()
 onChamfer(
@@ -135,6 +152,23 @@ onChamfer(
     distance2 = 0.2,
 },"#ff0000")
 move(0,3,0)
+
+
+-- chamfer by edge index
+cube("union",1,"#ffc658")
+onChamfer(
+{
+    type = "two_distances",
+    edges = {
+		{ index = 1, },
+		{ index = 5, },
+		{ index = 6, },
+    },
+    distance1 = 0.2,
+    distance2 = 0.2,
+},"#ff0000")
+move(0,3,0)
+
 --]]
 -- chamfer shape
 -- @param input: string or table
@@ -142,6 +176,46 @@ move(0,3,0)
 function ShapeBuilder.onChamfer(input, color)
 	local node = ShapeBuilder.getSelectedNode();
 	return ShapeBuilder.TopoOperation_onRun("onChamfer", node, input, color);
+end
+
+--[[
+-- fillet by edge id and orientation
+cube("union",1,"#ffc658")
+local topos = findAllToposByName()
+onFillet(
+{
+    type = "edge_circular",
+    edges = {
+		topos.edges[1],
+		topos.edges[5],
+		topos.edges[6],
+    },
+    radius = 0.2,
+},"#ff0000")
+move(0,3,0)
+
+
+-- fillet by edge index
+cube("union",1,"#ffc658")
+onFillet(
+{
+    type = "edge_circular",
+    edges = {
+		{ index = 1, },
+		{ index = 5, },
+		{ index = 6, },
+    },
+    radius = 0.2,
+},"#ff0000")
+move(0,3,0)
+
+--]]
+-- chamfer shape
+-- @param input: string or table
+-- @param color: color for new shape
+function ShapeBuilder.onFillet(input, color)
+	local node = ShapeBuilder.getSelectedNode();
+	return ShapeBuilder.TopoOperation_onRun("onFillet", node, input, color);
 end
 
 function ShapeBuilder.TopoOperation_onRun(action, node, input, color)
