@@ -1959,16 +1959,20 @@ createSketch("","xz")
 endSketch()
 sketch_extrude("union",1);
 --]]
-function ShapeBuilder.geom_svg_string(str, scale, color, bAttach, plane)
+function ShapeBuilder.geom_svg_string(str, scale, color, yzInvert, bAttach, plane)
     plane = plane or ShapeBuilder.get_sketch_plane();
     scale = scale or 1;
     local svg_parser = SvgParser:new()
     svg_parser:ParseString(str);
     local result = svg_parser:GetResult();
-    ShapeBuilder.run_svg_codes(result, scale, color, bAttach, plane);
+    ShapeBuilder.run_svg_codes(result, scale, color, yzInvert, bAttach, plane);
 end
-function ShapeBuilder.run_svg_codes(result, scale, color, bAttach, plane)
+function ShapeBuilder.run_svg_codes(result, scale, color, yzInvert, bAttach, plane)
     if(result)then
+		local yzInvert_num = 1;
+		if(yzInvert)then
+			yzInvert_num = -1;
+		end
         for k,v in ipairs(result) do
             local type = v.type;
             local out_data = v.out_data;
@@ -1980,11 +1984,11 @@ function ShapeBuilder.run_svg_codes(result, scale, color, bAttach, plane)
                 if(not bSame)then
                     ShapeBuilder.geom_lineSegment(
                         from_x * scale ,
-                        from_y * scale ,
-                        from_z * scale ,
+                        yzInvert_num * from_y * scale ,
+                        yzInvert_num * from_z * scale ,
                         to_x * scale ,
-                        to_y * scale ,
-                        to_z * scale ,
+                        yzInvert_num * to_y * scale ,
+                        yzInvert_num * to_z * scale ,
                         color,bAttach,plane);
                 end
             elseif(type == "bezier_curve")then
@@ -1992,7 +1996,7 @@ function ShapeBuilder.run_svg_codes(result, scale, color, bAttach, plane)
                 local result = {};
                 for __,pole in ipairs(poles) do
                     local x,y,z = SceneHelper.getPosition_HVInPlane(plane, pole[1], pole[2]);
-                    table.insert(result,{x * scale ,y * scale ,z * scale });
+                    table.insert(result,{x * scale ,yzInvert_num * y * scale ,yzInvert_num * z * scale });
                 end
                 ShapeBuilder.geom_bezier(result,color,bAttach,plane);
             end
