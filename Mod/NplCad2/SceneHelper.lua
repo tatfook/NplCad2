@@ -432,17 +432,9 @@ function SceneHelper.toParaX(scene, liner, angular)
 	end
 	--NplOce.deflection(2.0, 45);
 
-	local template = SceneHelper.loadParaXTemplateFromDisc();
 	local max_triangle_cnt = scene.max_triangle_cnt or 0;
 	local data = scene:toParaX(max_triangle_cnt);
-	if (template ~= "") then
-		if(data ~= nil)then
-			local Encoding = commonlib.gettable("System.Encoding");
-			data = Encoding.unbase64(data);
-			template = template..data;
-			return template;
-		end
-	end
+	return SceneHelper.unionParaXTemplate(data, true);
 end
 function SceneHelper.saveSceneToParaX(filename,scene, liner, angular)
 	if(not scene)then 
@@ -451,6 +443,19 @@ function SceneHelper.saveSceneToParaX(filename,scene, liner, angular)
 	SceneHelper.run(scene,false);
 	local content = SceneHelper.toParaX(scene, liner, angular) or "";
 	return SceneHelper.saveFile(filename,content);
+end
+function SceneHelper.unionParaXTemplate(content, isBase64)
+	local template = SceneHelper.loadParaXTemplateFromDisc();
+	if (template ~= "") then
+		if(content ~= nil)then
+			local Encoding = commonlib.gettable("System.Encoding");
+			if(isBase64)then
+				content = Encoding.unbase64(content);
+			end
+			content = template..content;
+			return content;
+		end
+	end
 end
 function SceneHelper.saveFile(filename,content)
 	local result = false;
