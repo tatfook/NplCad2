@@ -49,6 +49,13 @@ ShapeBuilder.angular = 28.5;
 
 ShapeBuilder.default_red_color = { 1, 0, 0, 1, };
 ShapeBuilder.default_color = { 255/255, 198/255, 88/255, 1, };
+
+ShapeBuilder.runningNodeTypes = { 
+	pushStage = "pushStage", 
+	pushNode = "pushNode", 
+	createNode = "createNode", 
+};
+
 function ShapeBuilder.exportFile(type)
 	if(not type)then
 		return
@@ -299,6 +306,7 @@ end
 -- the stage node is in top of a single document
 function ShapeBuilder.pushStage(op,name,color,bOp)
 	local node = ShapeBuilder.pushNode(op,name,color,bOp)
+    node:setTag("runningNodeType", ShapeBuilder.runningNodeTypes.pushStage);
 	ShapeBuilder.pre_stage = ShapeBuilder.cur_stage;
 	ShapeBuilder.cur_stage = node;
 
@@ -315,6 +323,7 @@ function ShapeBuilder.pushNode(op,name,color,bOp)
 	node:setOp(op);
 	node:setOpEnabled(bOp);
 	node:setColor(ShapeBuilder.converColorToRGBA(color));
+    node:setTag("runningNodeType", ShapeBuilder.runningNodeTypes.pushNode);
 
 	local parent = ShapeBuilder.cur_node or ShapeBuilder.getRootNode();
 	parent:addChild(node)
@@ -354,8 +363,21 @@ function ShapeBuilder.createNode(name,color,bOp)
 	local node = NplOce.ShapeNode.create(name);
 	node:setOpEnabled(bOp);
 	node:setColor(ShapeBuilder.converColorToRGBA(color));
-
-	local parent = ShapeBuilder.getCurStage();
+    node:setTag("runningNodeType", ShapeBuilder.runningNodeTypes.createNode);
+	
+	local cur_node = ShapeBuilder.cur_node;
+	local parent;
+	if(cur_node)then
+		local type = cur_node:getTag("runningNodeType");
+		if(type == ShapeBuilder.runningNodeTypes.createNode)then
+			-- get parent
+			parent = cur_node:getParent();
+		elseif(type == ShapeBuilder.runningNodeTypes.pushNode or type == ShapeBuilder.runningNodeTypes.pushStage)then
+			-- set cur_node as parent
+			parent = cur_node;
+		end
+	end
+	parent = parent or ShapeBuilder.getCurStage() or ShapeBuilder.getRootNode();
 	parent:addChild(node)
 	ShapeBuilder.cur_node = node;
 	ShapeBuilder.selected_node = node;
