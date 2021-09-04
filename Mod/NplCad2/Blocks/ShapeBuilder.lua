@@ -1435,14 +1435,19 @@ function ShapeBuilder.converColorToRGBA(color)
 		return color;
 	end
 	if(type(color) == "string")then
-		local dword = Color.ColorStr_TO_DWORD(color);
-		local r, g, b, a = Color.DWORD_TO_RGBA(dword);
-		r = r/255;
-		g = g/255;
-		b = b/255;
-		a = a/255;
+		local colorFloats = {};
+		Color.ColorStrToValues(color, colorFloats)
+		local r = colorFloats[1] or 255;
+		local g = colorFloats[2] or 255;
+		local b = colorFloats[3] or 255;
+		local a = colorFloats[4] or 255;
 
-		local v = { r,g,b,a }
+		r = r / 255;
+		g = g / 255;
+		b = b / 255;
+		a = a / 255;
+
+		local v = { r, g, b, a }
 		return v;
 	end
 	return default_color;
