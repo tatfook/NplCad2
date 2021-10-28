@@ -408,6 +408,33 @@ function SceneHelper.saveSceneToStep(filename, scene, bRun, swapYZ, bBinary, bEn
 
 	return scene:toStep_File(filename);
 end
+-- export scene to file by exporter
+-- @param filename: the path and name of file
+-- @param scene: 3d scene
+-- @param bRun:  ture to run scene before export
+-- @param formatStr: "fbxa" or "fbx" or "obj"
+-- @param swapYZ: true to swap Y annd Z axis
+-- @param targetCount: if targetCount > 0 the simplification of mesh will be enabled
+function SceneHelper.exportSceneToFile(filename, scene, bRun, formatStr, swapYZ, targetCount)
+	if(not scene)then 
+		return
+	end
+	if(bRun)then
+		SceneHelper.run(scene,false);
+	end
+	local result = scene:exportByExporter(formatStr, swapYZ, targetCount);
+	if(result)then
+		local cnt = result[1]
+		local content = result[2]
+		local isBase64 = result[3]
+		if(isBase64)then
+			content = Encoding.unbase64(content);
+		end
+		return SceneHelper.saveFile(filename, content);
+	end
+	
+end
+
 function SceneHelper.saveSceneToGltf(filename,scene,bRun, liner, angular)
 	if(not scene)then 
 		return
