@@ -370,7 +370,7 @@ function SceneHelper.combineBoneName(root_node, bone_name_constraint, joints_map
 		end
 	end
 end
-function SceneHelper.saveSceneToStl(filename, scene, bRun, swapYZ, bBinary, bEncodeBase64, bIncludeColor, liner, angular)
+function SceneHelper.saveSceneToStl(filename, scene, bRun, exportCoordinateType, bBinary, bEncodeBase64, bIncludeColor, liner, angular)
 	if(not scene)then 
 		return
 	end
@@ -382,7 +382,7 @@ function SceneHelper.saveSceneToStl(filename, scene, bRun, swapYZ, bBinary, bEnc
 	if (liner and angular) then
 		NplOce.deflection(liner, angular);
 	end
-	local content = scene:toStl_String(swapYZ,bBinary, bEncodeBase64, bIncludeColor);
+	local content = scene:toStl_String(exportCoordinateType, bBinary, bEncodeBase64, bIncludeColor);
 	if(bEncodeBase64)then
 	content = Encoding.unbase64(content);
 	end
@@ -413,16 +413,16 @@ end
 -- @param scene: 3d scene
 -- @param bRun:  ture to run scene before export
 -- @param formatStr: "fbxa" or "fbx" or "obj"
--- @param swapYZ: true to swap Y annd Z axis
+-- @param exportCoordinateType: NplOce.ExporterConfig.to_left_hand_y_up or NplOce.ExporterConfig.to_right_hand_y_up
 -- @param targetCount: if targetCount > 0 the simplification of mesh will be enabled
-function SceneHelper.exportSceneToFile(filename, scene, bRun, formatStr, swapYZ, targetCount)
+function SceneHelper.exportSceneToFile(filename, scene, bRun, formatStr, exportCoordinateType, targetCount)
 	if(not scene)then 
 		return
 	end
 	if(bRun)then
 		SceneHelper.run(scene,false);
 	end
-	local result = scene:exportByExporter(formatStr, swapYZ, targetCount);
+	local result = scene:exportByExporter(formatStr, exportCoordinateType, targetCount);
 	if(result)then
 		local cnt = result[1]
 		local content = result[2]
@@ -435,7 +435,7 @@ function SceneHelper.exportSceneToFile(filename, scene, bRun, formatStr, swapYZ,
 	
 end
 
-function SceneHelper.saveSceneToGltf(filename,scene,bRun, liner, angular)
+function SceneHelper.saveSceneToGltf(filename, scene, bRun, exportCoordinateType, liner, angular)
 	if(not scene)then 
 		return
 	end
@@ -446,7 +446,7 @@ function SceneHelper.saveSceneToGltf(filename,scene,bRun, liner, angular)
 	if (liner and angular) then
 		NplOce.deflection(liner, angular);
 	end
-	local content = scene:toGltf_String();
+	local content = scene:toGltf_String(exportCoordinateType);
 	return SceneHelper.saveFile(filename,content);
 end
 function SceneHelper.toParaX(scene, liner, angular)
@@ -463,7 +463,7 @@ function SceneHelper.toParaX(scene, liner, angular)
 	local data = scene:toParaX(max_triangle_cnt);
 	return SceneHelper.unionParaXTemplate(data, true);
 end
-function SceneHelper.saveSceneToParaX(filename,scene, liner, angular)
+function SceneHelper.saveSceneToParaX(filename, scene, liner, angular)
 	if(not scene)then 
 		return
 	end
@@ -484,7 +484,7 @@ function SceneHelper.unionParaXTemplate(content, isBase64)
 		end
 	end
 end
-function SceneHelper.saveFile(filename,content)
+function SceneHelper.saveFile(filename, content)
 	local result = false;
 	if(content)then
 		local len = string.len(content);

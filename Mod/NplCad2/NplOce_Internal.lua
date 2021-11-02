@@ -10,6 +10,10 @@ NPL.load("Mod/NplCad2/NplOce_Internal.lua");
 --]]
 local NplOce = NplOce;
 
+NplOce.ExporterConfig = {
+    to_left_hand_y_up = 0,
+    to_right_hand_y_up = 1,
+}
 
 NplOce.Transform_Enum = {
     ANIMATE_SCALE_UNIT = 0,
