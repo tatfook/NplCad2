@@ -395,19 +395,21 @@ function nplcad:api_runcode(input)
     yield();
     if(code and code ~= "")then
         local build_type = input.build_type
-        local swapYZ = input.swapYZ
+        local exportCoordinateType = input.exportCoordinateType or 0;
         local func_str = nplcad.do_string;
         local str;
         if(build_type == "parax")then
-            str = nplcad.getcode_export_parax(code)
+            str = nplcad.getcode_export_parax(code, exportCoordinateType)
         elseif(build_type == "stl")then
-            str = nplcad.getcode_export_stl(code, swapYZ)
+            str = nplcad.getcode_export_stl(code, exportCoordinateType)
+        elseif(build_type == "fbx" or build_type == "fbxa" or build_type == "obj" )then
+            str = nplcad.getcode_export_fbx_obj(code, build_type, exportCoordinateType, 0)
         elseif(build_type == "before_scene_code_xml")then
             str = nplcad.getcode_export_before_scene_code_xml(code)
         elseif(build_type == "scene_code_xml")then
             str = nplcad.getcode_export_scene_code_xml(code)
         else
-            str = nplcad.getcode(code)
+            str = nplcad.getcode(code, exportCoordinateType)
         end
         local code_func, errormsg = nplcad.compile_code(str);
         if(not code_func and errormsg)then
@@ -437,7 +439,7 @@ function nplcad.compile_code(str)
     local code_func, errormsg = loadstring(str);
     return code_func, errormsg;
 end
-function nplcad.getcode(str)
+function nplcad.getcode(str, exportCoordinateType)
     local s = string.format([[
         local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
         local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
@@ -446,13 +448,13 @@ function nplcad.getcode(str)
         SceneHelper.installMethods(_G, ShapeBuilder)
         %s
         SceneHelper.run(ShapeBuilder.getScene(),false);
-        local s = ShapeBuilder.toJson();
+        local s = ShapeBuilder.toJson(%d);
         _G.ShapeBuilder = nil;
         return s;
-    ]],str);
+    ]],str, exportCoordinateType);
     return s;
 end
-function nplcad.getcode_export_stl(str, swapYZ)
+function nplcad.getcode_export_stl(str, exportCoordinateType)
     local s = string.format([[
         local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
         local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
@@ -461,10 +463,10 @@ function nplcad.getcode_export_stl(str, swapYZ)
         SceneHelper.installMethods(_G, ShapeBuilder)
         %s
         SceneHelper.run(ShapeBuilder.getScene(),false);
-        local s = ShapeBuilder.toStl(%s);
+        local s = ShapeBuilder.toStl(%d);
         _G.ShapeBuilder = nil;
         return s;
-    ]], str, swapYZ);
+    ]], str, exportCoordinateType);
     return s;
 end
 function nplcad.getcode_export_parax(str)
@@ -487,6 +489,35 @@ function nplcad.getcode_export_parax(str)
     ]],str);
     return s;
 end
+function nplcad.getcode_export_fbx_obj(str, formatStr, exportCoordinateType, targetCount)
+    local s = string.format([[
+		NPL.load("(gl)script/ide/System/Encoding/base64.lua");
+        local Encoding = commonlib.gettable("System.Encoding");
+
+        local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
+        local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
+        _G.ShapeBuilder = ShapeBuilder;
+        ShapeBuilder.create()
+        SceneHelper.installMethods(_G, ShapeBuilder)
+        %s
+        SceneHelper.run(ShapeBuilder.getScene(),false);
+		local result = ShapeBuilder.scene:exportByExporter("%s", %d, %d);
+		local s;
+		if(result)then
+			local cnt = result[1]
+			local content = result[2]
+			local isBase64 = result[3]
+			if(not isBase64 and content)then
+				 content = Encoding.base64(content);
+			end
+			s = content;
+		end
+        _G.ShapeBuilder = nil;
+        return s;
+    ]], str, formatStr, exportCoordinateType, targetCount);
+    return s;
+end
+
 function nplcad.getcode_export_before_scene_code_xml(str)
     local s = string.format([[
         local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");

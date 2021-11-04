@@ -914,16 +914,15 @@ end
 
 
 -- Export the scene to json string with gltf format
--- @param {number} [indent = -1]
+-- @param exportCoordinateType: {number} 
 -- @return {string} v
-function ShapeBuilder.toJson(indent)
-	local json = ShapeBuilder.scene:toGltf_String();
-	--ShapeBuilder.TestToGltf();
+function ShapeBuilder.toJson(exportCoordinateType)
+	local json = ShapeBuilder.scene:toGltf_String(exportCoordinateType);
 	return json;
 end
 
-function ShapeBuilder.toStl(swapYZ,bBinary, bEncodeBase64, bIncludeColor)
-	local content = ShapeBuilder.scene:toStl_String(swapYZ,bBinary, bEncodeBase64, bIncludeColor);
+function ShapeBuilder.toStl(exportCoordinateType, bBinary, bEncodeBase64, bIncludeColor)
+	local content = ShapeBuilder.scene:toStl_String(exportCoordinateType, bBinary, bEncodeBase64, bIncludeColor);
 	return content;
 end
 
