@@ -543,7 +543,10 @@ function ShapeBuilder.multiRotationToNode(node,axis,angle)
 	end
 	angle = angle or 0;
 	angle = angle * math.pi * (1.0 / 180.0);
-	
+	local x = nil;
+    local y = nil;
+    local z = nil;
+
 	if(axis == "x")then
 		x = 1;
 		y = 0;
@@ -1043,6 +1046,7 @@ end
 -- Create a cube
 function ShapeBuilder.cube(op,size,color) 
 	local node = NplOce.ShapeNodeBox.create();
+	size = ShapeBuilder.checkPrecision(size);
 	node:setValue(size,size,size);
 	ShapeBuilder.addShapeNode(node,op,color) 
 	return node;
@@ -1055,6 +1059,9 @@ end
 -- @return {NplOce.Node} node
 function ShapeBuilder.box(op,x,y,z,color) 
 	local node = NplOce.ShapeNodeBox.create();
+	x = ShapeBuilder.checkPrecision(x);
+	y = ShapeBuilder.checkPrecision(y);
+	z = ShapeBuilder.checkPrecision(z);
 	node:setValue(x,y,z);
 	ShapeBuilder.addShapeNode(node,op,color) 
 	return node;
@@ -1071,6 +1078,9 @@ end
 
 function ShapeBuilder.box_fillet(op, x, y, z, edges, values, color) 
 	local node = NplOce.ShapeNodeFilletBox.create();
+	x = ShapeBuilder.checkPrecision(x);
+	y = ShapeBuilder.checkPrecision(y);
+	z = ShapeBuilder.checkPrecision(z);
 	edges = edges or {};
 	local len = #edges;
 	node:setValue(x,y,z,len,edges,values);
@@ -1089,6 +1099,9 @@ end
 
 function ShapeBuilder.box_chamfer(op, x, y, z, edges, values, color) 
 	local node = NplOce.ShapeNodeChamferBox.create();
+	x = ShapeBuilder.checkPrecision(x);
+	y = ShapeBuilder.checkPrecision(y);
+	z = ShapeBuilder.checkPrecision(z);
 	edges = edges or {};
 	local len = #edges;
 	node:setValue(x,y,z,len,edges,values);
@@ -1106,6 +1119,8 @@ end
 -- @return {NplOce.Node} node
 function ShapeBuilder._cylinder(op,radius,height,angle,color) 
 	local node = NplOce.ShapeNodeCylinder.create();
+	radius = ShapeBuilder.checkPrecision(radius);
+	height = ShapeBuilder.checkPrecision(height);
 	node:setValue(radius,height,angle);
 	ShapeBuilder.addShapeNode(node,op,color) 
 	return node;
@@ -1124,6 +1139,8 @@ end
 -- @return {NplOce.Node} node
 function ShapeBuilder.cylinder_fillet(op, radius, height, edges, values, color) 
 	local node = NplOce.ShapeNodeFilletCylinder.create();
+	radius = ShapeBuilder.checkPrecision(radius);
+	height = ShapeBuilder.checkPrecision(height);
 	edges = edges or {};
 	local len = #edges;
 	node:setValue(radius,height,360,len,edges,values);
@@ -1141,6 +1158,8 @@ end
 -- @return {NplOce.Node} node
 function ShapeBuilder.cylinder_chamfer(op, radius, height, edges, values, color) 
 	local node = NplOce.ShapeNodeChamferCylinder.create();
+	radius = ShapeBuilder.checkPrecision(radius);
+	height = ShapeBuilder.checkPrecision(height);
 	edges = edges or {};
 	local len = #edges;
 	node:setValue(radius,height,360,len,edges,values);
@@ -1157,6 +1176,7 @@ end
 -- @return {NplOce.Node} node
 function ShapeBuilder._sphere(op,radius,angle1,angle2,angle3,color) 
 	local node = NplOce.ShapeNodeSphere.create();
+	radius = ShapeBuilder.checkPrecision(radius);
 	node:setValue(radius,angle1,angle2,angle3);
 	ShapeBuilder.addShapeNode(node,op,color) 
 	return node;
@@ -1173,6 +1193,9 @@ end
 -- @return {NplOce.Node} node
 function ShapeBuilder._cone(op,top_radius,bottom_radius,height,angle,color) 
 	local node = NplOce.ShapeNodeCone.create();
+	top_radius = ShapeBuilder.checkPrecision(top_radius);
+	bottom_radius = ShapeBuilder.checkPrecision(bottom_radius);
+	height = ShapeBuilder.checkPrecision(height);
 	node:setValue(top_radius,bottom_radius,height,angle);
 	ShapeBuilder.addShapeNode(node,op,color) 
 	return node;
@@ -1193,6 +1216,9 @@ end
 
 function ShapeBuilder.cone_fillet(op, top_radius, bottom_radius, height, edges, values, color) 
 	local node = NplOce.ShapeNodeFilletCone.create();
+	top_radius = ShapeBuilder.checkPrecision(top_radius);
+	bottom_radius = ShapeBuilder.checkPrecision(bottom_radius);
+	height = ShapeBuilder.checkPrecision(height);
 	edges = edges or {};
 	local len = #edges;
 	node:setValue(top_radius,bottom_radius,height,360,len,edges,values);
@@ -1212,6 +1238,9 @@ end
 
 function ShapeBuilder.cone_chamfer(op, top_radius, bottom_radius, height, edges, values, color) 
 	local node = NplOce.ShapeNodeChamferCone.create();
+	top_radius = ShapeBuilder.checkPrecision(top_radius);
+	bottom_radius = ShapeBuilder.checkPrecision(bottom_radius);
+	height = ShapeBuilder.checkPrecision(height);
 	edges = edges or {};
 	local len = #edges;
 	node:setValue(top_radius,bottom_radius,height,360,len,edges,values);
@@ -1229,6 +1258,8 @@ end
 -- @return {NplOce.Node} node
 function ShapeBuilder._torus(op,radius1,radius2,angle1,angle2,angle3,color) 
 	local node = NplOce.ShapeNodeTorus.create();
+	radius1 = ShapeBuilder.checkPrecision(radius1);
+	radius2 = ShapeBuilder.checkPrecision(radius2);
 	node:setValue(radius1,radius2,angle1,angle2,angle3);
 	ShapeBuilder.addShapeNode(node,op,color) 
 	return node;
@@ -1245,6 +1276,8 @@ end
 -- @return {NplOce.Node} node
 function ShapeBuilder.prism(op,edges, radius, height,color) 
 	local node = NplOce.ShapeNodePrism.create();
+	radius = ShapeBuilder.checkPrecision(radius);
+	height = ShapeBuilder.checkPrecision(height);
 	node:setValue(edges, radius, height);
 	ShapeBuilder.addShapeNode(node,op,color) 
 	return node;
@@ -1559,12 +1592,12 @@ geom_lineSegment(0,0,0,0,len,0,"#00ff00",true);
 geom_lineSegment(0,0,0,0,0,len,"#0000ff",true);
 sphere("union",0.1,"#ffc658")
 
-geom_arcOfCircle( 0, 0, 0, 2, 0, 3.14, false, "#ff0000",true);
-geom_circle( 0, 0, 0, 2, "#ff0000",true);
-geom_arcOfEllipse( 0, 0, 0, 3, 1, 0, 3.14, false, "#ff0000",true);
-geom_ellipse( 0, 0, 0, 3, 1, "#ff0000",true);
-geom_arcOfHyperbola( 0, 0, 0, 3, 1, 0, 1.57, false, "#ff0000",true);
-geom_arcOfParabola( 0, 0, 0, 0.5, -1.57, 1.57, false, "#ff0000",true);
+geom_arcOfCircle( 0, 0, 0, 2, 0, 3.14, false, "#ff0000", true);
+geom_circle( 0, 0, 0, 2, "#ff0000", true);
+geom_arcOfEllipse( 0, 0, 0, 3, 1, 0, 3.14, false, "#ff0000", true);
+geom_ellipse( 0, 0, 0, 3, 1, "#ff0000", true);
+geom_arcOfHyperbola( 0, 0, 0, 3, 1, 0, 1.57, false, "#ff0000", true);
+geom_arcOfParabola( 0, 0, 0, 0.5, -1.57, 1.57, false, "#ff0000", true);
 
 -- draw rectangle
 local w = 3;
@@ -1655,17 +1688,16 @@ function ShapeBuilder.endSketch()
 	
 end
 
-function ShapeBuilder.geom_point(x, y, z, color, bAttach, plane)
+function ShapeBuilder.geom_point(x, y, z, color, bAttach)
     local node = NplOce.GeomPointNode.create();
-    plane = plane or ShapeBuilder.get_sketch_plane();
-	node:setValue(x, y, z, plane);
+	node:setValue(x, y, z);
     if(bAttach)then
         node:attachGeometry();
     end
 	ShapeBuilder.addShapeNode(node, nil, color);
 	return node;
 end
-function ShapeBuilder.geom_lineSegment(start_x, start_y, start_z, end_x, end_y, end_z, color, bAttach, plane)
+function ShapeBuilder.geom_lineSegment(start_x, start_y, start_z, end_x, end_y, end_z, color, bAttach)
     local node = NplOce.GeomLineSegmentNode.create();
     plane = plane or ShapeBuilder.get_sketch_plane();
 	node:setValue(start_x, start_y, start_z, end_x, end_y, end_z, plane);
@@ -1675,60 +1707,60 @@ function ShapeBuilder.geom_lineSegment(start_x, start_y, start_z, end_x, end_y, 
 	ShapeBuilder.addShapeNode(node, nil, color);
 	return node;
 end
-function ShapeBuilder.geom_arcOfCircle(x, y, z, r, u, v, emulateCCWXY, color, bAttach, plane)
+function ShapeBuilder.geom_arcOfCircle(x, y, z, r, u, v, emulateCCWXY, color, bAttach, dir)
     local node = NplOce.GeomArcOfCircleNode.create();
-    plane = plane or ShapeBuilder.get_sketch_plane();
-	node:setValue(x, y, z, r, u, v, emulateCCWXY, plane);
+	dir = dir or "";
+	node:setValue(x, y, z, r, u, v, emulateCCWXY, dir);
     if(bAttach)then
         node:attachGeometry();
     end
 	ShapeBuilder.addShapeNode(node, nil, color);
 	return node;
 end
-function ShapeBuilder.geom_circle(x, y, z, r, color, bAttach, plane)
+function ShapeBuilder.geom_circle(x, y, z, r, color, bAttach, dir)
     local node = NplOce.GeomCircleNode.create();
-    plane = plane or ShapeBuilder.get_sketch_plane();
-	node:setValue(x, y, z, r, plane);
+	dir = dir or "";
+	node:setValue(x, y, z, r, dir);
     if(bAttach)then
         node:attachGeometry();
     end
 	ShapeBuilder.addShapeNode(node, nil, color);
 	return node;
 end
-function ShapeBuilder.geom_arcOfEllipse(x, y, z, major_r, minor_r, u, v, emulateCCWXY, color, bAttach, plane)
+function ShapeBuilder.geom_arcOfEllipse(x, y, z, major_r, minor_r, u, v, emulateCCWXY, color, bAttach, dir)
     local node = NplOce.GeomArcOfEllipseNode.create();
-    plane = plane or ShapeBuilder.get_sketch_plane();
-	node:setValue(x, y, z, major_r, minor_r, u, v, emulateCCWXY, plane);
+	dir = dir or "";
+	node:setValue(x, y, z, major_r, minor_r, u, v, emulateCCWXY, dir);
     if(bAttach)then
         node:attachGeometry();
     end
 	ShapeBuilder.addShapeNode(node, nil, color);
 	return node;
 end
-function ShapeBuilder.geom_ellipse(x, y, z, major_r, minor_r, color, bAttach, plane)
+function ShapeBuilder.geom_ellipse(x, y, z, major_r, minor_r, color, bAttach, dir)
     local node = NplOce.GeomEllipseNode.create();
-    plane = plane or ShapeBuilder.get_sketch_plane();
-	node:setValue(x, y, z, major_r, minor_r, plane);
+	dir = dir or "";
+	node:setValue(x, y, z, major_r, minor_r, dir);
     if(bAttach)then
         node:attachGeometry();
     end
 	ShapeBuilder.addShapeNode(node, nil, color);
 	return node;
 end
-function ShapeBuilder.geom_arcOfHyperbola(x, y, z, major_r, minor_r, u, v, emulateCCWXY, color, bAttach, plane)
+function ShapeBuilder.geom_arcOfHyperbola(x, y, z, major_r, minor_r, u, v, emulateCCWXY, color, bAttach, dir)
     local node = NplOce.GeomArcOfHyperbolaNode.create();
-    plane = plane or ShapeBuilder.get_sketch_plane();
-	node:setValue(x, y, z, major_r, minor_r, u, v, emulateCCWXY, plane);
+	dir = dir or "";
+	node:setValue(x, y, z, major_r, minor_r, u, v, emulateCCWXY, dir);
     if(bAttach)then
         node:attachGeometry();
     end
 	ShapeBuilder.addShapeNode(node, nil, color);
 	return node;
 end
-function ShapeBuilder.geom_arcOfParabola(x, y, z, focal, u, v, emulateCCWXY, color, bAttach, plane)
+function ShapeBuilder.geom_arcOfParabola(x, y, z, focal, u, v, emulateCCWXY, color, bAttach, dir)
     local node = NplOce.GeomArcOfParabolaNode.create();
-    plane = plane or ShapeBuilder.get_sketch_plane();
-	node:setValue(x, y, z, focal, u, v, emulateCCWXY, plane);
+	dir = dir or "";
+	node:setValue(x, y, z, focal, u, v, emulateCCWXY, dir);
     if(bAttach)then
         node:attachGeometry();
     end
@@ -1746,12 +1778,11 @@ local poles = {
 geom_bezier( poles, "#ff0000", true);
 --]]
 
-function ShapeBuilder.geom_bezier(poles, color, bAttach, plane)
+function ShapeBuilder.geom_bezier(poles, color, bAttach, dir)
     local node = NplOce.GeomBezierCurveNode.create();
     local weights = {};
-    plane = plane or ShapeBuilder.get_sketch_plane();
 
-	node:setValue(poles, weights, plane);
+	node:setValue(poles, weights, dir);
     if(bAttach)then
         node:attachGeometry();
     end
@@ -1771,10 +1802,9 @@ local poles = {
 local degree = 3;
 geom_bspline( poles, degree, "#ff0000", true);
 --]]
-function ShapeBuilder.geom_bspline(poles, degree, color, bAttach, plane)
+function ShapeBuilder.geom_bspline(poles, degree, color, bAttach, dir)
     local node = NplOce.GeomBSplineCurveNode.create();
     degree = degree or 3;
-    plane = plane or ShapeBuilder.get_sketch_plane();
     
     local number_of_poles = #poles;
 
@@ -1801,7 +1831,7 @@ function ShapeBuilder.geom_bspline(poles, degree, color, bAttach, plane)
         multiplicities[1] = degree + 1;
         multiplicities[len_multi] = degree + 1;
     end
-	node:setValue(poles, weights, knots, multiplicities, degree, periodic, checkrational, plane);
+	node:setValue(poles, weights, knots, multiplicities, degree, periodic, checkrational, dir);
     if(bAttach)then
         node:attachGeometry();
     end
@@ -2035,5 +2065,12 @@ function ShapeBuilder.is_same_pos(start_x, start_y, start_z, end_x, end_y, end_z
         return true;
     end
 end
-
+function ShapeBuilder.checkPrecision(v, defaultValue) 
+	if(type(v) == "number")then
+		if(v < ShapeBuilder.Precision_Confusion)then
+			return defaultValue or 1;
+		end
+	end
+	return v;
+end
 NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.PartDesign.lua");
