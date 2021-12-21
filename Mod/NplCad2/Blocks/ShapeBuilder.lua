@@ -1534,6 +1534,26 @@ function ShapeBuilder.setScale(node,x,y,z)
 		]]
 	end
 end
+
+ -- parse json string to lua object 
+function ShapeBuilder.jsonToObj(json_str)
+	if(not json_str)then
+		return
+	end
+	commonlib.echo(json_str)
+	local out = {};
+	if(NPL.FromJson(json_str, out)) then
+		return out;
+	end
+end
+ -- parse lua object to json string 
+function ShapeBuilder.objToJson(obj)
+	if(not obj)then
+		return
+	end
+	return NPL.ToJson(obj, true)
+end
+
 function ShapeBuilder.isEmpty(s)
 	if(s == nil or s == "")then
 		return true;
