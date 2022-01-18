@@ -1416,6 +1416,9 @@ function ShapeBuilder.regularPolygon(op, p, r, color)
 end
 
 function ShapeBuilder.polygon(op, p, color)
+	if(not p or type(p) ~= "table")then
+		p = {0,0,0, 1,0,0, 1,1,0};
+	end
 	local node = NplOce.ShapeNodePolygon.create();
 	node:setValue(p);
 	ShapeBuilder.addShapeNode(node, op, color);
