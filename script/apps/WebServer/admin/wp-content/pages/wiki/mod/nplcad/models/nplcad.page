@@ -395,6 +395,7 @@ function nplcad:api_runcode(input)
     yield();
     if(code and code ~= "")then
         local build_type = input.build_type
+        local filename = input.filename
         local exportCoordinateType = input.exportCoordinateType or 0;
         local func_str = nplcad.do_string;
         local str;
@@ -404,6 +405,10 @@ function nplcad:api_runcode(input)
             str = nplcad.getcode_export_stl(code, exportCoordinateType)
         elseif(build_type == "fbx" or build_type == "fbxa" or build_type == "obj" )then
             str = nplcad.getcode_export_fbx_obj(code, build_type, exportCoordinateType, 0)
+        elseif(build_type == "step")then
+            str = nplcad.getcode_export_step(code, filename, exportCoordinateType, 0)
+        elseif(build_type == "iges" )then
+            str = nplcad.getcode_export_iges(code, filename, exportCoordinateType, 0)
         elseif(build_type == "before_scene_code_xml")then
             str = nplcad.getcode_export_before_scene_code_xml(code)
         elseif(build_type == "scene_code_xml")then
@@ -517,7 +522,44 @@ function nplcad.getcode_export_fbx_obj(str, formatStr, exportCoordinateType, tar
     ]], str, formatStr, exportCoordinateType, targetCount);
     return s;
 end
+function nplcad.getcode_export_step(str, filename, exportCoordinateType, targetCount)
+    local s = string.format([[
+		NPL.load("(gl)script/ide/System/Encoding/base64.lua");
+        local Encoding = commonlib.gettable("System.Encoding");
 
+        local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
+        local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
+        _G.ShapeBuilder = ShapeBuilder;
+        ShapeBuilder.create()
+        SceneHelper.installMethods(_G, ShapeBuilder)
+        %s
+        SceneHelper.run(ShapeBuilder.getScene(),false);
+		local result = ShapeBuilder.scene:toStep_String("%s", %d, %d);
+		
+        _G.ShapeBuilder = nil;
+        return result;
+    ]], str, filename, exportCoordinateType, targetCount);
+    return s;
+end
+function nplcad.getcode_export_iges(str, filename, exportCoordinateType, targetCount)
+    local s = string.format([[
+		NPL.load("(gl)script/ide/System/Encoding/base64.lua");
+        local Encoding = commonlib.gettable("System.Encoding");
+
+        local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
+        local ShapeBuilder = NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.lua");
+        _G.ShapeBuilder = ShapeBuilder;
+        ShapeBuilder.create()
+        SceneHelper.installMethods(_G, ShapeBuilder)
+        %s
+        SceneHelper.run(ShapeBuilder.getScene(),false);
+		local result = ShapeBuilder.scene:toIges_String("%s", %d, %d);
+		
+        _G.ShapeBuilder = nil;
+        return result;
+    ]], str, filename, exportCoordinateType, targetCount);
+    return s;
+end
 function nplcad.getcode_export_before_scene_code_xml(str)
     local s = string.format([[
         local SceneHelper = NPL.load("Mod/NplCad2/SceneHelper.lua");
