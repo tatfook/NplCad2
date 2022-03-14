@@ -2045,6 +2045,7 @@ function ShapeBuilder.geom_svg_string(str, scale, color, yzInvert, bAttach, plan
     local svg_parser = SvgParser:new()
     svg_parser:ParseString(str);
     local result = svg_parser:GetResult();
+    commonlib.echo(svg_parser:Dump());
     ShapeBuilder.run_svg_codes(result, scale, color, yzInvert, bAttach, plane);
 end
 function ShapeBuilder.run_svg_codes(result, scale, color, yzInvert, bAttach, plane)
@@ -2060,8 +2061,8 @@ function ShapeBuilder.run_svg_codes(result, scale, color, yzInvert, bAttach, pla
                 local from_x,from_y,from_z = SceneHelper.getPosition_HVInPlane(plane, out_data.from_x, out_data.from_y);
                 local to_x,to_y,to_z = SceneHelper.getPosition_HVInPlane(plane, out_data.to_x, out_data.to_y);
 
-                local bSame = ShapeBuilder.is_same_pos(from_x,from_y,from_z, to_x,to_y,to_z);
-                if(not bSame)then
+                local bEqual = ShapeBuilder.is_equal_pos(from_x, from_y, from_z, to_x, to_y, to_z);
+                if(not bEqual)then
                     ShapeBuilder.geom_lineSegment(
                         from_x * scale ,
                         yzInvert_num * from_y * scale ,
@@ -2070,6 +2071,11 @@ function ShapeBuilder.run_svg_codes(result, scale, color, yzInvert, bAttach, pla
                         yzInvert_num * to_y * scale ,
                         yzInvert_num * to_z * scale ,
                         color,bAttach,plane);
+                else
+                    commonlib.echo("===================found equal position to line");
+                    commonlib.echo(k);
+                    commonlib.echo(v);
+                    commonlib.echo({from_x, from_y, from_z, to_x, to_y, to_z});
                 end
             elseif(type == "bezier_curve")then
                 local poles = out_data;
@@ -2083,8 +2089,19 @@ function ShapeBuilder.run_svg_codes(result, scale, color, yzInvert, bAttach, pla
         end
     end
 end
-function ShapeBuilder.is_same_pos(start_x, start_y, start_z, end_x, end_y, end_z)
-    if( start_x == end_x and start_y == end_y and start_z == end_z )then
+function ShapeBuilder.is_equal_with_precision(a,b)
+    if(type(a) == "number" and type(b) == "number" )then
+        local diff = math.abs(a - b);
+        if(diff < ShapeBuilder.Precision_Confusion)then
+            return true
+        end
+	end
+end
+function ShapeBuilder.is_equal_pos(start_x, start_y, start_z, end_x, end_y, end_z)
+    if( ShapeBuilder.is_equal_with_precision(start_x, end_x) and 
+        ShapeBuilder.is_equal_with_precision(start_y, end_y) and
+        ShapeBuilder.is_equal_with_precision(start_z, end_z) 
+    )then
         return true;
     end
 end

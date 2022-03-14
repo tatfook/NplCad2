@@ -84,11 +84,13 @@ function SvgParser:Dump()
     end
 end
 function SvgParser:GetResult()
-    return self.result;
+    local result = self.result;
+    return result;
 end
-function SvgParser:PushLineNode(result, from_x, from_y, to_x, to_y)
+function SvgParser:PushLineNode(result, from_x, from_y, to_x, to_y, bClosed)
     table.insert(result,{
         type = "line",
+        bClosed = bClosed,
         out_data = {
             from_x = from_x,
             from_y = from_y,
@@ -191,7 +193,8 @@ function SvgParser:Tags_Callback_path(xmlNode)
                 new_x = cpx + table.remove(args)
                 new_y = cpy + table.remove(args)
 
-                self:PushLineNode(result,cpx,cpy,new_x,new_y);
+
+                self:PushLineNode(result, cpx, cpy, new_x, new_y);
 
                 cpx = new_x;
                 cpy = new_y;
@@ -209,7 +212,7 @@ function SvgParser:Tags_Callback_path(xmlNode)
         elseif op == "h" then
             while #args >= 1 do
                 new_x = cpx + table.remove(args)
-
+                new_y = cpy
                 self:PushLineNode(result,cpx,cpy,new_x,new_y);
                 cpx = new_x;
             end
@@ -223,8 +226,9 @@ function SvgParser:Tags_Callback_path(xmlNode)
         -- line to (vertical, relative)
         elseif op == "v" then
             while #args >= 1 do
+                new_x = cpx
                 new_y = cpy + table.remove(args)
-                self:PushLineNode(result,cpx,cpy,new_x,new_y);
+                self:PushLineNode(result, cpx, cpy, new_x, new_y);
                 cpy = new_y;
             end
         -- cubic bezier curve
@@ -476,7 +480,7 @@ function SvgParser:Tags_Callback_path(xmlNode)
         -- close shape (relative and absolute are the same)
         elseif op == "Z" or op == "z" then
 
-            self:PushLineNode(result,cpx,cpy,start_x,start_y);
+            self:PushLineNode(result,cpx,cpy,start_x,start_y, true);
 
             cpx = start_x
             cpy = start_y
