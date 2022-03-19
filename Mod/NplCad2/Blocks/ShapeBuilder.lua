@@ -1683,6 +1683,18 @@ createSketch()
 endSketch()
 sketch_extrude("union",1);
 move(0,0.5,0)
+
+
+createSketch("", "xz")
+    geom_circle(3, 0, 0, 1, "#ff0000");
+endSketch()
+sketch_revolve("union", 180, "z");
+
+createSketch("", "xz")
+    geom_svg_string("", 1, "#ff0000");
+endSketch()
+sketch_revolve("union", 180, "z");
+
 --]]
 
 function ShapeBuilder.createSketch(name, plane)
@@ -1886,6 +1898,74 @@ function ShapeBuilder.geom_regularPolygon(sides, center_h, center_v, radius, col
         end
     end
 end
+
+-- revolve face shapes in sketch
+-- @param op : "union" ...
+-- @param angle: rotation in degree
+-- @param {string} axis: "x" or "y" or "z"
+-- @param color: hex string "#ff0000"
+function ShapeBuilder.sketch_revolve(op, angle, axis, color)
+    ShapeBuilder.sketch_revolve_internal(op, angle, axis, color, true)
+end
+
+-- revolve wire shapes in sketch
+-- @param op : "union" ...
+-- @param angle: rotation in degree
+-- @param {string} axis: "x" or "y" or "z"
+-- @param color: hex string "#ff0000"
+
+function ShapeBuilder.sketch_revolve_wire(op, angle, axis, color)
+    ShapeBuilder.sketch_revolve_internal(op, angle, axis, color, false)
+end
+-- internal function for revolve
+-- @param op: "union" ...
+-- @param angle: rotation in degree
+-- @param {string} axis: "x" or "y" or "z"
+-- @param color: hex string "#ff0000"
+-- TODO @param {boolean} bSolid: true to make solid shape, false to make wire shape
+function ShapeBuilder.sketch_revolve_internal(op, angle, axis, color, bSolid)
+    local axis_x, axis_y, axis_z = 0, 0, 0;
+	if(axis == "x")then
+		axis_x = 1;
+	elseif(axis == "y")then
+		axis_y = 1;
+	elseif(axis == "z")then
+		axis_z = 1;
+	else
+		-- invalid param, axis
+		return;
+	end
+    -- this is a sketch node
+	local node = ShapeBuilder.getSelectedNode();
+	if (node and node.toShape and node.getTypeName) then
+        local type_name = node:getTypeName();
+        if(type_name == "Sketch")then
+            local parent = node:getParent();
+            local shape = node:toShape();
+		    if (shape ~= nil) then
+                local revolve_shape = NplOce.revolve(shape, axis_x, axis_y, axis_z, angle);
+				if (not revolve_shape:IsNull()) then
+					local model = NplOce.ShapeModel.create(revolve_shape);
+                    local revolve_node = NplOce.ShapeNode.create();
+		            revolve_node:setDrawable(model);
+                    parent:addChild(revolve_node);
+
+	                revolve_node:setOpEnabled(true);
+                    revolve_node:setOp(op);
+                    revolve_node:setColor(ShapeBuilder.converColorToRGBA(color));
+
+	                ShapeBuilder.selected_node = revolve_node;
+
+
+                    -- remove sketch node
+                    local parent = node:getParent();
+		            parent:removeChild(node);
+				end
+		    end
+        end
+        
+	end
+end
 function ShapeBuilder.sketch_extrude(op, length, color)
     ShapeBuilder.sketch_extrude_internal(op, length, color, true, 0, 1, 0, true)
 end
@@ -2039,6 +2119,9 @@ createSketch("","xz")
 endSketch()
 sketch_extrude("union",1);
 --]]
+-- create solid or wire by svg string
+-- @param {string} str: svg string like "<svg><path d='' /><path d='' /></svg>"
+-- @param {number} scale: scaling unit, default vlaue is 1
 function ShapeBuilder.geom_svg_string(str, scale, color, yzInvert, bAttach, plane)
     plane = plane or ShapeBuilder.get_sketch_plane();
     scale = scale or 1;
