@@ -1700,7 +1700,7 @@ sketch_revolve("union", 180, "z");
 function ShapeBuilder.createSketch(name, plane)
     local name = name or ShapeBuilder.generateId();
     plane = plane or "xz";
-	local node = NplOce.SketchNode.create();
+	local node = NplOce.SketchNode.create(name);
 	node:setOpEnabled(false);
     node:setPlaneString(plane)
 	local parent = ShapeBuilder.getCurNode();
@@ -2122,38 +2122,43 @@ sketch_extrude("union",1);
 -- create solid or wire by svg string
 -- @param {string} str: svg string like "<svg><path d='' /><path d='' /></svg>"
 -- @param {number} scale: scaling unit, default vlaue is 1
-function ShapeBuilder.geom_svg_string(str, scale, color, yzInvert, bAttach, plane)
+-- @param {number} hInvert: invert h value
+function ShapeBuilder.geom_svg_string(str, scale, color, hInvert, bAttach, plane)
     plane = plane or ShapeBuilder.get_sketch_plane();
     scale = scale or 1;
     local svg_parser = SvgParser:new()
     svg_parser:ParseString(str);
     local result = svg_parser:GetResult();
     commonlib.echo(svg_parser:Dump());
-    ShapeBuilder.run_svg_codes(result, scale, color, yzInvert, bAttach, plane);
+    ShapeBuilder.run_svg_codes(result, scale, color, hInvert, bAttach, plane);
 end
-function ShapeBuilder.run_svg_codes(result, scale, color, yzInvert, bAttach, plane)
+function ShapeBuilder.run_svg_codes(result, scale, color, hInvert, bAttach, plane)
     if(result)then
-		local yzInvert_num = 1;
-		if(yzInvert)then
-			yzInvert_num = -1;
-		end
+		hInvert = hInvert or 1;
         for k,v in ipairs(result) do
             local type = v.type;
             local out_data = v.out_data;
             if(type == "line")then
-                local from_x,from_y,from_z = SceneHelper.getPosition_HVInPlane(plane, out_data.from_x, out_data.from_y);
-                local to_x,to_y,to_z = SceneHelper.getPosition_HVInPlane(plane, out_data.to_x, out_data.to_y);
+				local input_from_x = out_data.from_x * scale;
+				local input_from_y = out_data.from_y * scale * hInvert;
+
+				local input_to_x = out_data.to_x * scale;
+				local input_to_y = out_data.to_y * scale * hInvert;
+
+                local from_x,from_y,from_z = SceneHelper.getPosition_HVInPlane(plane, input_from_x, input_from_y);
+                local to_x,to_y,to_z = SceneHelper.getPosition_HVInPlane(plane, input_to_x, input_to_y);
 
                 local bEqual = ShapeBuilder.is_equal_pos(from_x, from_y, from_z, to_x, to_y, to_z);
                 if(not bEqual)then
                     ShapeBuilder.geom_lineSegment(
-                        from_x * scale ,
-                        yzInvert_num * from_y * scale ,
-                        yzInvert_num * from_z * scale ,
-                        to_x * scale ,
-                        yzInvert_num * to_y * scale ,
-                        yzInvert_num * to_z * scale ,
-                        color,bAttach,plane);
+                        from_x,
+                        from_y,
+                        from_z,
+
+                        to_x,
+                        to_y,
+                        to_z,
+                        color, bAttach, plane);
                 else
                     commonlib.echo("===================found equal position to line");
                     commonlib.echo(k);
@@ -2164,10 +2169,13 @@ function ShapeBuilder.run_svg_codes(result, scale, color, yzInvert, bAttach, pla
                 local poles = out_data;
                 local result = {};
                 for __,pole in ipairs(poles) do
-                    local x,y,z = SceneHelper.getPosition_HVInPlane(plane, pole[1], pole[2]);
-                    table.insert(result,{x * scale ,yzInvert_num * y * scale ,yzInvert_num * z * scale });
+					local input_x = pole[1] * scale;
+					local input_y = pole[2] * scale * hInvert;
+
+                    local x, y, z = SceneHelper.getPosition_HVInPlane(plane, input_x, input_y);
+                    table.insert(result,{x, y , z});
                 end
-                ShapeBuilder.geom_bezier(result,color,bAttach,plane);
+                ShapeBuilder.geom_bezier(result, color, bAttach, plane);
             end
         end
     end
@@ -2196,4 +2204,5 @@ function ShapeBuilder.checkPrecision(v, defaultValue)
 	end
 	return v;
 end
+
 NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.PartDesign.lua");
