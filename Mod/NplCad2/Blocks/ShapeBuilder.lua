@@ -1899,38 +1899,32 @@ function ShapeBuilder.geom_regularPolygon(sides, center_h, center_v, radius, col
     end
 end
 
--- revolve face shapes in sketch
+-- revolve shapes in sketch
 -- @param op : "union" ...
 -- @param angle: rotation in degree
 -- @param {string} axis: "x" or "y" or "z"
 -- @param color: hex string "#ff0000"
-function ShapeBuilder.sketch_revolve(op, angle, axis, color)
-    ShapeBuilder.sketch_revolve_internal(op, angle, axis, color, true)
+-- @param {boolean} bSolid: true to revolve by faces, false to reolve by wires 
+function ShapeBuilder.sketch_revolve(op, angle, axis, color, bSolid)
+    ShapeBuilder.sketch_revolve_internal(op, angle, axis, color, bSolid)
 end
 
--- revolve wire shapes in sketch
--- @param op : "union" ...
--- @param angle: rotation in degree
--- @param {string} axis: "x" or "y" or "z"
--- @param color: hex string "#ff0000"
-
-function ShapeBuilder.sketch_revolve_wire(op, angle, axis, color)
-    ShapeBuilder.sketch_revolve_internal(op, angle, axis, color, false)
-end
 -- internal function for revolve
 -- @param op: "union" ...
 -- @param angle: rotation in degree
 -- @param {string} axis: "x" or "y" or "z"
 -- @param color: hex string "#ff0000"
--- TODO @param {boolean} bSolid: true to make solid shape, false to make wire shape
+-- @param {boolean} bSolid: true to revolve by faces, false to reolve by wires 
 function ShapeBuilder.sketch_revolve_internal(op, angle, axis, color, bSolid)
     local axis_x, axis_y, axis_z = 0, 0, 0;
+    local dir_x, dir_y, dir_z = 0, 0, 0;
+
 	if(axis == "x")then
-		axis_x = 1;
+		dir_x = 1;
 	elseif(axis == "y")then
-		axis_y = 1;
+		dir_y = 1;
 	elseif(axis == "z")then
-		axis_z = 1;
+		dir_z = 1;
 	else
 		-- invalid param, axis
 		return;
@@ -1943,7 +1937,7 @@ function ShapeBuilder.sketch_revolve_internal(op, angle, axis, color, bSolid)
             local parent = node:getParent();
             local shape = node:toShape();
 		    if (shape ~= nil) then
-                local revolve_shape = NplOce.revolve(shape, axis_x, axis_y, axis_z, angle);
+                local revolve_shape = NplOce.revolveShape(shape, angle, axis_x, axis_y, axis_z, dir_x, dir_y, dir_z, bSolid);
 				if (not revolve_shape:IsNull()) then
 					local model = NplOce.ShapeModel.create(revolve_shape);
                     local revolve_node = NplOce.ShapeNode.create();
@@ -1966,12 +1960,56 @@ function ShapeBuilder.sketch_revolve_internal(op, angle, axis, color, bSolid)
         
 	end
 end
-function ShapeBuilder.sketch_extrude(op, length, color)
-    ShapeBuilder.sketch_extrude_internal(op, length, color, true, 0, 1, 0, true)
+--[[
+createSketch("svg","xz")
+    geom_svg_string('<svg xmlns="http://www.w3.org/2000/svg" width="50.116001498495805" height="317.2835372767141" viewBox="-30 -22.28353727671411 50.116001498495805 317.2835372767141" ><path d="M-30,295z" fill="none" stroke="#000000"  stroke-width="1" /><path d="M0,-12.5916284468c8.2937303789,-23.7934887919 40.788837929,0 0,30.5916284468c-40.788837929,-30.5916284468 -8.2937303789,-54.3851172387 0,-30.5916284468z" fill="none" stroke="#000000"  stroke-width="1" /></svg>', 1, '#FFC658FF', -1)
+endSketch()
+sketch_extrude("union", 1, nil, "#FFC658FF", true)
+
+createSketch("svg","xy")
+    geom_svg_string('<svg xmlns="http://www.w3.org/2000/svg" width="50.116001498495805" height="317.2835372767141" viewBox="-30 -22.28353727671411 50.116001498495805 317.2835372767141" ><path d="M-30,295z" fill="none" stroke="#000000"  stroke-width="1" /><path d="M0,-12.5916284468c8.2937303789,-23.7934887919 40.788837929,0 0,30.5916284468c-40.788837929,-30.5916284468 -8.2937303789,-54.3851172387 0,-30.5916284468z" fill="none" stroke="#000000"  stroke-width="1" /></svg>', 1, '#FFC658FF', -1)
+endSketch()
+sketch_extrude("union", 1, "z", "#FFC658FF", true)
+
+--]]
+-- extrude shapes in sketch
+-- @param op : "union" ...
+-- @param length: value to extrude
+-- @param {string}  color: hex string "#ff0000"
+-- @param {string}  direction: nil to auto check by sketch plane normal, 
+-- @param {boolean} bSolid: true to extrude by faces, false to extrude by wires 
+function ShapeBuilder.sketch_extrude(op, length, direction, color, bSolid)
+	local bAutoCheckDir = false;
+	local dir_x, dir_y, dir_z = 0, 1, 0;
+	if(not direction)then
+		bAutoCheckDir = true;
+	else
+		if(direction == "x")then
+			dir_x = 1;
+			dir_y = 0;
+			dir_z = 0;
+		elseif(direction == "y")then
+			dir_x = 0;
+			dir_y = 1;
+			dir_z = 0;
+		elseif(direction == "z")then
+			dir_x = 0;
+			dir_y = 0;
+			dir_z = 1;
+		end
+	end
+    ShapeBuilder.sketch_extrude_internal(op, length, color, bAutoCheckDir, dir_x, dir_y, dir_z, bSolid)
 end
-function ShapeBuilder.sketch_extrude_wire(op, length, color, dir_x, dir_y, dir_z)
-    ShapeBuilder.sketch_extrude_internal(op, length, color, false, dir_x, dir_y, dir_z, false)
-end
+
+-- extrude shapes in sketch
+-- @param op : "union" ...
+-- @param length: value to extrude 
+-- @param color: hex string "#ff0000"
+-- @param {boolean} bAutoCheckDir: true to find direction by sketch plane normal
+-- @param {number} dir_x: 1 is on x direction, valid if bAutoCheckDir is true
+-- @param {number} dir_y: 1 is on y direction, valid if bAutoCheckDir is true
+-- @param {number} dir_z: 1 is on z direction, valid if bAutoCheckDir is true
+-- @param {boolean} bSolid: true to extrude by faces, false to extrude by wires 
 function ShapeBuilder.sketch_extrude_internal(op, length, color, bAutoCheckDir, dir_x, dir_y, dir_z, bSolid)
     -- this is a sketch node
 	local node = ShapeBuilder.getSelectedNode();
@@ -2005,19 +2043,6 @@ function ShapeBuilder.sketch_extrude_internal(op, length, color, bAutoCheckDir, 
         
 	end
 end
--- extrude svg path in a plane
--- @param plane: "xy" or "xz" or "yz"
--- @param length: 
--- @param svg_data: 
--- @param svg_scale: 
--- @param color: 
-function ShapeBuilder.sketch_extrude_svg_in_plane(plane, length, svg_data, svg_scale, color)
-	svg_scale = svg_scale or 1;
-	ShapeBuilder.createSketch(nil, plane);
-		ShapeBuilder.geom_svg_string( svg_data, svg_scale);
-	ShapeBuilder.endSketch();
-	ShapeBuilder.sketch_extrude("union", length, color);
-end
 function ShapeBuilder.get_sketch_plane()
     local cur_node = ShapeBuilder.cur_node;
     if(cur_node and cur_node.getPlaneString)then
@@ -2046,90 +2071,33 @@ function ShapeBuilder.geom_svg_file(filename, scale, color, bAttach, plane)
     local result = svg_parser:GetResult();
     ShapeBuilder.run_svg_codes(result, scale, color, bAttach, plane);
 end
-function ShapeBuilder.geom_svg_string_test()
-    local path_data = [[<svg>
-      <path d="m1.00059,299.00055
-            l0,-167.62497
-            l0,0
-            c0,-72.00411 58.37087,-130.37499 130.375,-130.37499
-            l0,0
-            l0,0
-            c34.57759,0 67.73898,13.7359 92.18906,38.18595
-            c24.45006,24.45005 38.18593,57.61144 38.18593,92.18904
-            l0,18.625
-            l37.24997,0
-            l-74.49995,74.50002
-            l-74.50002,-74.50002
-            l37.25,0
-            l0,-18.625c0,-30.8589 -25.0161,-55.87498 -55.87498,-55.87498
-            l0,0
-            l0,0
-            c-30.85892,0 -55.875,25.01608 -55.875,55.87498
-            l0,167.62497
-            z"/>
-    </svg>]]
-    createSketch("","xz")
-        geom_svg_string( path_data, 0.1, "#ff0000");
-    endSketch()
-    sketch_extrude("union",1);
-end
-function ShapeBuilder.geom_svg_string_test2()
-    local path_data = [[<svg>
-      <path d="M727.5,418.5
-        c
-        53.6
-        -52.27,
-        185.89
-        -10.14,
-        195,
-        39,
-        
-        6.8,
-        36.68
-        -52.58,
-        90.41
-        -114,
-        95
-        
-        -4.12
-        .31
-        -77.51,
-        4.77
-        -100
-        -44
-        
-        C694.44,478,706.1,439.37,727.5,418.5
-        Z" />
-    </svg>]]
-    createSketch("","xz")
-        geom_svg_string( path_data, 0.1);
-    endSketch()
-    sketch_extrude("union",1, "#ff0000");
-end
+
 --[[
-local SvgPathLibs = NPL.load("Mod/NplCad2/Svg/SvgPathLibs.lua");
-local path_data = SvgPathLibs.GetSvgByName("basic","arrow_u_turn");
-geom_svg_string( path_data, 0.1, "#ff0000", true);
-
-
-local SvgPathLibs = NPL.load("Mod/NplCad2/Svg/SvgPathLibs.lua");
-local path_data = SvgPathLibs.GetSvgByName("basic","arrow_u_turn");
-createSketch("","xz")
-    geom_svg_string( path_data, 0.1, "#ff0000");
-endSketch()
-sketch_extrude("union",1);
+-- show wires
+geom_svg_string('<svg  xmlns="http://www.w3.org/2000/svg" width="50.116001498495805" height="317.2835372767141" viewBox="-30 -22.28353727671411 50.116001498495805 317.2835372767141" ><path d="M-30,295z" fill="none" stroke="#000000"  stroke-width="1" /><path d="M0,-12.5916284468c8.2937303789,-23.7934887919 40.788837929,0 0,30.5916284468c-40.788837929,-30.5916284468 -8.2937303789,-54.3851172387 0,-30.5916284468z" fill="none" stroke="#000000"  stroke-width="1" /></svg>', 1, '#FFC658FF', -1, true)
 --]]
--- create solid or wire by svg string
+
+--[[
+-- extrude svg as faces
+createSketch("svg","xz")
+    geom_svg_string('<svg xmlns="http://www.w3.org/2000/svg" width="50.116001498495805" height="317.2835372767141" viewBox="-30 -22.28353727671411 50.116001498495805 317.2835372767141" ><path d="M-30,295z" fill="none" stroke="#000000"  stroke-width="1" /><path d="M0,-12.5916284468c8.2937303789,-23.7934887919 40.788837929,0 0,30.5916284468c-40.788837929,-30.5916284468 -8.2937303789,-54.3851172387 0,-30.5916284468z" fill="none" stroke="#000000"  stroke-width="1" /></svg>', 1, '#FFC658FF', -1)
+endSketch()
+sketch_extrude("union", 1, "#FFC658FF", true)
+--]]
+-- create wires by svg string
 -- @param {string} str: svg string like "<svg><path d='' /><path d='' /></svg>"
 -- @param {number} scale: scaling unit, default vlaue is 1
+-- @param {string} color: 
 -- @param {number} hInvert: invert h value
+-- @param {boolean} bAttach: true to be attached by ShapeNode, false to be invoked by sketch
+-- @param {string} plane: "xy" or "xz" or "yz"
 function ShapeBuilder.geom_svg_string(str, scale, color, hInvert, bAttach, plane)
     plane = plane or ShapeBuilder.get_sketch_plane();
     scale = scale or 1;
     local svg_parser = SvgParser:new()
     svg_parser:ParseString(str);
     local result = svg_parser:GetResult();
-    commonlib.echo(svg_parser:Dump());
+    --commonlib.echo(svg_parser:Dump());
     ShapeBuilder.run_svg_codes(result, scale, color, hInvert, bAttach, plane);
 end
 function ShapeBuilder.run_svg_codes(result, scale, color, hInvert, bAttach, plane)
