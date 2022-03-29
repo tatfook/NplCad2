@@ -1426,17 +1426,19 @@ function ShapeBuilder.polygon(op, p, color)
 end
 
 -- Create text
--- @param {text}
--- @param {font}
--- @param {size}
--- @param {object} [color = {r = 1, g = 0, b = 0, a = 1,}] - the range is [0-1]
--- @return {NplOce.Node} node
+-- @param {string} text
+-- @param {string} font
+-- @param {number} size
+-- @param {number} height
+-- @param {string} color
+-- @return {NplOce.ShapeNodeText} node
 function ShapeBuilder.text3d(op, text, font, size, height, color) 
 	local node = NplOce.ShapeNodeText.create();
 	if (type(font) == "string") then
 		local font_path = Files.GetFilePath(font);
 		if (not font_path) then
 			local font_files = {
+				SIMHEI = "C:/WINDOWS/FONTS/simhei.ttf",
 				MSYH = "C:/WINDOWS/FONTS/MSYH.TTC",
 				SIMSUN = "C:/WINDOWS/FONTS/SIMSUN.TTC",
 				SIMFANG = "C:/WINDOWS/FONTS/SIMFANG.TTF",
@@ -1450,7 +1452,50 @@ function ShapeBuilder.text3d(op, text, font, size, height, color)
 	end
 	return node;
 end
+--[[
 
+--]]
+-- Create text with fontMemory
+-- @param {string} text
+-- @param {number} size
+-- @param {number} height
+-- @param {string} color
+-- @param {string} fontBufferBase64: base64 string for font
+-- @param {number} fontBufferSize： the size of fontBuffer which is unbase64
+-- @return {NplOce.ShapeNodeTextMemory} node
+function ShapeBuilder.text3dMemory(op, text, size, height, color, fontBufferBase64, fontBufferSize)
+	local node = NplOce.ShapeNodeTextMemory.create();
+	if (fontBufferBase64 and type(fontBufferBase64) == "string" and fontBufferSize > 0) then
+		node:setValue(text, size, height, fontBufferBase64, fontBufferSize, true);
+		ShapeBuilder.addShapeNode(node, op, color);
+	end
+	return node;
+end
+--[[
+text3dMemory_test("union", "Paracraft", 1, 1, "#ff0000", "SIMHEI");
+--]]
+function ShapeBuilder.text3dMemory_test(op, text, size, height, color, font) 
+	local font_path = Files.GetFilePath(font);
+	if (not font_path) then
+		local font_files = {
+			SIMHEI = "C:/WINDOWS/FONTS/simhei.ttf",
+			MSYH = "C:/WINDOWS/FONTS/MSYH.TTC",
+			SIMSUN = "C:/WINDOWS/FONTS/SIMSUN.TTC",
+			SIMFANG = "C:/WINDOWS/FONTS/SIMFANG.TTF",
+			SIMKAI = "C:/WINDOWS/FONTS/SIMKAI.TTF"};
+		font_path = font_files[font];
+
+		
+	end
+	local file = ParaIO.open(font_path, "r");
+	if(file:IsValid()) then
+		local fontBuffer = file:GetText(0, -1)
+		file:close();
+		local fontBufferSize = #fontBuffer;
+		local fontBufferBase64 = Encoding.base64(fontBuffer);
+		ShapeBuilder.text3dMemory(op, text, size, height, color, fontBufferBase64, fontBufferSize);
+	end
+end
 -- Convert from color string to rgba table, if the type of color is table return color directly
 -- NOTE: the color isn't supported alpha  in nploce 
 -- @param {string} color - can be "#ffffff" or "#ffffffff" with alpha
