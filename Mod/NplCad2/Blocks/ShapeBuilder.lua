@@ -846,7 +846,7 @@ function ShapeBuilder._mirrorNode(node,axis_plane,x,y,z)
 		if(model)then
 			local shape = model:getShape();
 			if(shape)then
-				local w_matrix = SceneHelper.getTranformMatrixFrom(node,top_node)
+				local w_matrix = SceneHelper.drawableTransform(model, parent)
 				local matrix_shape = Matrix4:new(shape:getMatrix());
 				w_matrix = matrix_shape * w_matrix;
 
@@ -868,6 +868,7 @@ function ShapeBuilder._mirrorNode(node,axis_plane,x,y,z)
 			end
 		end
 	end)
+
 	ShapeBuilder.cur_node:addChild(mirror_node_root);
 	ShapeBuilder.selected_node = mirror_node_root;
 end
