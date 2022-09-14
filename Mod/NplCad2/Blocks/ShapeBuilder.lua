@@ -1004,19 +1004,7 @@ function ShapeBuilder.addShapeNode(node,op,color)
 	end
 	return node;
 end
--- Import brep file
-function ShapeBuilder.importBrepFromStr(op, color, swapYZ, isBase64, data) 
-	if(isBase64)then
-		data = Encoding.unbase64(data);
-	end
-	local shape = NplOce.import(data);
-	local node = NplOce.ShapeNode.create();
-	local model = NplOce.ShapeModel.create();
-	model:setShape(shape);
-	node:setDrawable(model);
-	ShapeBuilder.addShapeNode(node,op,color) 
-	return node;
-end
+
 
 -- Import stl file
 function ShapeBuilder.importStlFromStr(op, color, swapYZ, isBase64, data) 
@@ -1042,6 +1030,34 @@ function ShapeBuilder.importStl(op,filename,color,swapYZ)
 		content = file:GetText(0,-1);
 	end
 	return ShapeBuilder.importStlFromStr(op, color, swapYZ, false, content);
+end
+
+-- Import step file
+function ShapeBuilder.importSTEPFromStr(op, color, isBase64, data) 
+	if(isBase64)then
+		data = Encoding.unbase64(data);
+	end
+	local shape = NplOce.importSTEPBuffer("step_name_1", data);
+	local node = NplOce.ShapeNode.create();
+	local model = NplOce.ShapeModel.create();
+	model:setShape(shape);
+	node:setDrawable(model);
+	ShapeBuilder.addShapeNode(node,op,color) 
+	return node;
+end
+
+-- Import brep file
+function ShapeBuilder.importBREPFromStr(op, color, isBase64, data) 
+	if(isBase64)then
+		data = Encoding.unbase64(data);
+	end
+	local shape = NplOce.importBREPFromStr(data);
+	local node = NplOce.ShapeNode.create();
+	local model = NplOce.ShapeModel.create();
+	model:setShape(shape);
+	node:setDrawable(model);
+	ShapeBuilder.addShapeNode(node,op,color) 
+	return node;
 end
 
 -- Create a cube
@@ -2217,6 +2233,45 @@ function ShapeBuilder.checkPrecision(v, defaultValue)
 		end
 	end
 	return v;
+end
+
+--[[
+createSketch("svg","xz")
+    geom_svg_string('<svg xmlns="http://www.w3.org/2000/svg" width="50.116001498495805" height="317.2835372767141" viewBox="-30 -22.28353727671411 50.116001498495805 317.2835372767141" ><path d="M-30,295z" fill="none" stroke="#000000"  stroke-width="1" /><path d="M0,-12.5916284468c8.2937303789,-23.7934887919 40.788837929,0 0,30.5916284468c-40.788837929,-30.5916284468 -8.2937303789,-54.3851172387 0,-30.5916284468z" fill="none" stroke="#000000"  stroke-width="1" /></svg>', 1, '#FFC658FF', -1)
+endSketch()
+local profileSketch = getSelectedNode();
+
+createSketch("svg","xz")
+    geom_svg_string('<svg xmlns="http://www.w3.org/2000/svg" width="50.116001498495805" height="317.2835372767141" viewBox="-30 -22.28353727671411 50.116001498495805 317.2835372767141" ><path d="M-30,295z" fill="none" stroke="#000000"  stroke-width="1" /><path d="M0,-12.5916284468c8.2937303789,-23.7934887919 40.788837929,0 0,30.5916284468c-40.788837929,-30.5916284468 -8.2937303789,-54.3851172387 0,-30.5916284468z" fill="none" stroke="#000000"  stroke-width="1" /></svg>', 1, '#FFC658FF', -1)
+endSketch()
+local pathSketch = getSelectedNode();
+
+sketch_sweep("union", "#ff0000", profileSketch, pathSketch)
+--]]
+function ShapeBuilder.sketch_sweep(op, color, profileSketch, pathSketch, tol, fillMode)
+	commonlib.echo("=====================sweep 1");
+	if(not profileSketch or not pathSketch)then
+		return
+	end
+	commonlib.echo("=====================sweep 2");
+	ShapeBuilder.sweep(op, color, profileSketch:toShape(), pathSketch:toShape(), tol, fillMode);
+end
+function ShapeBuilder.sweep(op, color, profileShape, pathShape, tol, fillMode)
+	if(not profileShape or not pathShape)then
+		return
+	end
+	commonlib.echo("=====================sweep 3");
+	tol = tol or 0.01;
+	if(fillMode == nil or fillMode == false)then
+		fillMode = 0;
+	end
+	local sweep_shape = NplOce.sweepShape(profileShape, pathShape, tol, fillMode);
+
+	local node = NplOce.ShapeNode.create();
+	local model = NplOce.ShapeModel.create();
+	model:setShape(sweep_shape);
+	node:setDrawable(model);
+	ShapeBuilder.addShapeNode(node, op, color);
 end
 
 NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.PartDesign.lua");
