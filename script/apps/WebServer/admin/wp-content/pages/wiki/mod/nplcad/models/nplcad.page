@@ -534,11 +534,11 @@ function nplcad.getcode_export_step(str, filename, exportCoordinateType, targetC
         SceneHelper.installMethods(_G, ShapeBuilder)
         %s
         SceneHelper.run(ShapeBuilder.getScene(),false);
-		local result = ShapeBuilder.scene:toStep_String("%s", %d, %d);
+		local result = ShapeBuilder.scene:toStep_String("%s");
 		
         _G.ShapeBuilder = nil;
         return result;
-    ]], str, filename, exportCoordinateType, targetCount);
+    ]], str, filename);
     return s;
 end
 function nplcad.getcode_export_iges(str, filename, exportCoordinateType, targetCount)

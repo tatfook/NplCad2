@@ -236,6 +236,8 @@ function SceneHelper.runOpSequence(node, action_params)
 		local matrix_shape = Matrix4:new(shape:getMatrix());
 		--  clone a new shape
 		result_shape = shape:clone();
+		-- normallized transform is better?
+		-- transformed shape can't set color when export to step
 		result_shape:setMatrix(matrix_shape * w_matrix);
 	else
 		local model = action_params[1];

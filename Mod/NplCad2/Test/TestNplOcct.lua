@@ -10,7 +10,7 @@ local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
 NplOceConnection.load({ npl_oce_dll = "plugins/nploce_d.dll" },function(msg)
 	--TestNplOcct.helloWorld()
 	--TestNplOcct.test_NplOcctCharArray()
-	TestNplOcct.test_NplOcctImporterXCAF()
+	TestNplOcct.test_NplOcctImporterXCAF("test/cube.step")
 end);
 ------------------------------------------------------------
 --]]
@@ -51,10 +51,10 @@ function TestNplOcct.test_NplOcctCharArray()
 	commonlib.echo("=======================string");
 	commonlib.echo(s);
 end
-function TestNplOcct.test_NplOcctImporterXCAF()
+function TestNplOcct.test_NplOcctImporterXCAF(filename)
 	local npl_occt_importer_xcaf = NplOcct.NplOcctImporterXCAF.create();
 	local charArray = NplOcct.NplOcctCharArray.create();
-	local filename = "test/as1_pe_203.stp";
+	filename = filename or "test/as1_pe_203.stp";
 
 	 local file = ParaIO.open(filename,"r");
     if(file:IsValid()) then
@@ -63,5 +63,7 @@ function TestNplOcct.test_NplOcctImporterXCAF()
 		charArray:set(content, len);
         file:close();
     end
-	npl_occt_importer_xcaf:loadFromCharArray("test.step", charArray);
+	local nplOcctNode = npl_occt_importer_xcaf:loadFromCharArray("test.step", charArray, 0.5, 0.5, false);
+	local exporter = NplOcct.NplOcctExporterXCAF.create();
+	exporter:exportStep(nplOcctNode);
 end
