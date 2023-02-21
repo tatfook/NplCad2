@@ -96,6 +96,12 @@ function NplOceConnection.load(options,callback)
 		local lua_state = NPL.GetLuaState("",{});
 		LOG.std(nil, "info", "NplOceConnection lua_state", lua_state);
 
+		if(lua_state.value_str)then
+			local value = tonumber(lua_state.value_str)
+			LOG.std(nil, "info", "NplOceConnection", "lua state is %s.\n", lua_state.value_str);
+			NPL.activate(npl_oce_dll, { lua_state = value, callback = activate_callback});
+			return
+		end
 		local high = lua_state.high or 0;
 		local low = lua_state.low or 0;
 		local value = mathlib.bit.lshift(high, 32);
@@ -117,7 +123,8 @@ function NplOceConnection.OsSupported()
         return true
     end
 	local is_supported = (System.os.GetPlatform()=="win32" and not System.os.Is64BitsSystem());
-    return is_supported;
+    -- return is_supported;
+	return true;
 end
 local function activate()
 	if(msg and msg.successful)then
