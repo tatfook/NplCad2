@@ -675,7 +675,7 @@ function ShapeBuilder._fillet(node, axis_axis_plane, radius)
 		dir_z = 1;
 	elseif(axis_axis_plane == "xz")then
 		dir_y = 1;
-	elseif(axis_axis_plane == "yz")then
+	elseif(axis_axis_plane == "yz" or axis_axis_plane == "zy" )then
 		dir_x = 1;
 	elseif(type(axis_axis_plane) == "number") then
 		edges[1] = axis_axis_plane
@@ -733,7 +733,7 @@ function ShapeBuilder._chamfer(node, axis_axis_plane, radius)
 		dir_z = 1;
 	elseif(axis_axis_plane == "xz")then
 		dir_y = 1;
-	elseif(axis_axis_plane == "yz")then
+	elseif(axis_axis_plane == "yz" or axis_axis_plane == "zy" )then
 		dir_x = 1;
 	elseif(type(axis_axis_plane) == "number") then
 		edges[1] = axis_axis_plane
@@ -831,7 +831,7 @@ function ShapeBuilder._mirrorNode(node,axis_plane,x,y,z)
 		dir_z = 1;
 	elseif(axis_plane == "xz")then
 		dir_y = 1;
-	elseif(axis_plane == "yz")then
+	elseif(axis_plane == "yz" or axis_plane == "zy" )then
 		dir_x = 1;
 	end
 	local parent = node:getParent();

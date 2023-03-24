@@ -690,7 +690,7 @@ function SceneHelper.getPosition_HVInPlane(plane, h, v)
         x = h;
         y = v;
         z = 0;
-    elseif(plane == "yz")then
+    elseif(plane == "yz" or plane == "zy" )then
         x = 0;
         y = v;
         z = h;
