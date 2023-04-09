@@ -633,7 +633,7 @@ function SceneHelper.createRegularPolygonPointsInPlane(plane, sides, center_h, c
         local h = pos.h; 
         local v = pos.v; 
 
-        x,y,z = SceneHelper.getPosition_HVInPlane(plane, h, v);
+        x,y,z = SceneHelper.convert_xy_to_xyz(plane, h, v);
 
         table.insert(temp,{
             x = x,
@@ -681,24 +681,29 @@ function SceneHelper.createRegularPolygonPoints(sides, center_h, center_v, radiu
     end
     return pointList;
 end
+--[[
+	 * x y coordinate is:
+     * ----------> X
+     * |
+     * |
+     * |
+     * |
+     * Y
+     * convert to right hand axis and y up
+     * on plane xz : [x, y] => [x, 0, y]
+     * on plane xy : [x, y] => [x, -y, 0]
+     * on plane zy : [x, y] => [0, -y, x]
 
-function SceneHelper.getPosition_HVInPlane(plane, h, v)
-    local x = 0;
-    local y = 0;
-    local z = 0;
+]]
+function SceneHelper.convert_xy_to_xyz(plane, x, y)
+    local out = {}
     if(plane == "xy")then
-        x = h;
-        y = v;
-        z = 0;
+		out = {x, -y, 0};
     elseif(plane == "yz" or plane == "zy" )then
-        x = 0;
-        y = v;
-        z = h;
+		out = {0, -y, x};
     elseif(plane == "xz")then
-        x = h;
-        y = 0;
-        z = v;
+		out = {x, 0, y};
     end
-    return x,y,z
+    return out[1], out[2], out[3]
     
 end

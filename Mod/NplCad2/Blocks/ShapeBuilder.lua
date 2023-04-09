@@ -2163,6 +2163,8 @@ function ShapeBuilder.geom_svg_string(str, scale, color, hInvert, bAttach, plane
     ShapeBuilder.run_svg_codes(result, scale, color, hInvert, bAttach, plane);
 end
 function ShapeBuilder.run_svg_codes(result, scale, color, hInvert, bAttach, plane)
+    --commonlib.echo("=====================result");
+    --commonlib.echo(result);
     if(result)then
 		hInvert = hInvert or 1;
         for k,v in ipairs(result) do
@@ -2175,8 +2177,8 @@ function ShapeBuilder.run_svg_codes(result, scale, color, hInvert, bAttach, plan
 				local input_to_x = out_data.to_x * scale;
 				local input_to_y = out_data.to_y * scale * hInvert;
 
-                local from_x,from_y,from_z = SceneHelper.getPosition_HVInPlane(plane, input_from_x, input_from_y);
-                local to_x,to_y,to_z = SceneHelper.getPosition_HVInPlane(plane, input_to_x, input_to_y);
+                local from_x,from_y,from_z = SceneHelper.convert_xy_to_xyz(plane, input_from_x, input_from_y);
+                local to_x,to_y,to_z = SceneHelper.convert_xy_to_xyz(plane, input_to_x, input_to_y);
 
                 local bEqual = ShapeBuilder.is_equal_pos(from_x, from_y, from_z, to_x, to_y, to_z);
                 if(not bEqual)then
@@ -2202,7 +2204,7 @@ function ShapeBuilder.run_svg_codes(result, scale, color, hInvert, bAttach, plan
 					local input_x = pole[1] * scale;
 					local input_y = pole[2] * scale * hInvert;
 
-                    local x, y, z = SceneHelper.getPosition_HVInPlane(plane, input_x, input_y);
+                    local x, y, z = SceneHelper.convert_xy_to_xyz(plane, input_x, input_y);
                     table.insert(result,{x, y , z});
                 end
                 ShapeBuilder.geom_bezier(result, color, bAttach, plane);
