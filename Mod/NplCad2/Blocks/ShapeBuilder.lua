@@ -2153,10 +2153,14 @@ sketch_extrude("union", 1, "#FFC658FF", true)
 -- @param {number} hInvert: invert h value
 -- @param {boolean} bAttach: true to be attached by ShapeNode, false to be invoked by sketch
 -- @param {string} plane: "xy" or "xz" or "yz"
-function ShapeBuilder.geom_svg_string(str, scale, color, hInvert, bAttach, plane)
+-- @param {boolean} bBase64: 
+function ShapeBuilder.geom_svg_string(str, scale, color, hInvert, bAttach, plane, bBase64)
     plane = plane or ShapeBuilder.get_sketch_plane();
     scale = scale or 1;
     local svg_parser = SvgParser:new()
+	if(bBase64)then
+		str = Encoding.unbase64(str);
+	end
     svg_parser:ParseString(str);
     local result = svg_parser:GetResult();
     --commonlib.echo(svg_parser:Dump());
@@ -2237,43 +2241,46 @@ function ShapeBuilder.checkPrecision(v, defaultValue)
 	return v;
 end
 
---[[
-createSketch("svg","xz")
-    geom_svg_string('<svg xmlns="http://www.w3.org/2000/svg" width="50.116001498495805" height="317.2835372767141" viewBox="-30 -22.28353727671411 50.116001498495805 317.2835372767141" ><path d="M-30,295z" fill="none" stroke="#000000"  stroke-width="1" /><path d="M0,-12.5916284468c8.2937303789,-23.7934887919 40.788837929,0 0,30.5916284468c-40.788837929,-30.5916284468 -8.2937303789,-54.3851172387 0,-30.5916284468z" fill="none" stroke="#000000"  stroke-width="1" /></svg>', 1, '#FFC658FF', -1)
-endSketch()
-local profileSketch = getSelectedNode();
-
-createSketch("svg","xz")
-    geom_svg_string('<svg xmlns="http://www.w3.org/2000/svg" width="50.116001498495805" height="317.2835372767141" viewBox="-30 -22.28353727671411 50.116001498495805 317.2835372767141" ><path d="M-30,295z" fill="none" stroke="#000000"  stroke-width="1" /><path d="M0,-12.5916284468c8.2937303789,-23.7934887919 40.788837929,0 0,30.5916284468c-40.788837929,-30.5916284468 -8.2937303789,-54.3851172387 0,-30.5916284468z" fill="none" stroke="#000000"  stroke-width="1" /></svg>', 1, '#FFC658FF', -1)
-endSketch()
-local pathSketch = getSelectedNode();
-
-sketch_sweep("union", "#ff0000", profileSketch, pathSketch)
---]]
-function ShapeBuilder.sketch_sweep(op, color, profileSketch, pathSketch, tol, fillMode)
-	commonlib.echo("=====================sweep 1");
-	if(not profileSketch or not pathSketch)then
+function ShapeBuilder.sketch_sweep(op, pathSketch_name, profileSketch_name, color,  bSolid)
+	local parent_node = ShapeBuilder.getCurNode() or ShapeBuilder.getCurStage();
+	if(not parent_node)then
 		return
 	end
-	commonlib.echo("=====================sweep 2");
-	ShapeBuilder.sweep(op, color, profileSketch:toShape(), pathSketch:toShape(), tol, fillMode);
-end
-function ShapeBuilder.sweep(op, color, profileShape, pathShape, tol, fillMode)
-	if(not profileShape or not pathShape)then
-		return
-	end
-	commonlib.echo("=====================sweep 3");
-	tol = tol or 0.01;
-	if(fillMode == nil or fillMode == false)then
-		fillMode = 0;
-	end
-	local sweep_shape = NplOce.sweepShape(profileShape, pathShape, tol, fillMode);
+	local pathSketch_node = ShapeBuilder.getCurStage():findNode(pathSketch_name);
+    local profileSketch_node = ShapeBuilder.getCurStage():findNode(profileSketch_name);
+	if(pathSketch_node and pathSketch_node.toShape and profileSketch_node and profileSketch_node.toShape)then
+		local pathSketch_shape = pathSketch_node:toShape();
+		local profileSketch_shape = profileSketch_node:toShape();
+		if(pathSketch_shape and profileSketch_shape)then
+			local sweep_shape = NplOce.sweepShape(pathSketch_shape, profileSketch_shape, bSolid);
+			if(sweep_shape and (not sweep_shape:IsNull()))then
+				local model = NplOce.ShapeModel.create(sweep_shape);
+                local sweep_node = NplOce.ShapeNode.create();
+		        sweep_node:setDrawable(model);
 
-	local node = NplOce.ShapeNode.create();
-	local model = NplOce.ShapeModel.create();
-	model:setShape(sweep_shape);
-	node:setDrawable(model);
-	ShapeBuilder.addShapeNode(node, op, color);
-end
+	            sweep_node:setOpEnabled(true);
+                sweep_node:setOp(op);
+                sweep_node:setColor(ShapeBuilder.converColorToRGBA(color));
 
+				-- add child
+                parent_node:addChild(sweep_node);
+
+
+                -- remove sketch node
+                local profileSketch_parent = profileSketch_node:getParent();
+				if(profileSketch_parent)then
+					profileSketch_parent:removeChild(profileSketch_node);
+				end
+				local pathSketch_parent = pathSketch_node:getParent();
+				if(pathSketch_parent)then
+					pathSketch_parent:removeChild(pathSketch_node);
+				end
+
+	            ShapeBuilder.selected_node = extrude_node;
+
+			end
+
+		end
+	end
+end
 NPL.load("Mod/NplCad2/Blocks/ShapeBuilder.PartDesign.lua");
