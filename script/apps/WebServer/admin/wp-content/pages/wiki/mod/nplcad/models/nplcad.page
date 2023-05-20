@@ -387,9 +387,9 @@ function nplcad:api_runcode(input)
     else
         dll = "plugins/nploce.dll"
     end
-	local jih_occt = ParaEngine.GetAppCommandLineByParam("jih_occt", "");
-    if(jih_occt and jih_occt ~= "")then
-        dll = jih_occt
+	local nplcad_lib_name = ParaEngine.GetAppCommandLineByParam("nplcad_lib_name", "");
+    if(nplcad_lib_name and nplcad_lib_name ~= "")then
+        dll = nplcad_lib_name
     end
     NplOceConnection.load({ npl_oce_dll = dll },function(msg)
         if(msg == true)then
