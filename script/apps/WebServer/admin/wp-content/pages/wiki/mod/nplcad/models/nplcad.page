@@ -401,16 +401,25 @@ function nplcad:api_runcode(input)
         local build_type = input.build_type
         local filename = input.filename
         local exportCoordinateType = input.exportCoordinateType or 0;
+        local compilerVersion = input.compilerVersion;
         local func_str = nplcad.do_string;
         local str;
         if(build_type == "parax")then
-            str = nplcad.getcode_export_parax(code, exportCoordinateType)
+            if(compilerVersion == "v3")then
+                str = nplcad.getcode_export_parax_v3(code)
+            else
+                str = nplcad.getcode_export_parax(code, exportCoordinateType)
+            end
         elseif(build_type == "stl")then
             str = nplcad.getcode_export_stl(code, exportCoordinateType)
         elseif(build_type == "fbx" or build_type == "fbxa" or build_type == "obj" )then
             str = nplcad.getcode_export_fbx_obj(code, build_type, exportCoordinateType, 0)
         elseif(build_type == "step")then
-            str = nplcad.getcode_export_step(code, filename, exportCoordinateType, 0)
+            if(compilerVersion == "v3")then
+                str = nplcad.getcode_export_step_v3(code)
+            else
+                str = nplcad.getcode_export_step(code, filename, exportCoordinateType, 0)
+            end
         elseif(build_type == "iges" )then
             str = nplcad.getcode_export_iges(code, filename, exportCoordinateType, 0)
         elseif(build_type == "before_scene_code_xml")then
@@ -418,7 +427,11 @@ function nplcad:api_runcode(input)
         elseif(build_type == "scene_code_xml")then
             str = nplcad.getcode_export_scene_code_xml(code)
         else
-            str = nplcad.getcode(code, exportCoordinateType)
+            if(compilerVersion == "v3")then
+                str = nplcad.getcode_export_gltf_v3(code)
+            else
+                str = nplcad.getcode(code, exportCoordinateType)
+            end
         end
         local code_func, errormsg = nplcad.compile_code(str);
         if(not code_func and errormsg)then
@@ -477,6 +490,27 @@ function nplcad.getcode_export_stl(str, exportCoordinateType)
         return s;
     ]], str, exportCoordinateType);
     return s;
+end
+function nplcad.getcode_export_step_v3(str)
+end
+function nplcad.getcode_export_gltf_v3(str)
+    local s = string.format([[
+        local JiHDocument = NPL.load("Mod/NplCad2/JiHDom/JiHDocument.lua");
+        local JiHDocumentHelper = NPL.load("Mod/NplCad2/JiHDom/JiHDocumentHelper.lua");
+        commonlib.echo("==============JiHDocument");
+        commonlib.echo(JiHDocument);
+        _G.JiHDocument = JiHDocument;
+        _G.JiHDocumentHelper = JiHDocumentHelper;
+        %s
+         JiHDocumentHelper.run(jih_doc:getRootNode(), false);
+         local charArray = JiHDocumentHelper.toGltf(jih_doc:getRootNode(), 0.5, 0.5, true, true);
+         local content = JiHDocumentHelper.charArrayToString(charArray);
+        return content;
+    ]],str);
+    return s;
+end
+function nplcad.getcode_export_parax_v3(str)
+    
 end
 function nplcad.getcode_export_parax(str)
     local s = string.format([[
