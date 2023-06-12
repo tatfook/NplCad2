@@ -492,15 +492,21 @@ function nplcad.getcode_export_stl(str, exportCoordinateType)
     return s;
 end
 function nplcad.getcode_export_step_v3(str)
+    local s = string.format([[
+        local JiHDocument = NPL.load("Mod/NplCad2/JiHDom/JiHDocument.lua");
+        local JiHDocumentHelper = NPL.load("Mod/NplCad2/JiHDom/JiHDocumentHelper.lua");
+        %s
+         JiHDocumentHelper.run(jih_doc:getRootNode(), false);
+         local charArray = JiHDocumentHelper.toStep(jih_doc:getRootNode());
+         local content = JiHDocumentHelper.charArrayToString(charArray);
+        return content;
+    ]],str);
+    return s;
 end
 function nplcad.getcode_export_gltf_v3(str)
     local s = string.format([[
         local JiHDocument = NPL.load("Mod/NplCad2/JiHDom/JiHDocument.lua");
         local JiHDocumentHelper = NPL.load("Mod/NplCad2/JiHDom/JiHDocumentHelper.lua");
-        commonlib.echo("==============JiHDocument");
-        commonlib.echo(JiHDocument);
-        _G.JiHDocument = JiHDocument;
-        _G.JiHDocumentHelper = JiHDocumentHelper;
         %s
          JiHDocumentHelper.run(jih_doc:getRootNode(), false);
          local charArray = JiHDocumentHelper.toGltf(jih_doc:getRootNode(), 0.5, 0.5, true, true);
@@ -510,7 +516,18 @@ function nplcad.getcode_export_gltf_v3(str)
     return s;
 end
 function nplcad.getcode_export_parax_v3(str)
-    
+    local s = string.format([[
+        NPL.load("(gl)script/ide/System/Encoding/base64.lua");
+        local Encoding = commonlib.gettable("System.Encoding");
+        local JiHDocument = NPL.load("Mod/NplCad2/JiHDom/JiHDocument.lua");
+        local JiHDocumentHelper = NPL.load("Mod/NplCad2/JiHDom/JiHDocumentHelper.lua");
+        %s
+         JiHDocumentHelper.run(jih_doc:getRootNode(), false);
+         local content = JiHDocumentHelper.toParax(jih_doc:getRootNode(), 0.5, 0.5);
+         content = Encoding.base64(content);
+        return content;
+    ]],str);
+    return s;
 end
 function nplcad.getcode_export_parax(str)
     local s = string.format([[

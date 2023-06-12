@@ -60,7 +60,149 @@ JiHDocumentHelper.AxisType = {
  JiHDocumentHelper.theAngDeflection = 0.5;
 JiHDocumentHelper.Precision_Confusion = 0.0000001
 
- function JiHDocumentHelper.is_equal_with_precision(a,b)
+function JiHDocumentHelper.setMatrix(shape, matrix, forceUpdate)
+    if(not shape)then
+        return
+    end
+    shape:setMatrix(matrix, forceUpdate);
+end
+function JiHDocumentHelper.jihnode_is_equal(jihNode_1, jihNode_2)
+    if(jihNode_1 and jihNode_2 and (jihNode_1 == jihNode_2))then
+    end
+    return false;
+end
+function JiHDocumentHelper.multiplyMatrix(matrix1, matrix2)
+    local matrix = jihengine.Matrix:new();
+    jihengine.MathUtil:multiply_matrix(matrix1, matrix2, matrix);
+    return matrix;
+end
+function JiHDocumentHelper.setNodeMatrix(jih_node, matrix)
+    if (not jih_node or not matrix) then
+        return;
+    end
+    local transformComponent = JiHDocumentHelper.getComponentByName(jih_node, JiHDocumentHelper.JiHComponentNames.JiHTransformComponent);
+    if (transformComponent) then
+        local position = jihengine.Vector3:new();
+        local scale = jihengine.Vector3:new();
+        local q = jihengine.Quaternion:new();
+
+        matrix:decompose(scale, q, position);
+
+        transformComponent:set_x(position:getX());
+        transformComponent:set_y(position:getY());
+        transformComponent:set_z(position:getZ());
+
+        transformComponent:set_scale_x(scale:getX());
+        transformComponent:set_scale_y(scale:getY());
+        transformComponent:set_scale_z(scale:getZ());
+
+        transformComponent:set_q_x(q:getX());
+        transformComponent:set_q_y(q:getY());
+        transformComponent:set_q_z(q:getZ());
+        transformComponent:set_q_w(q:getW());
+    end
+end
+function JiHDocumentHelper.getNodeMatrix(jih_node)
+    if (not jih_node) then
+        return;
+    end
+    local matrix = jihengine.Matrix:new();
+    local transformComponent = JiHDocumentHelper.getComponentByName(jih_node, JiHDocumentHelper.JiHComponentNames.JiHTransformComponent);
+    if (transformComponent) then
+        local position = jihengine.Vector3:new();
+        local scale = jihengine.Vector3:new();
+        local q = jihengine.Quaternion:new();
+
+        position:setX(transformComponent:get_x());
+        position:setY(transformComponent:get_y());
+        position:setZ(transformComponent:get_z());
+
+        scale:setX(transformComponent:get_scale_x());
+        scale:setY(transformComponent:get_scale_y());
+        scale:setZ(transformComponent:get_scale_z());
+
+        q:setX(transformComponent:get_q_x());
+        q:setY(transformComponent:get_q_y());
+        q:setZ(transformComponent:get_q_z());
+        q:setW(transformComponent:get_q_w());
+
+        jihengine.Matrix:compose(scale, q, position, matrix);
+    end
+    return matrix;
+end
+function JiHDocumentHelper.getWorldMatrix(jih_node, top_node)
+        if (not jih_node) then
+            return;
+        end
+        local m = JiHDocumentHelper.getNodeMatrix(jih_node);
+        local parent = jih_node:getParent();
+        while (parent) do
+            if (JiHDocumentHelper.jihnode_is_equal(parent, top_node)) then
+                return m
+            end
+            local p_m = JiHDocumentHelper.getNodeMatrix(parent);
+            m = JiHDocumentHelper.multiplyMatrix(m, p_m);
+            parent = parent:getParent();
+
+            
+        end
+        return m;
+end
+function JiHDocumentHelper.clearNodesMap()
+	JiHDocumentHelper.traversal_nodes_map = {};
+end
+
+-- for storing temporary node parameter during scene traversal.
+function JiHDocumentHelper._pushActionParam(node,param)
+	if(not node)then
+		return;
+	end
+
+	local action_params_ = JiHDocumentHelper.traversal_nodes_map[node] or {};
+	local bIncluded = false;
+	for __, v in ipairs(action_params_) do
+		if(v == param)then
+			bIncluded = true;
+			break;
+		end
+	end
+	if(not bIncluded)then
+		table.insert(action_params_, param);
+	end
+	JiHDocumentHelper.traversal_nodes_map[node] = action_params_;
+end
+
+-- return all action params as array or nil, and clear them all.
+function JiHDocumentHelper._popAllActionParams(node)
+	if(not node)then
+		return;
+	end
+	local params = JiHDocumentHelper.traversal_nodes_map[node];
+	JiHDocumentHelper.traversal_nodes_map[node] = nil;
+	return params;
+end
+
+function JiHDocumentHelper.convertDirectionToArray(direction)
+    local dir_x = 0;
+    local dir_y = 1;
+    local dir_z = 0;
+    if (direction == JiHDocumentHelper.ShapeDirection.x) then
+        dir_x = 1;
+        dir_y = 0;
+        dir_z = 0;
+    elseif (direction == JiHDocumentHelper.ShapeDirection.y) then
+        dir_x = 0;
+        dir_y = 1;
+        dir_z = 0;
+    elseif (direction == JiHDocumentHelper.ShapeDirection.z) then
+        dir_x = 0;
+        dir_y = 0;
+        dir_z = 1;
+    end
+    return {dir_x, dir_y, dir_z};
+end
+
+function JiHDocumentHelper.is_equal_with_precision(a,b)
     if(type(a) == "number" and type(b) == "number" )then
         local diff = math.abs(a - b);
         if(diff < JiHDocumentHelper.Precision_Confusion)then
@@ -148,6 +290,17 @@ function JiHDocumentHelper.stringToJiHCharArray(str)
     end
     return charArray;
 end
+function JiHDocumentHelper.charArrayToCharCodeNumbers(charArray)
+    if(not charArray)then
+        return
+    end
+    local list = {};
+    for k = 1, charArray:getCount() do
+        local char = charArray:getValue(k-1);
+        table.insert(list, char);
+    end
+    return list;
+end
 function JiHDocumentHelper.charArrayToString(charArray)
     if(not charArray)then
         return
@@ -161,14 +314,180 @@ function JiHDocumentHelper.charArrayToString(charArray)
     end
     return s;
 end
+function JiHDocumentHelper.visit(scene, preVisitMethod, postVisitMethod)
+	if(not scene)then
+		return;
+	end
+	local node = scene:getChildAt(0);
+	JiHDocumentHelper.visitNode(node,preVisitMethod, postVisitMethod);
+end
+
+-- depth first traversal, visiting a single node. 
+function JiHDocumentHelper.visitNode(node,preVisitMethod, postVisitMethod)
+	if(not node)then
+		return;
+	end
+	if(preVisitMethod)then
+		preVisitMethod(node);
+	end
+    for k = 1,node:numChildren() do
+        local child = node:getChildAt(k-1);
+        if(child)then
+		    JiHDocumentHelper.visitNode(child,preVisitMethod, postVisitMethod);
+        end
+    end
+	
+	if(postVisitMethod)then
+		postVisitMethod(node);
+	end
+end
+
 function JiHDocumentHelper.run(scene_node, bUnionAll)
-	commonlib.echo("===================run");
 	if(not scene_node)then
 		return
 	end
-	local cnt = scene_node:numChildren();
-	commonlib.echo("===================cnt");
-	commonlib.echo(cnt);
+	JiHDocumentHelper.clearNodesMap();
+    local scene_first_node = scene_node:getChildAt(0);
+    JiHDocumentHelper.setOpEnabled(scene_first_node, bUnionAll);
+    JiHDocumentHelper.runNode(scene_first_node);
+    return scene_node;
+end
+
+function JiHDocumentHelper.runNode(top_node)
+	if(not top_node)then
+		return
+	end
+	local function push_nodes(node)
+		local topoShape = JiHDocumentHelper.getShape(node);
+		if(topoShape)then
+			local parent = JiHDocumentHelper.findParentOpEnabled(node);
+			if(parent)then
+                local drawable = node;
+				JiHDocumentHelper._pushActionParam(parent,drawable);
+			end
+		end
+	end
+	local function pop_nodes(node)
+		local action_params = JiHDocumentHelper._popAllActionParams(node) or {};
+		JiHDocumentHelper.runOpSequence(node, action_params)
+        JiHDocumentHelper.setOpEnabled(node, false);
+	end
+	JiHDocumentHelper.visitNode(top_node,function(node)
+		push_nodes(node);
+	end,function(node)
+		-- running boolean op
+		pop_nodes(node)
+		-- check if parent has op enabled
+		push_nodes(node);
+	end)
+end
+function JiHDocumentHelper.findParentOpEnabled(node)
+	if(not node)then
+		return
+	end
+	local p = node:getParent();
+	local lastNode;
+	while(p) do
+        local enabled = JiHDocumentHelper.getOpEnabled(p);
+		if(enabled)then
+			return p;
+		end
+		p = p:getParent();
+	end
+	return nil;
+end
+
+-- run boolean sequence in node
+function JiHDocumentHelper.runOpSequence(node, action_params)
+    if(not node or not action_params)then
+		return
+	end
+	local len = #action_params;
+	if(len == 0)then
+		return
+	end
+	local result_shape;
+	if(len == 1)then
+		local model_node = action_params[1];
+		local shape = JiHDocumentHelper.getShape(model_node);
+        local w_matrix = JiHDocumentHelper.getWorldMatrix(model_node, node);
+        --clone a new shape
+        result_shape = shape:clone();
+        JiHDocumentHelper.setMatrix(result_shape, w_matrix, false)
+	else
+		local model = action_params[1];
+		for k = 2, len do
+			local next_model = action_params[k];
+			model = JiHDocumentHelper.operateTwoNodes(model,next_model,node)
+		end
+		if(model)then
+			result_shape = JiHDocumentHelper.getShape(model);
+		else
+			LOG.std(nil, "error", "jihengine", "the model is nil");
+		end
+	end
+	if(result_shape and (not result_shape:isNull()))then
+        --TODO:destroy model node
+		-- clear children
+		node:removeAllChildren();
+        JiHDocumentHelper.setShape(node, result_shape:clone());
+	end
+end
+function JiHDocumentHelper.operateTwoNodes(model,next_model,top_node)
+        if (model and next_model) then
+            local next_node = next_model;
+            local op = JiHDocumentHelper.opType.union;
+            if (next_node) then
+                op = JiHDocumentHelper.getOp(next_node);
+            end
+            local w_matrix_1 = JiHDocumentHelper.getWorldMatrix(model, top_node);
+            local w_matrix_2 = JiHDocumentHelper.getWorldMatrix(next_model, top_node);
+            local shape_1 = JiHDocumentHelper.getShape(model);
+            local shape_2 = JiHDocumentHelper.getShape(next_model);
+
+
+            -- clone new shape to boolean op
+            local clone_shape_1 = shape_1:clone();
+            local clone_shape_2 = shape_2:clone();
+
+            JiHDocumentHelper.setMatrix(clone_shape_1, w_matrix_1, false);
+            JiHDocumentHelper.setMatrix(clone_shape_2, w_matrix_2, false);
+
+            -- create a new shape
+            local shape;
+            if (op == JiHDocumentHelper.opType.union) then
+                shape = JiHDocumentHelper.union(clone_shape_1, clone_shape_2);
+            elseif (op == JiHDocumentHelper.opType.difference) then
+
+                shape = JiHDocumentHelper.difference(clone_shape_1, clone_shape_2);
+            elseif (op == JiHDocumentHelper.opType.intersection) then
+                shape = JiHDocumentHelper.intersection(clone_shape_1, clone_shape_2);
+            else
+                console.error("jihengine", "unsupported op: %s", op);
+            end
+            if (not shape or shape:isNull()) then
+                console.error("jihengine", "the result of boolean is null");
+                return
+            end
+            local result_node = JiHDocumentHelper.createJiHNode("", shape);
+            return result_node;
+        end
+end
+
+function JiHDocumentHelper.union(shape_1, shape_2)
+    if(shape_1 and shape_2)then
+        return jihengine.JiHShapeMaker:fuse(shape_1, shape_2);
+    end
+end
+function JiHDocumentHelper.difference(shape_1, shape_2)
+    if(shape_1 and shape_2)then
+        return jihengine.JiHShapeMaker:cut(shape_1, shape_2);
+    end
+end
+function JiHDocumentHelper.intersection(shape_1, shape_2)
+    if(shape_1 and shape_2)then
+        return jihengine.JiHShapeMaker:common(shape_1, shape_2);
+    end
 end
 function JiHDocumentHelper.createJiHNode(id, shape, color, op)
 	local jih_node = jihengine.JiHNode:new(id);
@@ -307,13 +626,13 @@ end
 function JiHDocumentHelper.setOpEnabled(jih_node, v)
     local booleanComponent = JiHDocumentHelper.getComponentByName(jih_node, JiHDocumentHelper.JiHComponentNames.JiHBooleanComponent);
     if (booleanComponent) then
-        booleanComponent:setOpEnabled(v);
+        booleanComponent:setEnabled(v);
     end
 end
 function JiHDocumentHelper.getOpEnabled(jih_node)
     local booleanComponent = JiHDocumentHelper.getComponentByName(jih_node, JiHDocumentHelper.JiHComponentNames.JiHBooleanComponent);
     if (booleanComponent) then
-        local v = booleanComponent:getOpEnabled();
+        local v = booleanComponent:getEnabled();
         return v;
     end
 end
@@ -339,4 +658,41 @@ function JiHDocumentHelper.toGltf(scene_node, theLinDeflection, theAngDeflection
     local exporter = jihengine.JiHExporterGltf:new(scene_node, theLinDeflection, theAngDeflection, writeFace, writeEdge, true);
     local charArray = exporter:exportToCharArray();
     return charArray;
+end
+function JiHDocumentHelper.toStep(scene_node)
+    if(not scene_node)then
+        return
+    end
+    local exporter = jihengine.JiHExporterXCAF:new();
+    local charArray = exporter:exportStep(scene_node);
+    return charArray;
+end
+function JiHDocumentHelper.toParax(scene_node, theLinDeflection, theAngDeflection)
+    if(not scene_node)then
+        return
+    end
+    local exporter = jihengine.JiHExporterParaX:new(scene_node, theLinDeflection, theAngDeflection, false, 1.0);
+    local charArray = exporter:exportToCharArray();
+    local content = table.concat(JiHDocumentHelper.charArrayToCharCodeNumbers(charArray))
+    
+	local template = JiHDocumentHelper.loadParaXTemplateFromDisc();
+	content = template .. content;
+    return content
+end
+-- load parax template 
+function JiHDocumentHelper.loadParaXTemplateFromDisc()
+	local parax_template_data = JiHDocumentHelper.parax_template_data;
+	if(parax_template_data)then
+		return parax_template_data;
+	end
+	local templateName = "Mod/NplCad2/template.txt";
+	if(ParaIO.DoesFileExist(templateName, true)) then
+		local template_file = ParaIO.open(templateName, "r");
+		if(template_file:IsValid()) then
+			parax_template_data = template_file:GetText(0, -1);
+			template_file:close();
+		end
+	end
+	JiHDocumentHelper.parax_template_data = parax_template_data;
+	return parax_template_data;
 end

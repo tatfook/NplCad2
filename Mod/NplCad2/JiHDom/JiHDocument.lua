@@ -29,7 +29,11 @@ function JiHDocument:ctor()
     self.pushed_node_list = {};
     self.pushed_sketch_node_list = {};
 end
-    
+
+function JiHDocument:getCurStage()
+    return self.cur_stage;
+end
+
 function JiHDocument:getSelectedNode()
     return self.selected_node;
 end
@@ -50,6 +54,46 @@ function JiHDocument:addJiHNode(op, color, shape)
         self.selected_node = node;
     end
     return jih_node;
+end
+function JiHDocument:pushStage(op, name, color, bOp)
+    local node = self:pushNode(op, name, color, bOp)
+    JiHDocumentHelper.setTag(node, JiHDocumentHelper.runningNodeTypes.pushStage);
+
+    self.pre_stage = self.cur_stage;
+    self.cur_stage = node;
+    return node;
+end
+function JiHDocument:popStage()
+    self:popNode()
+    self.cur_stage = self.pre_stage;
+    self.pre_stage = nil;
+end
+function JiHDocument:pushNode(op, name, color, bOp)
+    name = name or JiHDocumentHelper.generateId();
+    local jih_node = JiHDocumentHelper.createJiHNode(name, nil, color, op);
+    JiHDocumentHelper.setOpEnabled(jih_node, bOp);
+    JiHDocumentHelper.setTag(jih_node, JiHDocumentHelper.runningNodeTypes.pushNode);
+
+
+    local parent = self.cur_node;
+    if (not parent) then
+        parent = self:getRootNode();
+    end
+    parent:addChild(jih_node)
+    self.cur_node = jih_node;
+    self.selected_node = jih_node;
+
+    table.insert(self.pushed_node_list, jih_node);
+    return jih_node
+end
+function JiHDocument:popNode()
+    local len = #self.pushed_node_list;
+	local node = self.pushed_node_list[len];
+	local parent = node:getParent() or self.getRootNode();
+
+	table.remove(self.pushed_node_list,len);
+	self.cur_node = parent;
+	self.selected_node = node;
 end
 function JiHDocument:box(op, x, y, z, color)
 	local jihTopoShape = jihengine.JiHShapeMaker:box(x, y, z);
@@ -325,7 +369,194 @@ function JiHDocument:feature_scale(x, y, z)
     local node = self:getSelectedNode();
     JiHDocumentHelper.setScale(node, x, y, z)
 end
+--[[
+    /**
+     * 
+     * @param op
+     * @param input_type: "chamfer" or "fillet"
+     * @param length
+     * @param edges: 1 or "1,2,3" or [1,2,3]
+     * @param color
+     */
+]]
+function JiHDocument:feature_chamfer_or_fillet(op, input_type, length, edges, color)
+    local jihNode = self:getSelectedNode();
+    if (type (edges) == "number") then
+        edges = {edges}; -- one index
+    elseif (type (edges) == "string") then
+        local input_edges = edges;
+        edges = {};
+        local section
+		for section in string.gfind(input_edges, "[^,]+") do
+			index = tonumber(section);
+			table.insert(edges,index);
+		end
+    end
+    self:feature_chamfer_or_fillet_(input_type, jihNode, op, length, edges, color);
+end
+function JiHDocument:feature_chamfer_or_fillet_(input_type, jihNode, op, length, edge_array, color)
+    if(not jihNode)then 
+        return 
+    end
+    local shape = JiHDocumentHelper.getShape(jihNode);
+    if (shape and (not shape:isNull())) then
+        local edge_arr = jihengine.JiHIntArray:new();
+        for k = 1, #edge_array do
+            edge_arr:pushValue(edge_array[k]);
+        end
+        local parent_node = jihNode:getParent();
+        local result_shape = nil;
+        if (input_type == "chamfer") then
+            result_shape = jihengine.JiHShapeMaker:chamfer(shape, length, edge_arr);
+        elseif (input_type == "fillet") then
+            result_shape = jihengine.JiHShapeMaker:fillet(shape, length, edge_arr);
+        end
+        if (result_shape and (not result_shape:isNull())) then
+            local chamfer_node = JiHDocumentHelper.createJiHNode(input_type .. "_" .. JiHDocumentHelper.generateId(), result_shape, color, op);
+            parent_node:addChild(chamfer_node);
+            self.selected_node = chamfer_node;
+
+            -- remove node
+            parent_node = jihNode:getParent();
+            parent_node:removeChild(jihNode);
+        end
+    end
+end
+function JiHDocument:feature_extrude_by_face(op, length, face_index, direction, color, bSolid)
+    local jihNode = self:getSelectedNode();
+    local dir_array = JiHDocumentHelper.convertDirectionToArray(direction);
+    local dir_x = dir_array[1];
+    local dir_y = dir_array[2];
+    local dir_z = dir_array[3];
+    self:feature_extrude_by_face_(jihNode, op, length, face_index, dir_x, dir_y, dir_z, color, bSolid);
+end
+function JiHDocument:feature_extrude_by_face_(jihNode, op, length, face_index, dir_x, dir_y, dir_z, color, bSolid)
+    if (not jihNode) then
+        return
+    end
+    local shape = JiHDocumentHelper.getShape(jihNode);
+    if (shape and (not shape:isNull())) then
+        local parent_node = jihNode:getParent();
+        local extrude_shape = jihengine.JiHShapeMaker:extrude(shape, length, face_index, dir_x, dir_y, dir_z, bSolid);
+        if (extrude_shape and (not extrude_shape:isNull())) then
+            local extrude_node = JiHDocumentHelper.createJiHNode("extrude_" .. JiHDocumentHelper.generateId(), extrude_shape, color, op);
+            parent_node:addChild(extrude_node);
+
+            self.selected_node = extrude_node;
+        end
+    end
+end
+function JiHDocument:feature_extrude(op, length, direction, color, bSolid)
+    local dir_array = JiHDocumentHelper.convertDirectionToArray(direction);
+    local dir_x = dir_array[1];
+    local dir_y = dir_array[2];
+    local dir_z = dir_array[3];
+    self:feature_extrude_internal(op, length, color, dir_x, dir_y, dir_z, bSolid)
+end
+
+function JiHDocument:feature_extrude_internal(op, length, color, dir_x, dir_y, dir_z, bSolid)
+    -- check if this is a sketch node
+        local sketch_node = self:getSelectedNode();
+        if (sketch_node) then
+            local tag = JiHDocumentHelper.getTag(sketch_node);
+            if (tag == "is_sketch") then
+                local parent_node = sketch_node:getParent();
+                local shape = jihengine.JiHShapeMaker:to_wires_shape(sketch_node);
+                if (shape and (not shape:isNull())) then
+                    local extrude_shape = jihengine.JiHShapeMaker:extrude_shape(shape, length, dir_x, dir_y, dir_z, bSolid);
+                    if (extrude_shape and (not extrude_shape:isNull())) then
+
+                        local extrude_node = JiHDocumentHelper.createJiHNode("extrude_" .. JiHDocumentHelper.generateId(), extrude_shape, color, op);
+                        parent_node:addChild(extrude_node);
+
+                        self.selected_node = extrude_node;
+
+                        -- remove sketch node
+                        parent_node = sketch_node:getParent();
+                        parent_node:removeChild(sketch_node);
+                    end
+                end
+            end
+        end
+end
+
+function JiHDocument:feature_revolve(op, angle, axis, color, bSolid)
+    self:feature_revolve_internal(op, angle, axis, color, bSolid);
+end
+
+function JiHDocument:feature_revolve_internal(op, angle, axis, color, bSolid)
+    local axis_x = 0;
+    local axis_y = 0;
+    local axis_z = 0;
+    local dir_x = 0;
+    local dir_y = 0;
+    local dir_z = 0;
+    if (axis == JiHDocumentHelper.AxisType.x) then
+        dir_x = 1;
+    elseif (axis == JiHDocumentHelper.AxisType.y) then
+        dir_y = 1;
+    elseif (axis == JiHDocumentHelper.AxisType.z) then
+        dir_z = 1;
+    else
+        -- invalid param, axis
+        return
+    end
+    -- check if this is a sketch node
+    local sketch_node = self:getSelectedNode();
+    if (sketch_node) then
+        local tag = JiHDocumentHelper.getTag(sketch_node);
+        if (tag == "is_sketch") then
+            local parent_node = sketch_node:getParent();
+            local shape = jihengine.JiHShapeMaker:to_wires_shape(sketch_node);
+            if (shape and (not shape:isNull())) then
+                local revolve_shape = jihengine.JiHShapeMaker:revolve_shape(shape, angle, axis_x, axis_y, axis_z, dir_x, dir_y, dir_z, bSolid);
+                if (revolve_shape and (not revolve_shape:isNull())) then
+
+                    local revolve_node = JiHDocumentHelper.createJiHNode("revolve_" .. JiHDocumentHelper.generateId(), revolve_shape, color, op);
+                    parent_node:addChild(revolve_node);
+
+                    self.selected_node = revolve_node;
+                    -- remove sketch node
+                    parent_node = sketch_node:getParent();
+                    parent_node:removeChild(sketch_node);
+                end
+            end
+        end
+    end
+end
+
+function JiHDocument:feature_sweep(op, pathSketch_name, profileSketch_name, color, bSolid)
+    local parent_node = self:getCurNode() or self:getCurStage();
+        if (not parent_node) then
+            return
+        end
+        local pathSketch_node = self:getCurStage():getChildById(pathSketch_name, true);
+        local profileSketch_node = self:getCurStage():getChildById(profileSketch_name, true);
+        if (pathSketch_node and profileSketch_node) then
+            local pathSketch_tag = JiHDocumentHelper.getTag(pathSketch_node);
+            local profileSketch_tag = JiHDocumentHelper.getTag(profileSketch_node);
+            if (pathSketch_tag == "is_sketch" and profileSketch_tag == "is_sketch") then
+
+                local profileSketch_shape = jihengine.JiHShapeMaker:to_wires_shape(profileSketch_node);
+                local pathSketch_shape = jihengine.JiHShapeMaker:to_wires_shape(pathSketch_node);
+
+                local sweep_shape = jihengine.JiHShapeMaker:sweep_shape(pathSketch_shape, profileSketch_shape, bSolid);
+                if (sweep_shape and (not sweep_shape:isNull())) then
+
+                    local sweep_node = JiHDocumentHelper.createJiHNode("sweep_" .. JiHDocumentHelper.generateId(), sweep_shape, color, op);
+                    parent_node:addChild(sweep_node);
+
+                    self.selected_node = sweep_node;
 
 
+                    -- remove sketch node
+                    parent_node = profileSketch_node:getParent();
+                    parent_node:removeChild(profileSketch_node);
 
+                    parent_node = pathSketch_node:getParent();
+                    parent_node:removeChild(pathSketch_node);
+                end
+            end
+        end
+end
 
