@@ -68,6 +68,7 @@ function JiHDocumentHelper.setMatrix(shape, matrix, forceUpdate)
 end
 function JiHDocumentHelper.jihnode_is_equal(jihNode_1, jihNode_2)
     if(jihNode_1 and jihNode_2 and (jihNode_1 == jihNode_2))then
+        return true;
     end
     return false;
 end
@@ -290,29 +291,24 @@ function JiHDocumentHelper.stringToJiHCharArray(str)
     end
     return charArray;
 end
-function JiHDocumentHelper.charArrayToCharCodeNumbers(charArray)
-    if(not charArray)then
-        return
-    end
-    local list = {};
-    for k = 1, charArray:getCount() do
-        local char = charArray:getValue(k-1);
-        table.insert(list, char);
-    end
-    return list;
-end
 function JiHDocumentHelper.charArrayToString(charArray)
     if(not charArray)then
         return
     end
-    local s = "";
+    local list = {};
     local cnt = charArray:getCount();
     for k = 1, cnt do
         local index = k - 1;
         local char_code = charArray:getValue(index);
-        s = s .. string.char(char_code);
+        -- convert to unsigned char code
+        if(char_code < 0)then
+            char_code = char_code + 256;
+        end
+        local char = string.char(char_code);
+        table.insert(list, char);
     end
-    return s;
+    local result = table.concat(list);
+    return result;
 end
 function JiHDocumentHelper.visit(scene, preVisitMethod, postVisitMethod)
 	if(not scene)then
@@ -673,8 +669,7 @@ function JiHDocumentHelper.toParax(scene_node, theLinDeflection, theAngDeflectio
     end
     local exporter = jihengine.JiHExporterParaX:new(scene_node, theLinDeflection, theAngDeflection, false, 1.0);
     local charArray = exporter:exportToCharArray();
-    local content = table.concat(JiHDocumentHelper.charArrayToCharCodeNumbers(charArray))
-    
+    local content = JiHDocumentHelper.charArrayToString(charArray)
 	local template = JiHDocumentHelper.loadParaXTemplateFromDisc();
 	content = template .. content;
     return content
