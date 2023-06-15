@@ -60,6 +60,139 @@ JiHDocumentHelper.AxisType = {
  JiHDocumentHelper.theAngDeflection = 0.5;
 JiHDocumentHelper.Precision_Confusion = 0.0000001
 
+function JiHDocumentHelper.findParentSketchPlane(cur_node)
+     if (not cur_node) then
+        return;
+    end
+    local plane;
+    local is_sketch = JiHDocumentHelper.isSketchNode(cur_node);
+    if (is_sketch) then
+        local sketch_plane = JiHDocumentHelper.getPlane(cur_node);
+        if (sketch_plane and sketch_plane ~= "") then
+            local out = {};
+	        if(NPL.FromJson(sketch_plane, out)) then
+                -- found sketch's plane
+                plane = out;
+	        end
+            
+        end
+    end
+    return plane;
+
+end
+
+-- @param direction: "x|y|z" or {dir_x, dir_y, dir_z}
+-- @return {dir_x, dir_y, dir_z}
+
+function JiHDocumentHelper.convertDirectionToArray(direction)
+    local dir_x = 0;
+    local dir_y = 1;
+    local dir_z = 0;
+
+    if (direction and type(direction) == "string") then
+        if (direction == JiHDocumentHelper.ShapeDirection.x) then
+            dir_x = 1;
+            dir_y = 0;
+            dir_z = 0;
+        elseif (direction == JiHDocumentHelper.ShapeDirection.y) then
+            dir_x = 0;
+            dir_y = 1;
+            dir_z = 0;
+        elseif (direction == JiHDocumentHelper.ShapeDirection.z) then
+            dir_x = 0;
+            dir_y = 0;
+            dir_z = 1;
+        end
+    end
+    if (direction and type(direction) == "table") then
+        dir_x = direction[1];
+        dir_y = direction[2];
+        dir_z = direction[3];
+    end
+    return {dir_x, dir_y, dir_z};
+end
+
+-- @param plane_dir: "x|y|z" or {dir_x, dir_y, dir_z} or {x, y, z, dir_x, dir_y, dir_z}
+-- @return {x, y, z, dir_x, dir_y, dir_z}
+function JiHDocumentHelper.convertPlaneToArray(plane_dir)
+    local x = 0;
+    local y = 0;
+    local z = 0;
+    local dir_x = 0;
+    local dir_y = 1;
+    local dir_z = 0;
+
+    if (plane_dir and type(plane_dir) == "string") then
+        local dir_arr = JiHDocumentHelper.convertDirectionToArray(plane_dir);
+        if (dir_arr) then
+            dir_x = dir_arr[1];
+            dir_y = dir_arr[2];
+            dir_z = dir_arr[3];
+        end
+    end
+    if (plane_dir and type(plane_dir) == "table") then
+        local len = #plane_dir;
+        if(len == 3)then
+            dir_x = plane_dir[1];
+            dir_y = plane_dir[2];
+            dir_z = plane_dir[3];
+        elseif(len >= 6)then
+            x = plane_dir[1];
+            y = plane_dir[2];
+            z = plane_dir[3];
+            dir_x = plane_dir[4];
+            dir_y = plane_dir[5];
+            dir_z = plane_dir[6];
+        end
+        
+    end
+
+    return {x, y, z, dir_x, dir_y, dir_z};
+end
+function JiHDocumentHelper.transformPointByPlane( 
+        x, y, z,
+        dir_x, dir_y, dir_z,
+        plane_center_x, plane_center_y, plane_center_z,
+        plane_dir_x, plane_dir_y, plane_dir_z)
+
+        local input = jihengine.Vector3:new(x, y, z);
+        local input_dir = jihengine.Vector3:new(dir_x, dir_y, dir_z);
+        jihengine.MathUtil:vector3_normalize(input_dir);
+
+        
+        local plane_dir = jihengine.Vector3:new(plane_dir_x, plane_dir_y, plane_dir_z);
+        jihengine.MathUtil:vector3_normalize(plane_dir);
+
+        local angle = jihengine.Vector3:angle(input_dir, plane_dir);
+
+        -- scale
+        local scale = jihengine.Vector3:new(1, 1, 1);
+        -- rotation
+        local q = jihengine.Quaternion:new();
+        local axis = jihengine.Vector3:new();
+        jihengine.MathUtil:vector3_cross(input_dir, plane_dir, axis);
+        jihengine.Quaternion:createFromAxisAngle(axis, angle, q);
+        -- translation
+        local translation = jihengine.Vector3:new(x + plane_center_x, y + plane_center_y, z + plane_center_z);
+
+        local matrix = jihengine.Matrix:new();
+        jihengine.Matrix:compose(scale, q, translation, matrix);
+
+        local result = jihengine.Vector3:new(0, 0, 0);
+        jihengine.MathUtil:vector3_multiply_matrix(input, matrix, result);
+        return {result:getX(), result:getY(), result:getZ()};
+
+end
+function JiHDocumentHelper.convert_xy_to_xyz_by_plane(plane_arr, x, y)
+    local plane_arr = plane_arr or {0, 0, 0, 0, 1, 0};
+
+    local result = JiHDocumentHelper.transformPointByPlane(x, 0, y,
+        0, 1, 0,
+        plane_arr[1], plane_arr[2], plane_arr[3],
+        plane_arr[4], plane_arr[5], plane_arr[6]
+    )
+    return result[1], result[2], result[3];   
+end
 function JiHDocumentHelper.setMatrix(shape, matrix, forceUpdate)
     if(not shape)then
         return
@@ -187,18 +320,26 @@ function JiHDocumentHelper.convertDirectionToArray(direction)
     local dir_x = 0;
     local dir_y = 1;
     local dir_z = 0;
-    if (direction == JiHDocumentHelper.ShapeDirection.x) then
+
+    if( direction and type(direction) == "string" )then
+        if (direction == JiHDocumentHelper.ShapeDirection.x) then
         dir_x = 1;
         dir_y = 0;
         dir_z = 0;
-    elseif (direction == JiHDocumentHelper.ShapeDirection.y) then
-        dir_x = 0;
-        dir_y = 1;
-        dir_z = 0;
-    elseif (direction == JiHDocumentHelper.ShapeDirection.z) then
-        dir_x = 0;
-        dir_y = 0;
-        dir_z = 1;
+        elseif (direction == JiHDocumentHelper.ShapeDirection.y) then
+            dir_x = 0;
+            dir_y = 1;
+            dir_z = 0;
+        elseif (direction == JiHDocumentHelper.ShapeDirection.z) then
+            dir_x = 0;
+            dir_y = 0;
+            dir_z = 1;
+        end
+    end
+    if( direction and type(direction) == "table" )then
+        dir_x = direction[1];
+        dir_y = direction[2];
+        dir_z = direction[3];
     end
     return {dir_x, dir_y, dir_z};
 end

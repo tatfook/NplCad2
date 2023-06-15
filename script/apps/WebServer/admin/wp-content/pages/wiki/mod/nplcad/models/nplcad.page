@@ -411,7 +411,14 @@ function nplcad:api_runcode(input)
                 str = nplcad.getcode_export_parax(code, exportCoordinateType)
             end
         elseif(build_type == "stl")then
-            str = nplcad.getcode_export_stl(code, exportCoordinateType)
+
+            if(compilerVersion == "v3")then
+                str = nplcad.getcode_export_stl_v3(code, exportCoordinateType)
+            else
+                str = nplcad.getcode_export_stl(code, exportCoordinateType)
+            end
+
+
         elseif(build_type == "fbx" or build_type == "fbxa" or build_type == "obj" )then
             str = nplcad.getcode_export_fbx_obj(code, build_type, exportCoordinateType, 0)
         elseif(build_type == "step")then
@@ -489,6 +496,17 @@ function nplcad.getcode_export_stl(str, exportCoordinateType)
         _G.ShapeBuilder = nil;
         return s;
     ]], str, exportCoordinateType);
+    return s;
+end
+function nplcad.getcode_export_stl_v3(str)
+    local s = string.format([[
+        local JiHDocument = NPL.load("Mod/NplCad2/JiHDom/JiHDocument.lua");
+        local JiHDocumentHelper = NPL.load("Mod/NplCad2/JiHDom/JiHDocumentHelper.lua");
+        %s
+         JiHDocumentHelper.run(jih_doc:getRootNode(), false);
+         local content = ""
+        return content;
+    ]],str);
     return s;
 end
 function nplcad.getcode_export_step_v3(str)

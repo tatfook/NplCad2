@@ -18,7 +18,6 @@ local SvgParser = NPL.load("Mod/NplCad2/Svg/SvgParser.lua");
 
 local JiHDocument = commonlib.inherit(nil,NPL.export());
 function JiHDocument:ctor()
-    commonlib.echo("=============create jih document");
 	self.scene_node = JiHDocumentHelper.createJiHNode("scene");
     local cur_node = JiHDocumentHelper.createJiHNode("root");
     self.scene_node:addChild(cur_node);
@@ -168,20 +167,45 @@ function JiHDocument:trapezoid(op, top_w, bottom_w, hight, depth, color)
     jih_node:setId("trapezoid_" ..  JiHDocumentHelper.generateId());
 end
 
-function JiHDocument:import_step_str(op, step_data, color, isBase64)
+function JiHDocument:import_shape_file(op, keyname, color)
+    commonlib.echo("todo: import_shape_file");
+end
+function JiHDocument:import_easy_shape_file(op, keyname, color)
+    commonlib.echo("todo: import_easy_shape_file");
+end
+function JiHDocument:import_easy_shape_str(op, step_data, color, isBase64)
     if (isBase64) then
         --decode base64
         step_data = atob(step_data);
     end
+    local charArray = JiHDocumentHelper.stringToJiHCharArray(step_data);
     local jihEasyStep = jihengine.JiHEasyStep:new();
-    local jihTopoShape = jihEasyStep:readCharArrayToShape(JiHDocumentHelper.stringToJiHCharArray(step_data));
+    local jihTopoShape = jihEasyStep:readCharArrayToShape(charArray);
+
     local jih_node = self:addJiHNode(op, color, jihTopoShape);
-    jih_node:setId("step_" + JiHDocumentHelper.generateId());
+    jih_node:setId("easy_shape_" + JiHDocumentHelper.generateId());
 end
-function JiHDocument:createSketch(name, plane)
+
+function JiHDocument:import_shape_str(op, step_data, color, isBase64)
+    if (isBase64) then
+        --decode base64
+        step_data = atob(step_data);
+    end
+    local charArray = JiHDocumentHelper.stringToJiHCharArray(step_data);
+    local importer_step = jihengine.JiHImporterXCAF:new();
+    local root_node_step = importer_step:loadFromCharArray("a.step", charArray, 0.1, 0.5, false);
+    local jih_node = self:addJiHNode(op, color, nil);
+    jih_node:addChild(root_node_step);
+    jih_node:setId("shape_" + JiHDocumentHelper.generateId());
+end
+
+-- @param  plane_dir: "x|y|z" or [0,0,0,0,1,0]
+function JiHDocument:createSketch(name, plane_dir)
     name = name or JiHDocumentHelper.generateId();
+    local plane = JiHDocumentHelper.convertPlaneToArray(plane_dir);
+    local plane_str = NPL.ToJson(plane, true);
     local  node = JiHDocumentHelper.createJiHNode(name)
-    JiHDocumentHelper.setPlane(node, plane);
+    JiHDocumentHelper.setPlane(node, plane_str);
     JiHDocumentHelper.setTag(node, JiHDocumentHelper.runningNodeTypes.is_sketch);
 
     local parent = self.cur_node;
@@ -218,17 +242,33 @@ function JiHDocument:geom_line_segment(start_x, start_y, start_z, end_x, end_y, 
     jih_node:addComponent(geom_component:toBase());
     jih_node:setId("geom_line_segment_" .. JiHDocumentHelper.generateId());
 end
+-- @param dir: "x|y|z" or { 0, 0, 0 }
 function JiHDocument:geom_circle(x, y, z, r, color, dir)
-    dir = dir or JiHDocumentHelper.ShapeDirection.y;
-    local geom_component = jihengine.JiHShapeMaker:geom_circle(x, y, z, r, dir);
+    local dir_arr;
+    local plane = JiHDocumentHelper.findParentSketchPlane(self:getCurNode());
+    if (plane) then
+        dir_arr = {plane[4], plane[5], plane[6]}
+    else
+        dir_arr = JiHDocumentHelper.convertDirectionToArray(dir);
+    end
+
+    local geom_component = jihengine.JiHShapeMaker:geom_circle(x, y, z, r, dir_arr[1], dir_arr[2], dir_arr[3]);
     local jihTopoShape = geom_component:toShape();
     local jih_node = self:addJiHNode(JiHDocumentHelper.opType.union, color, jihTopoShape);
     jih_node:addComponent(geom_component:toBase());
     jih_node:setId("geom_circle_" .. JiHDocumentHelper.generateId());
 end
+-- @param dir: "x|y|z" or { 0, 0, 0 }
 function JiHDocument:geom_ellipse(x, y, z, major_r, minor_r, color, dir)
-    dir = dir or JiHDocumentHelper.ShapeDirection.y;
-    local geom_component = jihengine.JiHShapeMaker:geom_ellipse(x, y, z, major_r, minor_r, dir);
+    local dir_arr;
+    local plane = JiHDocumentHelper.findParentSketchPlane(self:getCurNode());
+    if (plane) then
+        dir_arr = {plane[4], plane[5], plane[6]}
+    else
+        dir_arr = JiHDocumentHelper.convertDirectionToArray(dir);
+    end
+
+    local geom_component = jihengine.JiHShapeMaker:geom_ellipse(x, y, z, major_r, minor_r, dir_arr[1], dir_arr[2], dir_arr[3]);
     local jihTopoShape = geom_component:toShape();
     local jih_node = self:addJiHNode(JiHDocumentHelper.opType.union, color, jihTopoShape);
     jih_node:addComponent(geom_component:toBase());
@@ -256,19 +296,9 @@ function JiHDocument:geom_svg_file(filename, scale, color, plane)
         self:geom_svg_string(str, scale, color, plane, false);
     end
 end
-
-function JiHDocument:geom_svg_string(str, scale, color, plane, bBase64)
-    local is_sketch = JiHDocumentHelper.isSketchNode(self:getCurNode());
-    if (is_sketch) then
-        local sketch_plane = JiHDocumentHelper.getPlane(self:getCurNode());
-        if (plane ~= sketch_plane) then
-            if (sketch_plane == JiHDocumentHelper.PlaneType.xy or sketch_plane == JiHDocumentHelper.PlaneType.xz or sketch_plane == JiHDocumentHelper.PlaneType.zy) then
-                -- auto change sketch's plane
-                plane = sketch_plane;
-            end
-        end
-            
-    end
+  -- @param plane_dir : "x|y|z" or {0,0,0,0,1,0}
+function JiHDocument:geom_svg_string(str, scale, color, plane_dir, bBase64)
+    local plane = JiHDocumentHelper.findParentSketchPlane(self:getCurNode()) or JiHDocumentHelper.convertPlaneToArray(plane_dir);
     self:geom_svg_string_(str, scale, color, 1, plane, bBase64);
 end
 
@@ -297,8 +327,8 @@ function JiHDocument:run_svg_codes(result, scale, color, hInvert, plane)
 				local input_to_x = out_data.to_x * scale;
 				local input_to_y = out_data.to_y * scale * hInvert;
 
-                local from_x,from_y,from_z = JiHDocumentHelper.convert_xy_to_xyz(plane, input_from_x, input_from_y);
-                local to_x,to_y,to_z = JiHDocumentHelper.convert_xy_to_xyz(plane, input_to_x, input_to_y);
+                local from_x,from_y,from_z = JiHDocumentHelper.convert_xy_to_xyz_by_plane(plane, input_from_x, input_from_y);
+                local to_x,to_y,to_z = JiHDocumentHelper.convert_xy_to_xyz_by_plane(plane, input_to_x, input_to_y);
 
                 local bEqual = JiHDocumentHelper.is_equal_pos(from_x, from_y, from_z, to_x, to_y, to_z);
                 if(not bEqual)then
@@ -324,7 +354,7 @@ function JiHDocument:run_svg_codes(result, scale, color, hInvert, plane)
 					local input_x = pole[1] * scale;
 					local input_y = pole[2] * scale * hInvert;
 
-                    local x, y, z = JiHDocumentHelper.convert_xy_to_xyz(plane, input_x, input_y);
+                    local x, y, z = JiHDocumentHelper.convert_xy_to_xyz_by_plane(plane, input_x, input_y);
                     table.insert(result,{x, y , z});
                 end
                 self:geom_bezier(result, color, bAttach, plane);
