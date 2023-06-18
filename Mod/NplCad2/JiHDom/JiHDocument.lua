@@ -15,7 +15,7 @@ NPL.load("(gl)script/ide/System/Encoding/base64.lua");
 local Encoding = commonlib.gettable("System.Encoding");
 local JiHDocumentHelper = NPL.load("Mod/NplCad2/JiHDom/JiHDocumentHelper.lua");
 local SvgParser = NPL.load("Mod/NplCad2/Svg/SvgParser.lua");
-
+local BezierObject = NPL.load("Mod/NplCad2/JiHDom/BezierObject.lua");
 local JiHDocument = commonlib.inherit(nil,NPL.export());
 function JiHDocument:ctor()
 	self.scene_node = JiHDocumentHelper.createJiHNode("scene");
@@ -27,6 +27,8 @@ function JiHDocument:ctor()
 
     self.pushed_node_list = {};
     self.pushed_sketch_node_list = {};
+
+    self.cur_bezier_object = nil;
 end
 
 function JiHDocument:getCurStage()
@@ -198,7 +200,37 @@ function JiHDocument:import_shape_str(op, step_data, color, isBase64)
     jih_node:addChild(root_node_step);
     jih_node:setId("shape_" + JiHDocumentHelper.generateId());
 end
-
+function JiHDocument:createCurve(name, curveType, color)
+    self.cur_bezier_object = BezierObject:new():onInit(name, curveType, color, nil);
+end
+function JiHDocument:endCurve()
+    if (self.cur_bezier_object) then
+        local curveType = self.cur_bezier_object.curveType;
+        local geom_component = nil;
+        local name;
+        if (curveType == BezierObject.CurveTypes.bezier) then
+            geom_component = self.cur_bezier_object:create_JiHGeomBezierCurve();
+            name = "geom_bezier_" .. JiHDocumentHelper.generateId();
+        elseif (curveType == BezierObject.CurveTypes.bspline) then
+            geom_component = self.cur_bezier_object:create_JiHGeomBSplineCurve();
+            name = "geom_bspline_" .. JiHDocumentHelper.generateId();
+        end
+        if (geom_component) then
+            local color = self.cur_bezier_object.color;
+            local jihTopoShape = geom_component:toShape();
+            local jih_node = self:addJiHNode(JiHDocumentHelper.opType.union, color, jihTopoShape);
+            jih_node:addComponent(geom_component:toBase());
+            jih_node:setId(name);
+        end
+            
+    end
+    self.cur_bezier_object = nil;
+end
+function JiHDocument:addPoleToCurve(x, y, z)
+    if(self.cur_bezier_object)then
+        self.cur_bezier_object:addPole(x, y, z);
+    end
+end
 -- @param  plane_dir: "x|y|z" or [0,0,0,0,1,0]
 function JiHDocument:createSketch(name, plane_dir)
     name = name or JiHDocumentHelper.generateId();
