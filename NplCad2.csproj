@@ -53,7 +53,7 @@
     <None Include="Mod\NplCad2\BrepShapes\sphere.brep" />
     <None Include="Mod\NplCad2\Examples\Primitives.lua" />
     <None Include="Mod\NplCad2\ItemCADCodeBlock.lua" />
-    <None Include="Mod\NplCad2\JiHDom\BezierObject.lua" />
+    <None Include="Mod\NplCad2\JiHDom\BSplineObject.lua" />
     <None Include="Mod\NplCad2\JiHDom\JiHDocument.lua" />
     <None Include="Mod\NplCad2\JiHDom\JiHDocumentHelper.lua" />
     <None Include="Mod\NplCad2\main.lua" />
