@@ -173,7 +173,7 @@ function JiHDocumentHelper.transformPointByPlane(
         jihengine.MathUtil:vector3_cross(input_dir, plane_dir, axis);
         jihengine.Quaternion:createFromAxisAngle(axis, angle, q);
         -- translation
-        local translation = jihengine.Vector3:new(x + plane_center_x, y + plane_center_y, z + plane_center_z);
+        local translation = jihengine.Vector3:new(plane_center_x, plane_center_y, plane_center_z);
 
         local matrix = jihengine.Matrix:new();
         jihengine.Matrix:compose(scale, q, translation, matrix);
