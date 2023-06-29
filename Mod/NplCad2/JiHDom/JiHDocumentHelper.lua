@@ -424,9 +424,10 @@ function JiHDocumentHelper.generateId()
 end
 function JiHDocumentHelper.stringToJiHCharArray(str)
     str = str or "";
+    local len = #str
     local charArray = jihengine.JiHCharArray:new();
-    for k=1,#str do
-        local char = str[k];
+    for k = 1, len do
+        local char = str:sub(k,k)
         local char_code = string.byte(char);
         charArray:pushValue(char_code);
     end

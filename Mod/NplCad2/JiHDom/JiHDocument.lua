@@ -178,27 +178,27 @@ end
 function JiHDocument:import_easy_shape_str(op, step_data, color, isBase64)
     if (isBase64) then
         --decode base64
-        step_data = atob(step_data);
+		step_data = Encoding.unbase64(step_data);
     end
     local charArray = JiHDocumentHelper.stringToJiHCharArray(step_data);
     local jihEasyStep = jihengine.JiHEasyStep:new();
     local jihTopoShape = jihEasyStep:readCharArrayToShape(charArray);
 
     local jih_node = self:addJiHNode(op, color, jihTopoShape);
-    jih_node:setId("easy_shape_" + JiHDocumentHelper.generateId());
+    jih_node:setId("easy_shape_" .. JiHDocumentHelper.generateId());
 end
 
 function JiHDocument:import_shape_str(op, step_data, color, isBase64)
     if (isBase64) then
         --decode base64
-        step_data = atob(step_data);
+		step_data = Encoding.unbase64(step_data);
     end
     local charArray = JiHDocumentHelper.stringToJiHCharArray(step_data);
     local importer_step = jihengine.JiHImporterXCAF:new();
     local root_node_step = importer_step:loadFromCharArray("a.step", charArray, 0.1, 0.5, false);
     local jih_node = self:addJiHNode(op, color, nil);
     jih_node:addChild(root_node_step);
-    jih_node:setId("shape_" + JiHDocumentHelper.generateId());
+    jih_node:setId("shape_" .. JiHDocumentHelper.generateId());
 end
 function JiHDocument:createCurve(name, curveType, positionType, closed, color)
     self.cur_curve_object = BSplineObject:new():onInit(name, curveType, positionType, closed, color, nil);
