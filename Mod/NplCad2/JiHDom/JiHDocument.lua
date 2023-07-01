@@ -443,17 +443,7 @@ end
 ]]
 function JiHDocument:feature_chamfer_or_fillet(op, input_type, length, edges, color)
     local jihNode = self:getSelectedNode();
-    if (type (edges) == "number") then
-        edges = {edges}; -- one index
-    elseif (type (edges) == "string") then
-        local input_edges = edges;
-        edges = {};
-        local section
-		for section in string.gfind(input_edges, "[^,]+") do
-			index = tonumber(section);
-			table.insert(edges,index);
-		end
-    end
+    edges = JiHDocumentHelper.convertValueToArray(edges)
     self:feature_chamfer_or_fillet_(input_type, jihNode, op, length, edges, color);
 end
 function JiHDocument:feature_chamfer_or_fillet_(input_type, jihNode, op, length, edge_array, color)
@@ -621,4 +611,70 @@ function JiHDocument:feature_sweep(op, pathSketch_name, profileSketch_name, colo
             end
         end
 end
+function JiHDocument:feature_shell(op, thickness, face_index, inwards, color)
+    local jihNode = self:getSelectedNode();
+    self:feature_shell_(jihNode, op, thickness, face_index, inwards, color);
+end
+function JiHDocument:feature_shell_(jihNode, op, thickness, face_index, inwards, color)
+    if (not jihNode) then
+        return
+    end
+    local shape = JiHDocumentHelper.getShape(jihNode);
+    if (shape and (not shape:isNull())) then
+        local parent_node = jihNode:getParent();
+        local shell_shape = jihengine.JiHShapeMaker:shell_shape(shape, thickness, face_index, inwards);
+        if (shell_shape and (not shell_shape:isNull())) then
+            local shell_node = JiHDocumentHelper.createJiHNode("shell_" .. JiHDocumentHelper.generateId(), shell_shape, color, op);
+            parent_node:addChild(shell_node);
 
+
+            parent_node:removeChild(jihNode);
+
+            self.selected_node = shell_node;
+        end
+    end
+end
+-- @param op
+-- @param angle
+-- @param { string | Array<number> } neutral_plane: "x|y|z" or {0,0,0,0,1,0}
+-- @param { number | string | Array<number> }faces: 0 or "0,1,2" or {0,1,2}
+-- @param reversed
+-- @param color
+function JiHDocument:feature_draft(op, angle, neutral_plane, faces, reversed, color)
+    local jihNode = self:getSelectedNode();
+    local plane_arr = JiHDocumentHelper.convertPlaneToArray(neutral_plane);
+    local neutral_x = plane_arr[1];
+    local neutral_y = plane_arr[2];
+    local neutral_z = plane_arr[3];
+
+    local neutral_dir_x = plane_arr[4];
+    local neutral_dir_y = plane_arr[5];
+    local neutral_dir_z = plane_arr[6];
+
+    faces = JiHDocumentHelper.convertValueToArray(faces)
+
+    self:feature_draft_(jihNode, op, angle, neutral_x, neutral_y, neutral_z, neutral_dir_x, neutral_dir_y, neutral_dir_z, faces, reversed, color);
+end
+function JiHDocument:feature_draft_(jihNode, op, angle, neutral_x, neutral_y, neutral_z, neutral_dir_x, neutral_dir_y, neutral_dir_z, faces, reversed, color)
+    if (not jihNode) then
+        return
+    end
+    local shape = JiHDocumentHelper.getShape(jihNode);
+    local face_arr = jihengine.JiHIntArray:new();
+     for k = 1, #faces do
+            face_arr:pushValue(faces[k]);
+        end
+    if (shape and (not shape:isNull())) then
+        local parent_node = jihNode:getParent();
+        local draft_shape = jihengine.JiHShapeMaker:draft_shape(shape, angle, neutral_x, neutral_y, neutral_z, neutral_dir_x, neutral_dir_y, neutral_dir_z, face_arr, reversed);
+        if (draft_shape and (not draft_shape:isNull())) then
+            local draft_node = JiHDocumentHelper.createJiHNode("draft_" .. JiHDocumentHelper.generateId(), draft_shape, color, op);
+            parent_node:addChild(draft_node);
+
+
+            parent_node:removeChild(jihNode);
+
+            self.selected_node = draft_node;
+        end
+    end
+end

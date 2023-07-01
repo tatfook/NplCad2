@@ -80,7 +80,21 @@ function JiHDocumentHelper.findParentSketchPlane(cur_node)
     return plane;
 
 end
-
+-- @param value: 1 or "1,2,3" or [1,2,3]
+function JiHDocumentHelper.convertValueToArray(value)
+    if (type (value) == "number") then
+        value = {value}; -- one index
+    elseif (type (value) == "string") then
+        local input_value = value;
+        value = {};
+        local section
+		for section in string.gfind(input_value, "[^,]+") do
+			index = tonumber(section);
+			table.insert(value,index);
+		end
+    end
+    return value;
+end
 -- @param direction: "x|y|z" or {dir_x, dir_y, dir_z}
 -- @return {dir_x, dir_y, dir_z}
 
