@@ -697,3 +697,23 @@ function JiHDocument:feature_clone_node_by_name(op, objName, color, bOp)
 
     end
 end
+function JiHDocument:feature_delete_node_by_name(objName)
+    local stage = self:getCurStage();
+    if(not stage)then
+        return
+    end
+    local jihNode = stage:getChildById(objName, true);
+    if (jihNode) then
+       
+
+        local parent_node = jihNode:getParent();
+        parent_node:removeChild(jihNode);
+
+        if (self.cur_node == jihNode) then
+            self.cur_node = nil;
+        end
+
+        self.selected_node = nil;
+
+    end
+end
