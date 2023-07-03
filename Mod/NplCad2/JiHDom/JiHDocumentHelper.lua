@@ -847,3 +847,13 @@ function JiHDocumentHelper.loadParaXTemplateFromDisc()
 	JiHDocumentHelper.parax_template_data = parax_template_data;
 	return parax_template_data;
 end
+function JiHDocumentHelper.generateNodeIds(jihNode)
+    if(not jihNode)then
+        return
+    end
+    JiHDocumentHelper.visitNode(jihNode,function(node)
+        if(node)then
+            node:setId(JiHDocumentHelper.generateId())
+        end
+    end)
+end

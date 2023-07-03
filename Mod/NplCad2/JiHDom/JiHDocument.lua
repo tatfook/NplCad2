@@ -678,3 +678,22 @@ function JiHDocument:feature_draft_(jihNode, op, angle, neutral_x, neutral_y, ne
         end
     end
 end
+function JiHDocument:feature_clone_node_by_name(op, objName, color, bOp)
+    local stage = self:getCurStage();
+    if(not stage)then
+        return
+    end
+    local jihNode = stage:getChildById(objName, true);
+    if (jihNode) then
+        local copy = jihengine.JiHEngineHelper:clone_node(jihNode);
+        JiHDocumentHelper.generateNodeIds(copy);
+        JiHDocumentHelper.setOp(copy, op);
+        JiHDocumentHelper.setOpEnabled(copy, bOp);
+        JiHDocumentHelper.setColor(copy, color);
+
+        stage:addChild(copy);
+
+        self.selected_node = copy;
+
+    end
+end
