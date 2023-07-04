@@ -717,3 +717,36 @@ function JiHDocument:feature_delete_node_by_name(objName)
 
     end
 end
+function JiHDocument:feature_mirror_node_by_name(op, objName, plane, color)
+    local stage = self:getCurStage();
+    local jihNode = stage:getChildById(objName, true);
+    local plane_arr = JiHDocumentHelper.convertPlaneToArray(plane);
+    self:feature_mirror_node_by_name_(jihNode, op, plane_arr[1], plane_arr[2], plane_arr[3], plane_arr[4], plane_arr[5], plane_arr[6], color);
+end
+function JiHDocument:feature_mirror_node_by_name_(jihNode, op, x, y, z, dir_x, dir_y, dir_z, color)
+    if(not jihNode)then
+        return
+    end
+    local stage = self:getCurStage();
+    local copy = jihengine.JiHEngineHelper:clone_node(jihNode);
+    JiHDocumentHelper.generateNodeIds(copy);
+    
+
+    local top_node = JiHDocumentHelper.createJiHNode("temp_top_" .. JiHDocumentHelper.generateId(), nil, color, JiHDocumentHelper.opType.union);
+    JiHDocumentHelper.setOpEnabled(top_node, true);
+
+    top_node:addChild(copy);
+
+    JiHDocumentHelper.runNode(top_node)
+    local shape = JiHDocumentHelper.getShape(top_node);
+
+    if (shape and (not shape:isNull())) then
+        local shape_result = jihengine.JiHShapeMaker:mirror_shape(shape, x, y, z, dir_x, dir_y, dir_z);
+        if (shape_result and (not shape_result:isNull())) then
+            local mirror_node = JiHDocumentHelper.createJiHNode("mirror_" .. JiHDocumentHelper.generateId(), shape_result, color, op);
+            stage:addChild(mirror_node);
+
+            self.selected_node = mirror_node;
+        end
+    end
+end

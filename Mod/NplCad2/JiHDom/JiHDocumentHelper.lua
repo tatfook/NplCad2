@@ -219,6 +219,11 @@ function JiHDocumentHelper.jihnode_is_equal(jihNode_1, jihNode_2)
     end
     return false;
 end
+function JiHDocumentHelper.inverseMatrix(matrix)
+    local matrix_invert = jihengine.Matrix:new();
+    jihengine.MathUtil:invert_matrix(matrix, matrix_invert);
+    return matrix_invert;
+end
 function JiHDocumentHelper.multiplyMatrix(matrix1, matrix2)
     local matrix = jihengine.Matrix:new();
     jihengine.MathUtil:multiply_matrix(matrix1, matrix2, matrix);
