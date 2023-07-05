@@ -717,6 +717,11 @@ function JiHDocument:feature_delete_node_by_name(objName)
 
     end
 end
+function JiHDocument:feature_mirror(op, plane, color)
+    local jihNode = self:getSelectedNode();
+    local plane_arr = JiHDocumentHelper.convertPlaneToArray(plane);
+    self:feature_mirror_node_by_name_(jihNode, op, plane_arr[1], plane_arr[2], plane_arr[3], plane_arr[4], plane_arr[5], plane_arr[6], color);
+end
 function JiHDocument:feature_mirror_node_by_name(op, objName, plane, color)
     local stage = self:getCurStage();
     local jihNode = stage:getChildById(objName, true);
