@@ -11,6 +11,7 @@ Sketch.test();
 --]]
 NPL.load("(gl)script/ide/System/Encoding/base64.lua");
 local Encoding = commonlib.gettable("System.Encoding");
+local BSplineObject = NPL.load("Mod/NplCad2/JiHDom/BSplineObject.lua");
 local Sketch = commonlib.inherit(nil,NPL.export());
 
 Sketch.ConstraintType = {
@@ -110,6 +111,35 @@ function Sketch:add_arc(name, center_arr, radius, startAngle, endAngle, directio
     table.insert(self.geoms, geom_id);
     return geom_id;
 end
+-- add_ellipse
+function Sketch:add_ellipse(name, center_arr, major_radius, minor_radius, direction_arr)
+    local geom = jihengine.JiHGeom_Ellipse:new();
+    local centerPoint = jihengine.Vector3:new(center_arr[1], center_arr[2], center_arr[3]);
+    local direction = jihengine.Vector3:new(direction_arr[1], direction_arr[2], direction_arr[3]);
+    geom:setId(name);
+    geom:set(centerPoint, major_radius, minor_radius, direction);
+    local geom_id = self.sketchObject:addGeometry(geom:to_JiHGeom_Base());
+    table.insert(self.geoms, geom_id);
+    return geom_id;
+end
+-- add_bspline
+function Sketch:add_bspline(name, poles, closed, degree)
+    local geom = jihengine.JiHGeom_BSpline:new();
+    local bspline_params = BSplineObject.createJiHGeomBSplineParams(poles, closed, degree)
+    geom:setId(name);
+    geom:setValues(bspline_params.poles_arr, 
+             bspline_params.weights_arr, 
+             bspline_params.knots_arr, 
+             bspline_params.multiplicities_arr, 
+             bspline_params.degree, 
+             false, 
+             true,
+             BSplineObject.CurveTypes.basis_spline);
+    local geom_id = self.sketchObject:addGeometry(geom:to_JiHGeom_Base());
+    table.insert(self.geoms, geom_id);
+    return geom_id;
+end
+
 -- constraint_point_coincident
 function Sketch:add_constraint_point_coincident(to_geom_point_id, from_geom_point_id)
     local constraint = {
@@ -162,6 +192,10 @@ function Sketch:add_constraint_distance_circle_to_circle(from_geom_circle_id, to
         Value = value,
     }
     return self:add_constraint(constraint);
+end
+-- constraint_distance_ellipse_to_ellipse
+function Sketch:add_constraint_distance_ellipse_to_ellipse(from_geom_circle_id, to_geom_circle_id, value)
+    return self:add_constraint_distance_circle_to_circle(from_geom_circle_id, to_geom_circle_id, value)
 end
 
 -- constraint_distance_x_line
@@ -361,9 +395,57 @@ function Sketch:dump()
             local startAngle = geom_arc:getStartAngle();
             local endAngle = geom_arc:getEndAngle();
             commonlib.echo({center:getX(), center:getY(), center:getZ(), radius, startAngle, endAngle, });
+        elseif(name == "JiHGeom_Ellipse")then
+            local geom_ellipse = jihengine.JiHTypeConverter:to_JiHGeom_Ellipse(geom);
+            local center = geom_ellipse:getCenter();
+            local major_radius = geom_ellipse:getMajorRadius();
+            local minor_radius = geom_ellipse:getMinorRadius();
+            commonlib.echo({center:getX(), center:getY(), center:getZ(), radius, major_radius, minor_radius});
+        elseif(name == "JiHGeom_BSpline")then
+            local geom_bspline = jihengine.JiHTypeConverter:to_JiHGeom_BSpline(geom);
+            local poles_arr = geom_bspline:getPolesArray();
+            local knots_arr = geom_bspline:getKnotsArray();
+            local weights_arr = geom_bspline:getWeightsArray();
+            local multi_arr = geom_bspline:getMultiplicitiesArray();
+            local degree = geom_bspline:getDegree();
+            commonlib.echo("=================poles_arr");
+            self:dump_JiHDataVector3Array(poles_arr);
+            commonlib.echo("=================knots_arr");
+            self:dump_JiHNumberArray(knots_arr);
+            commonlib.echo("=================weights_arr");
+            self:dump_JiHNumberArray(weights_arr);
+            commonlib.echo("=================multi_arr");
+            self:dump_JiHNumberArray(multi_arr);
+            commonlib.echo("=================degree");
+            commonlib.echo(degree);
         end
     end
 end
+function Sketch:dump_JiHDataVector3Array(arr)
+    if(not arr)then
+        return
+    end
+    local result = {};
+    local len = arr:getCount();
+    for k = 1, len do
+        local v = arr:getValue(k-1);
+        table.insert(result, {x = v:getX(), y = v:getY(), z = v:getZ(), });
+    end
+    commonlib.echo(result);
+end
+function Sketch:dump_JiHNumberArray(arr)
+    if(not arr)then
+        return
+    end
+    local result = {};
+    local len = arr:getCount();
+    for k = 1, len do
+        local v = arr:getValue(k-1);
+        table.insert(result, v);
+    end
+    commonlib.echo(result);
+end
+
 function Sketch:test_constraint_point_coincident()
     local geom_id_1 = self:add_point("geom_id_1", { 0, 0, 0 });
     local geom_id_2 = self:add_point("geom_id_2", { 10, 0, 0 });
@@ -417,6 +499,17 @@ function Sketch:test_constraint_distance_circle_to_circle()
     self:dump();
     self:solve();
     commonlib.echo("==================test_constraint_distance_circle_to_circle solved");
+    self:dump();
+end
+function Sketch:test_constraint_distance_ellipse_to_ellipse()
+    local geom_id_ellipse_1 = self:add_ellipse("geom_id_ellipse_1", { 0, 0, 0 }, 10, 5,  { 0, 0, 1 });
+    local geom_id_ellipse_2 = self:add_ellipse("geom_id_ellipse_2", { 10, 0, 0 }, 20, 10, { 0, 0, 1 });
+
+    self:add_constraint_distance_ellipse_to_ellipse(geom_id_ellipse_1, geom_id_ellipse_2, 20);
+    commonlib.echo("==================test_constraint_distance_ellipse_to_ellipse");
+    self:dump();
+    self:solve();
+    commonlib.echo("==================test_constraint_distance_ellipse_to_ellipse solved");
     self:dump();
 end
 function Sketch:test_constraint_distance_x_line()
@@ -564,8 +657,22 @@ function Sketch:test_constraint_parallel_line_to_line()
     commonlib.echo("==================test_constraint_parallel_line_to_line solved");
     self:dump();
 end
+function Sketch:test_add_bspline()
+    local poles = {
+        { x = 0, y = 0, z = 0 },
+        { x = 1, y = 1, z = 0 },
+        { x = 2, y = 0, z = 0 },
+    }
+    local geom_id_bspline = self:add_bspline("geom_id_bspline", poles);
+    commonlib.echo("==================test_add_bspline");
+    self:dump();
+    self:solve();
+    commonlib.echo("==================test_add_bspline solved");
+    self:dump();
+end
 function Sketch.test()
     local sketch = Sketch:new();
+
     sketch:test_constraint_point_coincident();
 
     sketch = Sketch:new();
@@ -579,6 +686,9 @@ function Sketch.test()
 
     sketch = Sketch:new();
     sketch:test_constraint_distance_circle_to_circle();
+
+    sketch = Sketch:new();
+    sketch:test_constraint_distance_ellipse_to_ellipse();
 
     sketch = Sketch:new();
     sketch:test_constraint_distance_x_line();
@@ -618,4 +728,8 @@ function Sketch.test()
 
     sketch = Sketch:new();
     sketch:test_constraint_parallel_line_to_line()
+
+    sketch = Sketch:new();
+    sketch:test_add_bspline();
+
 end

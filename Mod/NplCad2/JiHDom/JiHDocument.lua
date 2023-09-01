@@ -97,6 +97,9 @@ function JiHDocument:popNode()
 	self.selected_node = node;
 end
 function JiHDocument:box(op, x, y, z, color)
+    local Sketch = NPL.load("Mod/NplCad2/JiHDom/Sketch.lua");
+    Sketch.test();
+
 	local jihTopoShape = jihengine.JiHShapeMaker:box(x, y, z);
     local jih_node = self:addJiHNode(op, color, jihTopoShape);
     jih_node:setId("box_" ..  JiHDocumentHelper.generateId());
@@ -200,22 +203,14 @@ function JiHDocument:import_shape_str(op, step_data, color, isBase64)
     jih_node:addChild(root_node_step);
     jih_node:setId("shape_" .. JiHDocumentHelper.generateId());
 end
-function JiHDocument:createCurve(name, curveType, positionType, closed, color)
-    self.cur_curve_object = BSplineObject:new():onInit(name, curveType, positionType, closed, color, nil);
+function JiHDocument:createBSpline(name, closed, color)
+    self.cur_curve_object = BSplineObject:new():onInit(name, {}, 3, closed, color, BSplineObject.CurveTypes.basis_spline);
 end
-function JiHDocument:endCurve()
+function JiHDocument:endBSpline()
     if (self.cur_curve_object) then
         local curveType = self.cur_curve_object.curveType;
-        local geom_component = nil;
-        local name;
-        if(curveType == BSplineObject.CurveTypes.bezier)then
-            geom_component = self.cur_curve_object:create_JiHGeomBezierCurve();
-            name = "geom_bezier_" .. JiHDocumentHelper.generateId();
-        elseif(curveType == BSplineObject.CurveTypes.bspline)then
-            geom_component = self.cur_curve_object:create_JiHGeomBSplineCurve();
-            name = "geom_bspline_" .. JiHDocumentHelper.generateId();
-        end
-        
+        local name = "geom_bspline_" .. JiHDocumentHelper.generateId();
+        local geom_component = self.cur_curve_object:create_JiHGeomBSplineCurve();
         if (geom_component) then
             local color = self.cur_curve_object.color;
             local jihTopoShape = geom_component:toShape();
@@ -227,7 +222,7 @@ function JiHDocument:endCurve()
     end
     self.cur_curve_object = nil;
 end
-function JiHDocument:addPositionToCurve(x, y, z)
+function JiHDocument:addPoleToCurve(x, y, z)
     if(self.cur_curve_object)then
         self.cur_curve_object:addPosition(x, y, z);
     end
@@ -307,6 +302,27 @@ function JiHDocument:geom_ellipse(x, y, z, major_r, minor_r, color, dir)
     jih_node:addComponent(geom_component:toBase());
     jih_node:setId("geom_ellipse_" .. JiHDocumentHelper.generateId());
 end
+
+-- @param dir: "x|y|z" or { 0, 0, 0 }
+function JiHDocument:geom_arc(x, y, z, r, startAngle, endAngle, color, dir, isDegree)
+    local dir_arr;
+    local plane = JiHDocumentHelper.findParentSketchPlane(self:getCurNode());
+    if (plane) then
+        dir_arr = {plane[4], plane[5], plane[6]}
+    else
+        dir_arr = JiHDocumentHelper.convertDirectionToArray(dir);
+    end
+    if(isDegree)then
+        startAngle = startAngle * math.pi / 180;
+        endAngle = endAngle * math.pi / 180;
+    end
+    local geom_component = jihengine.JiHShapeMaker:geom_arc(x, y, z, r, startAngle, endAngle, dir_arr[1], dir_arr[2], dir_arr[3]);
+    local jihTopoShape = geom_component:toShape();
+    local jih_node = self:addJiHNode(JiHDocumentHelper.opType.union, color, jihTopoShape);
+    jih_node:addComponent(geom_component:toBase());
+    jih_node:setId("geom_arc_" .. JiHDocumentHelper.generateId());
+end
+
 function JiHDocument:geom_bezier(poles, color)
     poles =  poles or {}
     local poles_arr = jihengine.JiHDataVector3Array:new();
