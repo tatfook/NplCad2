@@ -169,6 +169,14 @@ function JiHDocument:trapezoid(op, top_w, bottom_w, hight, depth, color)
     jih_node:setId("trapezoid_" ..  JiHDocumentHelper.generateId());
 end
 
+function JiHDocument:import_step_string(op, step_data, bColorful, color)
+    if (bColorful)then
+        self:import_shape_str(op, step_data, color, true);
+    else
+        self:import_easy_shape_str(op, step_data, color, true)
+    end
+end
+
 function JiHDocument:import_shape_file(op, keyname, color)
     commonlib.echo("todo: import_shape_file");
 end
