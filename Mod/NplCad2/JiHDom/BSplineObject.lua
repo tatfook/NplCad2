@@ -26,16 +26,16 @@ end
 --@param {Array<{x,y,z}>} positions:
 --@param {number} degree:
 --@param {boolean} closed:
---@param {string} color:
 --@param {BSplineObject.CurveTypes} curveType:
+--@param {string} color:
 
-function BSplineObject:onInit(name, positions, degree, closed, color, curveType)
+function BSplineObject:onInit(name, positions, degree, closed, curveType, color)
 	self.name = name;
 	self.positions = positions or {};
 	self.degree = degree;
 	self.closed = closed;
-	self.color = color;
 	self.curveType = curveType;
+	self.color = color;
     return self;
 end
 function BSplineObject:addPosition(x, y, z)

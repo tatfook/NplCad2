@@ -72,7 +72,7 @@
     <None Include="Mod\NplCad2\stl\RobotArm\Servo_Motor_Micro_9g.stl" />
     <None Include="Mod\NplCad2\stl\RobotArm\Waist.stl" />
     <None Include="Mod\NplCad2\Svg\SvgPathLibs.lua" />
-    <None Include="Mod\NplCad2\Test\TestNplOcct.lua" />
+    <None Include="Mod\NplCad2\Test\TestJiHDoc.lua" />
     <None Include="Mod\NplCad2\Test\TestScene.lua" />
     <None Include="Mod\NplCad2\Svg\SvgParser.lua" />
     <None Include="script\apps\WebServer\admin\wp-content\pages\wiki\mod\nplcad\models\nplcad_git_repo.page" />

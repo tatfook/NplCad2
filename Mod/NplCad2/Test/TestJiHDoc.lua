@@ -1,29 +1,26 @@
 --[[
-Title: TestNplOcct
+Title: TestJiHDoc
 Author(s): leio
 Date: 2022/12/10
 Desc: 
 use the lib:
 ------------------------------------------------------------
-local TestNplOcct = NPL.load("Mod/NplCad2/Test/TestNplOcct.lua");
-local NplOceConnection = NPL.load("Mod/NplCad2/NplOceConnection.lua");
-NplOceConnection.load({ npl_oce_dll = "plugins/nploce_d.dll" },function(msg)
-	--TestNplOcct.helloWorld()
-	--TestNplOcct.test_NplOcctCharArray()
-	TestNplOcct.test_NplOcctImporterXCAF("test/cube.step")
-end);
+local TestJiHDoc = NPL.load("Mod/NplCad2/Test/TestJiHDoc.lua");
+TestJiHDoc.test_LoadStepFile("test/servo.step", "test/out_servo.step");
 ------------------------------------------------------------
 --]]
 NPL.load("(gl)script/ide/Encoding.lua");
 local Encoding = commonlib.gettable("commonlib.Encoding");
+local JiHDocumentHelper = NPL.load("Mod/NplCad2/JiHDom/JiHDocumentHelper.lua");
 
-local TestNplOcct = NPL.export();
+local TestJiHDoc = NPL.export();
 
-function TestNplOcct.helloWorld()
+--[[
+function TestJiHDoc.helloWorld()
 	commonlib.echo(NplOcct.helloWorld());
 	local npl_occt_node = NplOcct.NplOcctNode.create();
 end
-function TestNplOcct.test_NplOcctCharArray()
+function TestJiHDoc.test_NplOcctCharArray()
 	local npl_occt_chararray = NplOcct.NplOcctCharArray.create();
 	local content = "abc123中文";
 	local len = #content;
@@ -51,19 +48,28 @@ function TestNplOcct.test_NplOcctCharArray()
 	commonlib.echo("=======================string");
 	commonlib.echo(s);
 end
-function TestNplOcct.test_NplOcctImporterXCAF(filename)
-	local npl_occt_importer_xcaf = NplOcct.NplOcctImporterXCAF.create();
-	local charArray = NplOcct.NplOcctCharArray.create();
-	filename = filename or "test/as1_pe_203.stp";
 
-	 local file = ParaIO.open(filename,"r");
+]]
+
+function TestJiHDoc.test_LoadStepFile(filename, out_filename)
+	local step_importer = jihengine.JiHImporterXCAF:new()
+	local jih_char_array = jihengine.JiHCharArray:new();
+
+	local file = ParaIO.open(filename,"r");
     if(file:IsValid()) then
         local content = file:GetText(0,-1);
 		local len = #content;
-		charArray:set(content, len);
+		jih_char_array:set(content, len);
         file:close();
     end
-	local nplOcctNode = npl_occt_importer_xcaf:loadFromCharArray("test.step", charArray, 0.5, 0.5, false);
-	local exporter = NplOcct.NplOcctExporterXCAF.create();
-	exporter:exportStep(nplOcctNode);
+	local jih_root_node = step_importer:loadFromCharArray("test/temp.step", jih_char_array, 0.5, 0.5, false);
+	local shape_cnt = step_importer:getTotalShapesCnt();
+	commonlib.echo("==============shape_cnt");
+	commonlib.echo(shape_cnt);
+	commonlib.echo("==============jih_root_node numChildren");
+	commonlib.echo(jih_root_node:numChildren());
+	local step_exporter = jihengine.JiHExporterXCAF:new();
+	local out_char_array = step_exporter:exportStep(jih_root_node);
+	JiHDocumentHelper.jiHCharArrayToFile(out_filename, out_char_array)
+	
 end

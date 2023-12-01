@@ -97,9 +97,6 @@ function JiHDocument:popNode()
 	self.selected_node = node;
 end
 function JiHDocument:box(op, x, y, z, color)
-    local Sketch = NPL.load("Mod/NplCad2/JiHDom/Sketch.lua");
-    Sketch.test();
-
 	local jihTopoShape = jihengine.JiHShapeMaker:box(x, y, z);
     local jih_node = self:addJiHNode(op, color, jihTopoShape);
     jih_node:setId("box_" ..  JiHDocumentHelper.generateId());
@@ -204,7 +201,7 @@ function JiHDocument:import_shape_str(op, step_data, color, isBase64)
     jih_node:setId("shape_" .. JiHDocumentHelper.generateId());
 end
 function JiHDocument:createBSpline(name, closed, color)
-    self.cur_curve_object = BSplineObject:new():onInit(name, {}, 3, closed, color, BSplineObject.CurveTypes.basis_spline);
+    self.cur_curve_object = BSplineObject:new():onInit(name, {}, 3, closed, BSplineObject.CurveTypes.basis_spline, color);
 end
 function JiHDocument:endBSpline()
     if (self.cur_curve_object) then
@@ -337,6 +334,99 @@ function JiHDocument:geom_bezier(poles, color)
     local jih_node = self:addJiHNode(JiHDocumentHelper.opType.union, color, jihTopoShape);
     jih_node:addComponent(geom_component:toBase());
     jih_node:setId("geom_bezier_" .. JiHDocumentHelper.generateId());
+end
+
+function JiHDocument:geom_bspline(poles, degree, is_closed, color)
+    self:geom_bspline_(poles, degree, is_closed, BSplineObject.CurveTypes.basis_spline, color);
+end
+
+function JiHDocument:geom_bspline_(poles, degree, is_closed, curve_type, color)
+    local bspline_obj = BSplineObject:new():onInit("", poles, degree, is_closed, curve_type, color);
+    local geom_component = bspline_obj:create_JiHGeomBSplineCurve();
+    local jihTopoShape = geom_component:toShape();
+    local jih_node = self:addJiHNode(JiHDocumentHelper.opType.union, color, jihTopoShape);
+    jih_node:addComponent(geom_component);
+    jih_node:setId("geom_bspline_" .. JiHDocumentHelper.generateId());
+end
+  -- @param plane_dir : "x|y|z" or {0,0,0,0,1,0}
+function JiHDocument:geom_dxf_string(str, scale, color, plane_dir, bBase64)
+    local plane = JiHDocumentHelper.findParentSketchPlane(self:getCurNode()) or JiHDocumentHelper.convertPlaneToArray(plane_dir);
+    self:geom_dxf_string_(str, scale, color, plane, bBase64);
+end
+
+function JiHDocument:geom_dxf_string_(str, scale, color, plane, bBase64)
+    scale = scale or 1;
+	if(bBase64)then
+		str = Encoding.unbase64(str);
+	end
+    self:run_dxf_codes(str, scale, color, plane);
+end
+function JiHDocument:run_dxf_codes(str, scale, color, plane)
+    local plane_arr = JiHDocumentHelper.convertPlaneToArray(plane);
+    local char_array = JiHDocumentHelper.stringToJiHCharArray(str)
+    local rootNode = jihengine.JiHNode:new("root");
+    local jihDxfLoader = jihengine.JiHDxfLoader:new(char_array, rootNode);
+    jihDxfLoader:DoRead();
+
+     local is_failed = jihDxfLoader:Failed();
+    commonlib.echo("========== is_failed");
+    commonlib.echo(is_failed);
+    commonlib.echo("========== rootNode:numChildren()");
+    commonlib.echo(rootNode:numChildren());
+    local cnt = jihDxfLoader:getGeomCnt();
+    commonlib.echo("========== jihDxfLoader:getGeomCnt()");
+    commonlib.echo(cnt);
+
+    for k = 0, cnt-1 do
+        local geom_base = jihDxfLoader:getGeomByIndex(k);
+        local id = geom_base:getId();
+        local name = geom_base:getName();
+        if(name == JiHDocumentHelper.GeomTypes.JiHGeom_Point)then
+            local geom = jihengine.JiHTypeConverter:to_JiHGeom_Point(geom_base);
+            local point = geom:getPoint();
+            self:geom_point(point:getX(), point:getY(), point:getZ(), color);
+        elseif(name == JiHDocumentHelper.GeomTypes.JiHGeom_Line)then
+            local geom = jihengine.JiHTypeConverter:to_JiHGeom_Line(geom_base);
+            local startPoint = geom:getStartPoint();
+            local endPoint = geom:getEndPoint();
+            local direction = geom:getDirection();
+            self:geom_line_segment(startPoint:getX(), startPoint:getY(), startPoint:getZ(), endPoint:getX(), endPoint:getY(), endPoint:getZ(), color);
+
+        elseif(name == JiHDocumentHelper.GeomTypes.JiHGeom_Arc)then
+            local geom = jihengine.JiHTypeConverter:to_JiHGeom_Arc(geom_base);
+            local center = geom:getCenter();
+            local radius = geom:getRadius();
+            local startAngle = geom:getStartAngle();
+            local endAngle = geom:getEndAngle();
+            local direction = geom:getDirection();
+            self:geom_arc(center:getX(), center:getY(), center:getZ(), radius, startAngle, endAngle, color, plane_arr, false);
+
+        elseif(name == JiHDocumentHelper.GeomTypes.JiHGeom_Circle)then
+            local geom = jihengine.JiHTypeConverter:to_JiHGeom_Circle(geom_base);
+            local center = geom:getCenter();
+            local radius = geom:getRadius();
+            local direction = geom:getDirection();
+            self:geom_circle(center:getX(), center:getY(), center:getZ(), radius, color, plane_arr);
+
+        elseif(name == JiHDocumentHelper.GeomTypes.JiHGeom_Ellipse)then
+            local geom = jihengine.JiHTypeConverter:to_JiHGeom_Ellipse(geom_base);
+            local center = geom:getCenter();
+            local majorRadius = geom:getMajorRadius();
+            local minorRadius = geom:getMinorRadius();
+            local direction = geom:getDirection();
+            self:geom_ellipse(center:getX(), center:getY(), center:getZ(), majorRadius, minorRadius, color, plane_arr);
+
+        elseif(name == JiHDocumentHelper.GeomTypes.JiHGeom_BSpline)then
+            local geom = jihengine.JiHTypeConverter:to_JiHGeom_BSpline(geom_base);
+                local poles_arr = geom:getPolesArray();
+                local poles = {};
+                for k = 1, poles_arr:getCount() do
+                    local pole = poles_arr:getValue(k-1);
+                    table.insert(poles, {pole:getX(), pole:getY(), pole:getZ()})
+                end
+                self:geom_bspline(poles, 3, false, color);
+        end
+    end
 end
 function JiHDocument:geom_svg_file(filename, scale, color, plane)
     if (global_resource) then

@@ -12,6 +12,16 @@ local JiHDocumentHelper = NPL.export();
 NPL.load("(gl)script/ide/System/Core/Color.lua");
 local Color = commonlib.gettable("System.Core.Color");
 
+
+JiHDocumentHelper.GeomTypes = {
+	JiHGeom_Point = "JiHGeom_Point",
+    JiHGeom_Line = "JiHGeom_Line",
+    JiHGeom_Arc = "JiHGeom_Arc",
+    JiHGeom_Circle = "JiHGeom_Circle",
+    JiHGeom_Ellipse = "JiHGeom_Ellipse",
+    JiHGeom_BSpline = "JiHGeom_BSpline",
+}
+
 JiHDocumentHelper.defaultNodeColor = "#ffc658";
 JiHDocumentHelper.defaultNodeColor_arr = { 255/255, 198/255, 88/255, 1, };
 
@@ -119,9 +129,17 @@ function JiHDocumentHelper.convertDirectionToArray(direction)
         end
     end
     if (direction and type(direction) == "table") then
-        dir_x = direction[1];
-        dir_y = direction[2];
-        dir_z = direction[3];
+        local len = #direction;
+        if(len >= 6)then
+            dir_x = direction[4];
+            dir_y = direction[5];
+            dir_z = direction[6];
+        else
+            dir_x = direction[1];
+            dir_y = direction[2];
+            dir_z = direction[3];
+        end
+        
     end
     return {dir_x, dir_y, dir_z};
 end
@@ -356,9 +374,16 @@ function JiHDocumentHelper.convertDirectionToArray(direction)
         end
     end
     if( direction and type(direction) == "table" )then
-        dir_x = direction[1];
-        dir_y = direction[2];
-        dir_z = direction[3];
+        local len = #direction;
+        if(len >= 6)then
+            dir_x = direction[4];
+            dir_y = direction[5];
+            dir_z = direction[6];
+        else
+            dir_x = direction[1];
+            dir_y = direction[2];
+            dir_z = direction[3];
+        end
     end
     return {dir_x, dir_y, dir_z};
 end
@@ -770,13 +795,13 @@ function JiHDocumentHelper.setColor(jih_node, color)
         doubleArray:pushValue(g);
         doubleArray:pushValue(b);
         doubleArray:pushValue(a);
-        materialComponent:setDiffuseColor(doubleArray);
+        materialComponent:setBaseColor(doubleArray);
     end
 end
 function JiHDocumentHelper.getColor(jih_node)
     local materialComponent = JiHDocumentHelper.getComponentByName(jih_node, JiHDocumentHelper.JiHComponentNames.JiHMaterialComponent);
     if (materialComponent) then
-        local doubleArray = materialComponent:getDiffuseColor();
+        local doubleArray = materialComponent:getBaseColor();
         return {doubleArray:getValue(0), doubleArray:getValue(1), doubleArray:getValue(2), doubleArray:getValue(3)};
     end
 end
@@ -861,6 +886,24 @@ function JiHDocumentHelper.generateNodeIds(jihNode)
             node:setId(JiHDocumentHelper.generateId())
         end
     end)
+end
+function JiHDocumentHelper.fileToJiHCharArray(filename)
+    if(ParaIO.DoesFileExist(filename, true)) then
+		local template_file = ParaIO.open(filename, "r");
+		if(template_file:IsValid()) then
+			local data = template_file:GetText(0, -1);
+			template_file:close();
+            return JiHDocumentHelper.stringToJiHCharArray(data);
+		end
+	end
+end
+function JiHDocumentHelper.jiHCharArrayToFile(filename, jih_char_array)
+	local template_file = ParaIO.open(filename, "w");
+	if(template_file:IsValid()) then
+        local content = JiHDocumentHelper.charArrayToString(jih_char_array)
+        template_file:write(content, #content);
+		template_file:close();
+	end
 end
 
 
