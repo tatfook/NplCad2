@@ -398,10 +398,26 @@ function nplcad:api_runcode(input)
     end);
     yield();
     if(code and code ~= "")then
+        _G.mainParams = nil;
+        
         local build_type = input.build_type
         local filename = input.filename
         local exportCoordinateType = input.exportCoordinateType or 0;
         local compilerVersion = input.compilerVersion;
+        local mainParams = input.mainParams;
+        if(mainParams and type(mainParams) == "string")then
+            local out={};
+            if(NPL.FromJson(mainParams, out)) then
+                mainParams = out
+            else
+                mainParams = nil
+            end
+        end
+        mainParams = mainParams or {};
+        if next(mainParams) == nil then
+            mainParams = nil;
+        end
+
         local func_str = nplcad.do_string;
         local str;
         if(build_type == "parax")then
@@ -435,7 +451,7 @@ function nplcad:api_runcode(input)
             str = nplcad.getcode_export_scene_code_xml(code)
         else
             if(compilerVersion == "v3")then
-                str = nplcad.getcode_export_gltf_v3(code)
+                str = nplcad.getcode_export_gltf_v3(code, mainParams)
             else
                 str = nplcad.getcode(code, exportCoordinateType)
             end
@@ -453,6 +469,8 @@ function nplcad:api_runcode(input)
             output.result = result;
         end
     end
+    _G.mainParams = nil;
+
 	NPL.load("(gl)script/apps/Aries/Creator/Game/game_logic.lua");
 	local GameLogic = commonlib.gettable("MyCompany.Aries.Game.GameLogic")
 	if(GameLogic and GameLogic.GetFilters and GameLogic.GetFilters())then
@@ -521,15 +539,32 @@ function nplcad.getcode_export_step_v3(str)
     ]],str);
     return s;
 end
-function nplcad.getcode_export_gltf_v3(str)
+function nplcad.getcode_export_gltf_v3(str, mainParams)
+    -- TODO:set local to mainParams
+    _G.mainParams = mainParams;
     local s = string.format([[
         local JiHDocument = NPL.load("Mod/NplCad2/JiHDom/JiHDocument.lua");
         local JiHDocumentHelper = NPL.load("Mod/NplCad2/JiHDom/JiHDocumentHelper.lua");
         %s
-         JiHDocumentHelper.run(jih_doc:getRootNode(), false);
-         local charArray = JiHDocumentHelper.toGltf(jih_doc:getRootNode(), 0.5, 0.5, true, true);
-         local content = JiHDocumentHelper.charArrayToString(charArray);
-        return content;
+
+        if(defaultConfigs)then
+            mainParams = mainParams or JiHDocumentHelper.getMainParamDefaultValues(defaultConfigs);
+        end
+        mainParams = mainParams or {};
+        local context = {};
+        if(main and type(main) == "function")then
+            main(mainParams, context)
+        end
+        if(context.jih_doc)then
+            jih_doc = context.jih_doc
+        end
+        local content;
+        if(jih_doc)then
+            JiHDocumentHelper.run(jih_doc:getRootNode(), false);
+            local charArray = JiHDocumentHelper.toGltf(jih_doc:getRootNode(), 0.5, 0.5, true, true);
+            content = JiHDocumentHelper.charArrayToString(charArray);
+        end
+        return { content = content, mainParams = mainParams, defaultConfigs = defaultConfigs,  };
     ]],str);
     return s;
 end

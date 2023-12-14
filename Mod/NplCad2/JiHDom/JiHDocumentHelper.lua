@@ -905,5 +905,16 @@ function JiHDocumentHelper.jiHCharArrayToFile(filename, jih_char_array)
 		template_file:close();
 	end
 end
-
+function JiHDocumentHelper.getMainParamDefaultValues(mainParameterDefinitions)
+    if(not mainParameterDefinitions)then
+        return
+    end
+    local params = {};
+    for k,v in ipairs(mainParameterDefinitions) do
+        local name = v.name or "";
+        local value = v.initial;
+        params[name] = value;
+    end
+    return params;
+end
 
