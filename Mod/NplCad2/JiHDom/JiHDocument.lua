@@ -847,6 +847,7 @@ function JiHDocument:feature_mirror_node_by_name_(jihNode, op, x, y, z, dir_x, d
         return
     end
     local stage = self:getCurStage();
+    local cur_node = self:getCurNode() or stage;
     local copy = jihengine.JiHEngineHelper:clone_node(jihNode);
     JiHDocumentHelper.generateNodeIds(copy);
     
@@ -863,7 +864,7 @@ function JiHDocument:feature_mirror_node_by_name_(jihNode, op, x, y, z, dir_x, d
         local shape_result = jihengine.JiHShapeMaker:mirror_shape(shape, x, y, z, dir_x, dir_y, dir_z);
         if (shape_result and (not shape_result:isNull())) then
             local mirror_node = JiHDocumentHelper.createJiHNode("mirror_" .. JiHDocumentHelper.generateId(), shape_result, color, op);
-            stage:addChild(mirror_node);
+            cur_node:addChild(mirror_node);
 
             self.selected_node = mirror_node;
         end
