@@ -536,6 +536,7 @@ function nplcad.getcode_export_step_v3(str)
          local charArray = JiHDocumentHelper.toStep(jih_doc:getRootNode());
          local content = JiHDocumentHelper.charArrayToString(charArray);
         return content;
+
     ]],str);
     return s;
 end
@@ -543,6 +544,7 @@ function nplcad.getcode_export_gltf_v3(str, mainParams)
     -- TODO:set local to mainParams
     _G.mainParams = mainParams;
     local s = string.format([[
+        local jih_doc = nil;
         local JiHDocument = NPL.load("Mod/NplCad2/JiHDom/JiHDocument.lua");
         local JiHDocumentHelper = NPL.load("Mod/NplCad2/JiHDom/JiHDocumentHelper.lua");
         %s
@@ -552,11 +554,15 @@ function nplcad.getcode_export_gltf_v3(str, mainParams)
         end
         mainParams = mainParams or {};
         local context = {};
+        local jih_doc_from_return = nil;
         if(main and type(main) == "function")then
-            main(mainParams, context)
+            jih_doc_from_return = main(mainParams, context)
         end
         if(context.jih_doc)then
             jih_doc = context.jih_doc
+        end
+        if(jih_doc_from_return)then
+            jih_doc = jih_doc_from_return
         end
         local content;
         if(jih_doc)then
