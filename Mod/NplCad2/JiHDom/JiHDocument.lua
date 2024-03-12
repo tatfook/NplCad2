@@ -511,9 +511,18 @@ end
 
 -- features 
 
+-- 和 feature_position 功能一样
+function JiHDocument:translate(x, y, z)
+    self:feature_position(x, y, z);
+end
 function JiHDocument:feature_position(x, y, z)
     local node = self:getSelectedNode();
     JiHDocumentHelper.setPosition(node, x, y, z)
+end
+
+-- 和 feature_rotate 功能一样
+function JiHDocument:rotate(axix, angle)
+    self:feature_rotate(axix, angle);
 end
 function JiHDocument:feature_rotate(axix, angle)
     local axis_x = 0;
@@ -541,6 +550,11 @@ function JiHDocument:feature_rotate_(axis_x, axis_y, axis_z, angle_degree)
     JiHDocumentHelper.setQuaternion(node, q:getX(), q:getY(), q:getZ(), q:getW());
 end
 
+-- 和 feature_scale 功能一样
+function JiHDocument:scale(x, y, z)
+    self:feature_scale(x, y, z);
+
+end
 function JiHDocument:feature_scale(x, y, z)
     local node = self:getSelectedNode();
     JiHDocumentHelper.setScale(node, x, y, z)
