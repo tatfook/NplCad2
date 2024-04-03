@@ -95,6 +95,13 @@ function JiHDocument:popNode()
 	table.remove(self.pushed_node_list,len);
 	self.cur_node = parent;
 	self.selected_node = node;
+
+    -- 检测是否执行布尔运算
+    local enabled = JiHDocumentHelper.getOpEnabled(node);
+    if(enabled)then
+        JiHDocumentHelper.runNode(node)
+        JiHDocumentHelper.setOpEnabled(node, false);
+    end
 end
 function JiHDocument:box(op, x, y, z, color)
 	local jihTopoShape = jihengine.JiHShapeMaker:box(x, y, z);
@@ -559,6 +566,43 @@ function JiHDocument:feature_scale(x, y, z)
     local node = self:getSelectedNode();
     JiHDocumentHelper.setScale(node, x, y, z)
 end
+function JiHDocument:fillet(jiHPlaneType, radius, nodeName)
+    self:fillet_or_chamfer_all_edges("fillet", jiHPlaneType, radius, nodeName)
+end
+function JiHDocument:chamfer(jiHPlaneType, radius, nodeName)
+    self:fillet_or_chamfer_all_edges("chamfer", jiHPlaneType, radius, nodeName)
+end
+
+--[[
+    /**
+     * 
+     * @param input_type: "chamfer" or "fillet"
+     * @param jiHPlaneType: JiHDocumentHelper.JiHPlaneType
+     * @param radius: 
+     * @param nodeName
+     */
+]]
+
+function JiHDocument:fillet_or_chamfer_all_edges(input_type, jiHPlaneType, radius, nodeName)
+    local jihNode;
+    if(nodeName and nodeName ~= "")then
+        jihNode = JiHDocumentHelper.getNodeByNodeId(this.getCurStage(), nodeName);
+    else 
+        jihNode = self:getSelectedNode();
+
+    end
+	local shape = JiHDocumentHelper.getShape(jihNode);
+	local arr = JiHDocumentHelper.convertJiHPlaneTypeToArr(jiHPlaneType);
+    local newShape;
+    if(input_type == "fillet")then
+	    newShape = jihengine.JiHShapeMaker:FilletByAxis(shape, radius, arr.axisList, arr.dirList);
+    else
+	    newShape = jihengine.JiHShapeMaker:ChamferByAxis(shape, radius, arr.axisList, arr.dirList);
+    end
+	if (newShape and (not newShape:isNull()))then
+		JiHDocumentHelper.setShape(jihNode, newShape);
+    end
+end
 --[[
     /**
      * 
@@ -578,6 +622,7 @@ function JiHDocument:feature_chamfer_or_fillet_(input_type, jihNode, op, length,
     if(not jihNode)then 
         return 
     end
+
     local shape = JiHDocumentHelper.getShape(jihNode);
     if (shape and (not shape:isNull())) then
         local edge_arr = jihengine.JiHIntArray:new();

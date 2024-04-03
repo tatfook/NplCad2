@@ -12,7 +12,16 @@ local JiHDocumentHelper = NPL.export();
 NPL.load("(gl)script/ide/System/Core/Color.lua");
 local Color = commonlib.gettable("System.Core.Color");
 
-
+JiHDocumentHelper.JiHPlaneType = {
+    All = "xyz",
+	x = "x",
+	y = "y",
+	z = "z",
+	xy = "xy",
+	xz = "xz",
+	zy = "zy",
+	yz = "yz",
+}
 JiHDocumentHelper.GeomTypes = {
 	JiHGeom_Point = "JiHGeom_Point",
     JiHGeom_Line = "JiHGeom_Line",
@@ -552,7 +561,7 @@ function JiHDocumentHelper.runNode(top_node)
 	local function pop_nodes(node)
 		local action_params = JiHDocumentHelper._popAllActionParams(node) or {};
 		JiHDocumentHelper.runOpSequence(node, action_params)
-        JiHDocumentHelper.setOpEnabled(node, false);
+        --JiHDocumentHelper.setOpEnabled(node, false);
 	end
 	JiHDocumentHelper.visitNode(top_node,function(node)
 		push_nodes(node);
@@ -560,14 +569,15 @@ function JiHDocumentHelper.runNode(top_node)
 		-- running boolean op
 		pop_nodes(node)
 		-- check if parent has op enabled
-		push_nodes(node);
+		--push_nodes(node);
 	end)
 end
 function JiHDocumentHelper.findParentOpEnabled(node)
 	if(not node)then
 		return
 	end
-	local p = node:getParent();
+	--local p = node:getParent();
+	local p = node;
 	local lastNode;
 	while(p) do
         local enabled = JiHDocumentHelper.getOpEnabled(p);
@@ -918,3 +928,48 @@ function JiHDocumentHelper.getMainParamDefaultValues(mainParameterDefinitions)
     return params;
 end
 
+function JiHDocumentHelper.convertJiHPlaneTypeToArr(jiHPlaneType)
+        local axis_x = 0;
+		local axis_y = 0;
+		local axis_z = 0;
+
+		local dir_x = 0;
+		local dir_y = 0;
+		local dir_z = 0;
+
+		if (jiHPlaneType == "xyz") then
+			axis_x = 1;
+			axis_y = 1;
+			axis_z = 1;
+		elseif (jiHPlaneType == "x") then
+			axis_x = 1;
+		elseif (jiHPlaneType == "y") then
+			axis_y = 1;
+		elseif (jiHPlaneType == "z") then
+			axis_z = 1;
+		elseif (jiHPlaneType == "xy") then
+			dir_z = 1;
+		elseif (jiHPlaneType == "xz") then
+			dir_y = 1;
+		elseif (jiHPlaneType == "yz" or jiHPlaneType == "zy") then
+			dir_x = 1;
+        end
+
+		local axisList = jihengine.JiHDoubleArray:new();
+		axisList:pushValue(axis_x);
+		axisList:pushValue(axis_y);
+		axisList:pushValue(axis_z);
+
+		local dirList = jihengine.JiHDoubleArray:new();
+		dirList:pushValue(dir_x);
+		dirList:pushValue(dir_y);
+		dirList:pushValue(dir_z);
+
+		return {
+			axisList = axisList ,
+			dirList = dirList,
+		};
+end
+function JiHDocumentHelper.getNodeByNodeId(stage, objName)
+    return stage:getChildById(objName, true);
+end
