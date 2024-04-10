@@ -337,7 +337,9 @@ function JiHDocumentHelper._pushActionParam(node,param)
 	if(not node)then
 		return;
 	end
-
+    if(node == param)then
+        return;
+    end
 	local action_params_ = JiHDocumentHelper.traversal_nodes_map[node] or {};
 	local bIncluded = false;
 	for __, v in ipairs(action_params_) do
@@ -540,7 +542,7 @@ function JiHDocumentHelper.run(scene_node, bUnionAll)
 	JiHDocumentHelper.clearNodesMap();
     local scene_first_node = scene_node:getChildAt(0);
     JiHDocumentHelper.setOpEnabled(scene_first_node, bUnionAll);
-    JiHDocumentHelper.runNode(scene_first_node);
+    --JiHDocumentHelper.runNode(scene_first_node);
     return scene_node;
 end
 

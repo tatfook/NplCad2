@@ -853,6 +853,8 @@ function JiHDocument:feature_draft_(jihNode, op, angle, neutral_x, neutral_y, ne
 end
 function JiHDocument:feature_clone_node_by_name(op, objName, color, bOp)
     local stage = self:getCurStage();
+	local cur_node = self:getCurNode() or stage;
+
     if(not stage)then
         return
     end
@@ -860,11 +862,18 @@ function JiHDocument:feature_clone_node_by_name(op, objName, color, bOp)
     if (jihNode) then
         local copy = jihengine.JiHEngineHelper:clone_node(jihNode);
         JiHDocumentHelper.generateNodeIds(copy);
+        copy:setId("clone_" .. objName .. "_" .. JiHDocumentHelper.generateId());
+
         JiHDocumentHelper.setOp(copy, op);
         JiHDocumentHelper.setOpEnabled(copy, bOp);
         JiHDocumentHelper.setColor(copy, color);
 
-        stage:addChild(copy);
+        if (bOp)then
+			JiHDocumentHelper.runNode(copy);
+			JiHDocumentHelper.setOpEnabled(copy, false);
+		end
+
+        cur_node:addChild(copy);
 
         self.selected_node = copy;
 
