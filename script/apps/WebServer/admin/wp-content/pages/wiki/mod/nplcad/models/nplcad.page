@@ -529,13 +529,35 @@ function nplcad.getcode_export_stl_v3(str)
 end
 function nplcad.getcode_export_step_v3(str)
     local s = string.format([[
+        local jih_doc = nil;
         local JiHDocument = NPL.load("Mod/NplCad2/JiHDom/JiHDocument.lua");
         local JiHDocumentHelper = NPL.load("Mod/NplCad2/JiHDom/JiHDocumentHelper.lua");
         %s
-         JiHDocumentHelper.run(jih_doc:getRootNode(), false);
-         local charArray = JiHDocumentHelper.toStep(jih_doc:getRootNode());
-         local content = JiHDocumentHelper.charArrayToString(charArray);
-        return content;
+
+        if(defaultConfigs)then
+            mainParams = mainParams or JiHDocumentHelper.getMainParamDefaultValues(defaultConfigs);
+        end
+        mainParams = mainParams or {};
+        local context = {};
+        local jih_doc_from_return = nil;
+        if(main and type(main) == "function")then
+            jih_doc_from_return = main(mainParams, context)
+        end
+        if(context.jih_doc)then
+            jih_doc = context.jih_doc
+        end
+        if(jih_doc_from_return)then
+            jih_doc = jih_doc_from_return
+        end
+        local content;
+        if(jih_doc)then
+            JiHDocumentHelper.run(jih_doc:getRootNode(), false);
+            local charArray = JiHDocumentHelper.toStep(jih_doc:getRootNode());
+            content = JiHDocumentHelper.charArrayToString(charArray);
+        end
+        commonlib.echo("====================content");
+        commonlib.echo(content);
+        return { content = content, mainParams = mainParams, defaultConfigs = defaultConfigs,  };
 
     ]],str);
     return s;

@@ -256,6 +256,14 @@ function JiHDocumentHelper.multiplyMatrix(matrix1, matrix2)
     jihengine.MathUtil:multiply_matrix(matrix1, matrix2, matrix);
     return matrix;
 end
+function JiHDocumentHelper.setShapeTransform(shape, transformComponent)
+    if(not shape or not transformComponent)then
+        return
+    end
+    shape:rotate(transformComponent:get_q_x(), transformComponent:get_q_y(), transformComponent:get_q_z(), transformComponent:get_q_w());
+	shape:scale(transformComponent:get_scale_x(), transformComponent:get_scale_y(), transformComponent:get_scale_z());
+	shape:translate(transformComponent:get_x(), transformComponent:get_y(), transformComponent:get_z());
+end
 function JiHDocumentHelper.setNodeMatrix(jih_node, matrix)
     if (not jih_node or not matrix) then
         return;
@@ -338,6 +346,8 @@ function JiHDocumentHelper._pushActionParam(node,param)
 		return;
 	end
     if(node == param)then
+        commonlib.echo("_pushActionParam found same node");
+        commonlib.echo(node:getId());
         return;
     end
 	local action_params_ = JiHDocumentHelper.traversal_nodes_map[node] or {};
@@ -550,6 +560,7 @@ function JiHDocumentHelper.runNode(top_node)
 	if(not top_node)then
 		return
 	end
+	JiHDocumentHelper.clearNodesMap();
 	local function push_nodes(node)
 		local topoShape = JiHDocumentHelper.getShape(node);
 		if(topoShape)then
@@ -603,11 +614,15 @@ function JiHDocumentHelper.runOpSequence(node, action_params)
 	local result_shape;
 	if(len == 1)then
 		local model_node = action_params[1];
+
 		local shape = JiHDocumentHelper.getShape(model_node);
-        local w_matrix = JiHDocumentHelper.getWorldMatrix(model_node, node);
+        --local w_matrix = JiHDocumentHelper.getWorldMatrix(model_node, node);
         --clone a new shape
         result_shape = shape:clone();
-        JiHDocumentHelper.setMatrix(result_shape, w_matrix, false)
+        --JiHDocumentHelper.setMatrix(result_shape, w_matrix, false)
+	    local child_transformComponent = JiHDocumentHelper.getComponentByName(model_node, JiHDocumentHelper.JiHComponentNames.JiHTransformComponent);
+		JiHDocumentHelper.setShapeTransform(result_shape, child_transformComponent);
+
 	else
 		local model = action_params[1];
 		for k = 2, len do
@@ -616,15 +631,15 @@ function JiHDocumentHelper.runOpSequence(node, action_params)
 		end
 		if(model)then
 			result_shape = JiHDocumentHelper.getShape(model);
+            result_shape = result_shape:clone();
 		else
 			LOG.std(nil, "error", "jihengine", "the model is nil");
 		end
 	end
 	if(result_shape and (not result_shape:isNull()))then
-        --TODO:destroy model node
 		-- clear children
-		node:removeAllChildren();
-        JiHDocumentHelper.setShape(node, result_shape:clone());
+		node:removeAllChildren(true);
+        JiHDocumentHelper.setShape(node, result_shape);
 	end
 end
 function JiHDocumentHelper.operateTwoNodes(model,next_model,top_node)
@@ -634,8 +649,13 @@ function JiHDocumentHelper.operateTwoNodes(model,next_model,top_node)
             if (next_node) then
                 op = JiHDocumentHelper.getOp(next_node);
             end
-            local w_matrix_1 = JiHDocumentHelper.getWorldMatrix(model, top_node);
-            local w_matrix_2 = JiHDocumentHelper.getWorldMatrix(next_model, top_node);
+            -- local w_matrix_1 = JiHDocumentHelper.getWorldMatrix(model, top_node);
+            -- local w_matrix_2 = JiHDocumentHelper.getWorldMatrix(next_model, top_node);
+
+            local child_1_transformComponent = JiHDocumentHelper.getComponentByName(model, JiHDocumentHelper.JiHComponentNames.JiHTransformComponent);
+			local child_2_transformComponent = JiHDocumentHelper.getComponentByName(next_model, JiHDocumentHelper.JiHComponentNames.JiHTransformComponent);
+
+
             local shape_1 = JiHDocumentHelper.getShape(model);
             local shape_2 = JiHDocumentHelper.getShape(next_model);
 
@@ -644,8 +664,12 @@ function JiHDocumentHelper.operateTwoNodes(model,next_model,top_node)
             local clone_shape_1 = shape_1:clone();
             local clone_shape_2 = shape_2:clone();
 
-            JiHDocumentHelper.setMatrix(clone_shape_1, w_matrix_1, false);
-            JiHDocumentHelper.setMatrix(clone_shape_2, w_matrix_2, false);
+            -- JiHDocumentHelper.setMatrix(clone_shape_1, w_matrix_1, false);
+            -- JiHDocumentHelper.setMatrix(clone_shape_2, w_matrix_2, false);
+
+            
+			JiHDocumentHelper.setShapeTransform(clone_shape_1, child_1_transformComponent);
+			JiHDocumentHelper.setShapeTransform(clone_shape_2, child_2_transformComponent);
 
             -- create a new shape
             local shape;
