@@ -999,3 +999,20 @@ end
 function JiHDocumentHelper.getNodeByNodeId(stage, objName)
     return stage:getChildById(objName, true);
 end
+function JiHDocumentHelper.test_load_svg()
+    --local filename = "test/rect.svg";
+    local filename = "test/rect_round.svg";
+
+    local svg_data = "";
+	local file = ParaIO.open(filename, "r");
+	if(file:IsValid()) then
+		svg_data= file:GetText();
+		file:close();
+	end
+    commonlib.echo("======================svg_data");
+    commonlib.echo(#svg_data);
+
+    local charArray = JiHDocumentHelper.stringToJiHCharArray(svg_data);
+    local jih_svg_loader = jihengine.JiHSvgLoader:new();
+    jih_svg_loader:loadFromCharArray(charArray);
+end
