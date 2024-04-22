@@ -398,13 +398,12 @@ function nplcad:api_runcode(input)
     end);
     yield();
     if(code and code ~= "")then
-        _G.mainParams = nil;
-        
         local build_type = input.build_type
         local filename = input.filename
         local exportCoordinateType = input.exportCoordinateType or 0;
         local compilerVersion = input.compilerVersion;
         local mainParams = input.mainParams;
+        local exportOptions = input.exportOptions;
         if(mainParams and type(mainParams) == "string")then
             local out={};
             if(NPL.FromJson(mainParams, out)) then
@@ -417,29 +416,61 @@ function nplcad:api_runcode(input)
         if next(mainParams) == nil then
             mainParams = nil;
         end
-
+        
         local func_str = nplcad.do_string;
         local str;
+        if(not build_type or build_type == "")then
+            build_type = "gltf"
+        end
+
+        if(exportOptions and type(exportOptions) == "string")then
+            local out={};
+            if(NPL.FromJson(exportOptions, out)) then
+                exportOptions = out
+            else
+                exportOptions = nil
+            end
+        end
+        exportOptions = exportOptions or { angleTolerance = 0.1, linearTolerance = 0.3, scale = 1, };
+
+        _G.mainParams = mainParams;
+        _G.build_type = build_type;
+        _G.exportOptions = exportOptions;
+
+        commonlib.echo("===================build_type");
+        commonlib.echo(build_type);
+        commonlib.echo("===================exportOptions");
+        commonlib.echo(exportOptions);
+
+        commonlib.echo("===================compilerVersion");
+        commonlib.echo(compilerVersion);
         if(build_type == "parax")then
             if(compilerVersion == "v3")then
-                str = nplcad.getcode_export_parax_v3(code)
+                str = nplcad.getcode_export_v3(code)
+                --str = nplcad.getcode_export_parax_v3(code)
             else
                 str = nplcad.getcode_export_parax(code, exportCoordinateType)
             end
         elseif(build_type == "stl")then
 
             if(compilerVersion == "v3")then
-                str = nplcad.getcode_export_stl_v3(code, exportCoordinateType)
+                str = nplcad.getcode_export_v3(code)
+                --str = nplcad.getcode_export_stl_v3(code, exportCoordinateType)
             else
                 str = nplcad.getcode_export_stl(code, exportCoordinateType)
             end
 
 
         elseif(build_type == "fbx" or build_type == "fbxa" or build_type == "obj" )then
-            str = nplcad.getcode_export_fbx_obj(code, build_type, exportCoordinateType, 0)
+            if(compilerVersion == "v3")then
+                str = nplcad.getcode_export_v3(code)
+            else
+                str = nplcad.getcode_export_fbx_obj(code, build_type, exportCoordinateType, 0)
+            end
         elseif(build_type == "step")then
             if(compilerVersion == "v3")then
-                str = nplcad.getcode_export_step_v3(code)
+                str = nplcad.getcode_export_v3(code)
+                --str = nplcad.getcode_export_step_v3(code)
             else
                 str = nplcad.getcode_export_step(code, filename, exportCoordinateType, 0)
             end
@@ -449,9 +480,9 @@ function nplcad:api_runcode(input)
             str = nplcad.getcode_export_before_scene_code_xml(code)
         elseif(build_type == "scene_code_xml")then
             str = nplcad.getcode_export_scene_code_xml(code)
-        else
+        elseif(build_type == "gltf")then
             if(compilerVersion == "v3")then
-                str = nplcad.getcode_export_gltf_v3(code, mainParams)
+                str = nplcad.getcode_export_v3(code)
             else
                 str = nplcad.getcode(code, exportCoordinateType)
             end
@@ -470,6 +501,8 @@ function nplcad:api_runcode(input)
         end
     end
     _G.mainParams = nil;
+    _G.build_type = nil;
+    _G.exportOptions = nil;
 
 	NPL.load("(gl)script/apps/Aries/Creator/Game/game_logic.lua");
 	local GameLogic = commonlib.gettable("MyCompany.Aries.Game.GameLogic")
@@ -524,6 +557,85 @@ function nplcad.getcode_export_stl_v3(str)
          JiHDocumentHelper.run(jih_doc:getRootNode(), false);
          local content = ""
         return content;
+    ]],str);
+    return s;
+end
+-- export 3d model
+-- @params str: the code string
+-- @params build_type: the model type, step/gltf/fbx/stl/obj/parax
+-- @params exportOptions: the export options
+--[[
+    exportOptions = {
+        key = "", -- gltf/step/fbx/stl/obj/parax
+        angleTolerance = 0,
+        linearTolerance = 0,
+        scale = 1,
+        format = "ascii", "ascii" or "binary"
+    }
+]]
+function nplcad.getcode_export_v3(str)
+    local s = string.format([[
+        NPL.load("(gl)script/ide/System/Encoding/base64.lua");
+        local Encoding = commonlib.gettable("System.Encoding");
+
+        local jih_doc = nil;
+        local JiHDocument = NPL.load("Mod/NplCad2/JiHDom/JiHDocument.lua");
+        local JiHDocumentHelper = NPL.load("Mod/NplCad2/JiHDom/JiHDocumentHelper.lua");
+        %s
+
+        if(defaultConfigs)then
+            mainParams = mainParams or JiHDocumentHelper.getMainParamDefaultValues(defaultConfigs);
+        end
+        mainParams = mainParams or {};
+        local context = {};
+        local jih_doc_from_return = nil;
+        if(main and type(main) == "function")then
+            jih_doc_from_return = main(mainParams, context)
+        end
+        if(context.jih_doc)then
+            jih_doc = context.jih_doc
+        end
+        if(jih_doc_from_return)then
+            jih_doc = jih_doc_from_return
+        end
+        local content;
+        local writeBinary = false;
+        if(exportOptions.format == "binary")then
+            writeBinary = true;
+        end
+        if(jih_doc)then
+            JiHDocumentHelper.run(jih_doc:getRootNode(), false);
+            if(build_type == "step")then
+                local charArray = JiHDocumentHelper.toStep(jih_doc:getRootNode());
+                content = JiHDocumentHelper.charArrayToString(charArray);
+            elseif(build_type == "gltf")then
+                
+                local charArray = JiHDocumentHelper.toGltf(jih_doc:getRootNode(), exportOptions.linearTolerance, exportOptions.angleTolerance, true, true, exportOptions.scale, writeBinary);
+                content = JiHDocumentHelper.charArrayToString(charArray);
+                if(writeBinary)then
+                    content = Encoding.base64(content);
+                end
+            elseif(build_type == "fbx")then
+                if(not writeBinary)then
+                    build_type = "fbxa";
+                end
+                local uCharArray = JiHDocumentHelper.export3DModelByAssimp(build_type, jih_doc:getRootNode(), exportOptions.linearTolerance, exportOptions.angleTolerance, exportOptions.scale);
+                content = JiHDocumentHelper.charArrayToString(uCharArray);
+                if(writeBinary)then
+                    content = Encoding.base64(content);
+                end
+
+            elseif(build_type == "stl" or build_type == "obj")then
+                local charArray = JiHDocumentHelper.export3DModelByAssimp(build_type, jih_doc:getRootNode(), exportOptions.linearTolerance, exportOptions.angleTolerance, exportOptions.scale);
+                content = JiHDocumentHelper.charArrayToString(charArray);
+
+            elseif(build_type == "parax")then
+                content = JiHDocumentHelper.toParax(jih_doc:getRootNode(), exportOptions.linearTolerance, exportOptions.angleTolerance, exportOptions.scale);
+                content = Encoding.base64(content);
+            end
+           
+        end
+        return { content = content, mainParams = mainParams, defaultConfigs = defaultConfigs,  };
     ]],str);
     return s;
 end

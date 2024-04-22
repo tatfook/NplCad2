@@ -869,11 +869,11 @@ function JiHDocumentHelper.getOp(jih_node)
     end
 end
 
-function JiHDocumentHelper.toGltf(scene_node, theLinDeflection, theAngDeflection, writeFace, writeEdge)
+function JiHDocumentHelper.toGltf(scene_node, theLinDeflection, theAngDeflection, writeFace, writeEdge, scale, writeBinary)
     if(not scene_node)then
         return
     end
-    local exporter = jihengine.JiHExporterGltf:new(scene_node, theLinDeflection, theAngDeflection, writeFace, writeEdge, true);
+    local exporter = jihengine.JiHExporterGltf:new(scene_node, theLinDeflection, theAngDeflection, writeFace, writeEdge, true, scale, writeBinary);
     local charArray = exporter:exportToCharArray();
     return charArray;
 end
@@ -885,16 +885,23 @@ function JiHDocumentHelper.toStep(scene_node)
     local charArray = exporter:exportStep(scene_node);
     return charArray;
 end
-function JiHDocumentHelper.toParax(scene_node, theLinDeflection, theAngDeflection)
+function JiHDocumentHelper.toParax(scene_node, theLinDeflection, theAngDeflection, scale)
     if(not scene_node)then
         return
     end
-    local exporter = jihengine.JiHExporterParaX:new(scene_node, theLinDeflection, theAngDeflection, false, 1.0);
+    local exporter = jihengine.JiHExporterParaX:new(scene_node, theLinDeflection, theAngDeflection, true, scale);
     local charArray = exporter:exportToCharArray();
     local content = JiHDocumentHelper.charArrayToString(charArray)
 	local template = JiHDocumentHelper.loadParaXTemplateFromDisc();
 	content = template .. content;
     return content
+end
+-- export 3d model by assimp
+-- @param model_type: fbx/fbxa/stl/obj
+function JiHDocumentHelper.export3DModelByAssimp(model_type, scene_node, theLinDeflection, theAngDeflection, scale)
+    local exporter = jihengine.JiHExporterForAssimp:new(theAngDeflection, theLinDeflection, scale);
+    local charArray = exporter:ExportToCharArray(scene_node, model_type);
+    return charArray;
 end
 -- load parax template 
 function JiHDocumentHelper.loadParaXTemplateFromDisc()
