@@ -96,7 +96,7 @@ function JiHDocument:popNode()
 	self.cur_node = parent;
 	self.selected_node = node;
 
-    -- ¼ì²âÊÇ·ñÖ´ÐÐ²¼¶ûÔËËã
+    -- ï¿½ï¿½ï¿½ï¿½Ç·ï¿½Ö´ï¿½Ð²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     local enabled = JiHDocumentHelper.getOpEnabled(node);
     if(enabled)then
         JiHDocumentHelper.runNode(node)
@@ -518,7 +518,7 @@ end
 
 -- features 
 
--- ºÍ feature_position ¹¦ÄÜÒ»Ñù
+-- ï¿½ï¿½ feature_position ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½
 function JiHDocument:translate(x, y, z)
     self:feature_position(x, y, z);
 end
@@ -527,7 +527,7 @@ function JiHDocument:feature_position(x, y, z)
     JiHDocumentHelper.setPosition(node, x, y, z)
 end
 
--- ºÍ feature_rotate ¹¦ÄÜÒ»Ñù
+-- ï¿½ï¿½ feature_rotate ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½
 function JiHDocument:rotate(axix, angle)
     self:feature_rotate(axix, angle);
 end
@@ -557,7 +557,7 @@ function JiHDocument:feature_rotate_(axis_x, axis_y, axis_z, angle_degree)
     JiHDocumentHelper.setQuaternion(node, q:getX(), q:getY(), q:getZ(), q:getW());
 end
 
--- ºÍ feature_scale ¹¦ÄÜÒ»Ñù
+-- ï¿½ï¿½ feature_scale ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½
 function JiHDocument:scale(x, y, z)
     self:feature_scale(x, y, z);
 
@@ -910,6 +910,7 @@ function JiHDocument:feature_mirror_node_by_name(op, objName, plane, color)
     local plane_arr = JiHDocumentHelper.convertPlaneToArray(plane);
     self:feature_mirror_node_by_name_(jihNode, op, plane_arr[1], plane_arr[2], plane_arr[3], plane_arr[4], plane_arr[5], plane_arr[6], color);
 end
+
 function JiHDocument:feature_mirror_node_by_name_(jihNode, op, x, y, z, dir_x, dir_y, dir_z, color)
     if(not jihNode)then
         return
@@ -937,4 +938,22 @@ function JiHDocument:feature_mirror_node_by_name_(jihNode, op, x, y, z, dir_x, d
             self.selected_node = mirror_node;
         end
     end
+end
+
+function JiHDocument:involute_gear(
+    op, base_height, base_module, base_teeth, fillet_head, fillet_root, fillet_undercut,
+    helical_beta, helical_double, helical_properties_from_tool, involute_pressure_angle, involute_shift,
+    tolerance_backlash, tolerance_clearance, tolerance_head, tolerance_reversed_backlash, color
+)
+    local jihTopoShape = jihengine.JiHShapeMaker:involute_gear(
+        base_height, base_module, base_teeth,
+        fillet_head, fillet_root, fillet_undercut,
+        helical_beta, helical_double, helical_properties_from_tool,
+        involute_pressure_angle, involute_shift,
+        tolerance_backlash, tolerance_clearance,
+        tolerance_head, tolerance_reversed_backlash
+    )
+
+    local jih_node = self:addJiHNode(op, color, jihTopoShape)
+    jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
 end
