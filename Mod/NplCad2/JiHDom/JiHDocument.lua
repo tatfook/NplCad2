@@ -516,7 +516,46 @@ function JiHDocument:run_svg_codes(result, scale, color, hInvert, plane)
     end
 end
 
--- features 
+-- features
+
+-- translate
+function JiHDocument:feature_position_transform(x, y, z)
+    local node = self:getSelectedNode()
+    local jihNode = node
+    local shape = JiHDocumentHelper.getShape(jihNode)
+    shape:translate(x, y, z)
+end
+
+-- scale
+function JiHDocument:feature_scale_transform(x, y, z)
+    local node = self:getSelectedNode()
+    local jihNode = node
+    local shape = JiHDocumentHelper.getShape(jihNode)
+    shape:scale(x, y, z)
+end
+
+-- rotate
+function JiHDocument:feature_rotate_transform(axisEnum, angle_degree)
+    local node = self:getSelectedNode()
+    local shape = JiHDocumentHelper.getShape(node)
+
+    local axis_x, axis_y, axis_z = 0, 0, 0
+    if axisEnum == JiHDocumentHelper.AxisType.x then
+        axis_x = 1
+    elseif axisEnum == JiHDocumentHelper.AxisType.y then
+        axis_y = 1
+    elseif axisEnum == JiHDocumentHelper.AxisType.z then
+        axis_z = 1
+    end
+
+    local q = jihengine.Quaternion:new();
+    local axis = jihengine.Vector3:new(axis_x, axis_y, axis_z);
+    local angle = angle_degree * math.pi * (1.0 / 180.0);
+    jihengine.Quaternion:createFromAxisAngle(axis, angle, q);
+
+    shape:rotate(q:getX(), q:getY(), q:getZ(), q:getW())
+end
+
 
 -- �� feature_position ����һ��
 function JiHDocument:translate(x, y, z)
