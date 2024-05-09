@@ -996,3 +996,19 @@ function JiHDocument:involute_gear(
     local jih_node = self:addJiHNode(op, color, jihTopoShape)
     jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
 end
+
+function JiHDocument:involute_rack_gear(
+    op,
+    base_module, base_teeth, base_height, base_add_endings, base_thickness,
+    fillet_head, fillet_root, helical_beta, helical_double_helix,
+    involute_press_angle, tolerance_head, tolerance_clearance,
+    color
+)
+    local jihTopoShape = jihengine_runtime.JiHShapeMaker:involute_rack_gear(
+        base_module, base_teeth, base_height, base_add_endings, base_thickness,
+        fillet_head, fillet_root, helical_beta, helical_double_helix,
+        involute_press_angle, tolerance_head, tolerance_clearance
+    )
+    local jih_node = self:addJiHNode(op, color, jihTopoShape)
+    jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
+end
