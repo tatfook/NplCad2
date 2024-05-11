@@ -980,21 +980,46 @@ function JiHDocument:feature_mirror_node_by_name_(jihNode, op, x, y, z, dir_x, d
 end
 
 function JiHDocument:involute_gear(
-    op, base_height, base_module, base_teeth, fillet_head, fillet_root, fillet_undercut,
-    helical_beta, helical_double, helical_properties_from_tool, involute_pressure_angle, involute_shift,
-    tolerance_backlash, tolerance_clearance, tolerance_head, tolerance_reversed_backlash, color
+    op,
+    base_teeth, base_module, base_height,
+    involute_pressure_angle, involute_shift,
+    helical_beta, helical_double,
+    fillet_head, fillet_root, fillet_undercut,
+    tolerance_backlash, tolerance_clearance, tolerance_head, tolerance_reversed_backlash,
+    color
 )
     local jihTopoShape = jihengine.JiHShapeMaker:involute_gear(
-        base_height, base_module, base_teeth,
-        fillet_head, fillet_root, fillet_undercut,
-        helical_beta, helical_double, helical_properties_from_tool,
+        base_teeth, base_module, base_height,
         involute_pressure_angle, involute_shift,
-        tolerance_backlash, tolerance_clearance,
-        tolerance_head, tolerance_reversed_backlash
+        helical_beta, helical_double,
+        fillet_head, fillet_root, fillet_undercut,
+        tolerance_backlash, tolerance_clearance, tolerance_head, tolerance_reversed_backlash
     )
 
     local jih_node = self:addJiHNode(op, color, jihTopoShape)
     jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
+end
+
+function JiHDocument:involute_internal_gear(
+  op,
+  base_teeth, base_module, base_height, base_thickness,
+  involute_pressure_angle, involute_shift,
+  helical_beta, helical_double,
+  fillet_head, fillet_root,
+  tolerance_backlash, tolerance_clearance,
+  tolerance_head, tolerance_reversed_backlash,
+  color
+)
+    local jihTopoShape = jihengine_runtime.JiHShapeMaker:involute_internal_gear(
+        base_teeth, base_module, base_height, base_thickness,
+        involute_pressure_angle, involute_shift,
+        helical_beta, helical_double,
+        fillet_head, fillet_root,
+        tolerance_backlash, tolerance_clearance,
+        tolerance_head, tolerance_reversed_backlash
+    )
+    local jih_node = self:addJiHNode(op, color, jihTopoShape)
+    jih_node:setId("gear_" .. generateId())
 end
 
 function JiHDocument:involute_rack_gear(
