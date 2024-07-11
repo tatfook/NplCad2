@@ -1010,7 +1010,7 @@ function JiHDocument:involute_internal_gear(
   tolerance_head, tolerance_reversed_backlash,
   color
 )
-    local jihTopoShape = jihengine_runtime.JiHShapeMaker:involute_internal_gear(
+    local jihTopoShape = jihengine.JiHShapeMaker:involute_internal_gear(
         base_teeth, base_module, base_height, base_thickness,
         involute_pressure_angle, involute_shift,
         helical_beta, helical_double,
@@ -1019,7 +1019,7 @@ function JiHDocument:involute_internal_gear(
         tolerance_head, tolerance_reversed_backlash
     )
     local jih_node = self:addJiHNode(op, color, jihTopoShape)
-    jih_node:setId("gear_" .. generateId())
+    jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
 end
 
 function JiHDocument:involute_rack_gear(
@@ -1029,11 +1029,134 @@ function JiHDocument:involute_rack_gear(
     involute_press_angle, tolerance_head, tolerance_clearance,
     color
 )
-    local jihTopoShape = jihengine_runtime.JiHShapeMaker:involute_rack_gear(
+    local jihTopoShape = jihengine.JiHShapeMaker:involute_rack_gear(
         base_module, base_teeth, base_height, base_add_endings, base_thickness,
         fillet_head, fillet_root, helical_beta, helical_double_helix,
         involute_press_angle, tolerance_head, tolerance_clearance
     )
+    local jih_node = self:addJiHNode(op, color, jihTopoShape)
+    jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
+end
+
+function JiHDocument:bevel_gear(
+    op, base_teeth, base_module, base_height,
+    helical_beta, involute_pitch_angle,
+    involute_pressure_angle,
+    tolerance_backlash, tolerance_clearance,
+    color
+)
+    local jihTopoShape = jihengine.JiHShapeMaker:bevel_gear(
+        base_teeth, base_module, base_height,
+        helical_beta, involute_pitch_angle,
+        involute_pressure_angle,
+        tolerance_backlash, tolerance_clearance
+    )
+    local jih_node = self:addJiHNode(op, color, jihTopoShape)
+    jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
+end
+
+function JiHDocument:crown_gear(
+    op, base_teeth, base_otherTeeth, base_module,
+    base_height, base_thickness,
+    involute_pressure_angle,
+    color
+)
+    local jihTopoShape = jihengine.JiHShapeMaker:crown_gear(
+        base_teeth, base_otherTeeth, base_module,
+        base_height, base_thickness,
+        involute_pressure_angle
+    )
+    local jih_node = self:addJiHNode(op, color, jihTopoShape)
+    jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
+end
+
+function JiHDocument:worm_gear(
+    op, base_teeth, base_module, base_diameter, base_height, base_reverse_pitch, involute_pressure_angle,
+    tolerance_clearance, tolerance_head,
+    color
+)
+    local jihTopoShape = jihengine.JiHShapeMaker:worm_gear(
+        base_teeth, base_module, base_diameter, base_height, base_reverse_pitch, involute_pressure_angle,
+        tolerance_clearance, tolerance_head
+    )
+    local jih_node = self:addJiHNode(op, color, jihTopoShape)
+    jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
+end
+
+function JiHDocument:cycloid_gear(
+    op, teeth, base_module, height,
+    inner_diameter, outer_diameter,
+    head_fillet, root_fillet,
+    beta, double_helix,
+    backlash, clearance, head,
+    color
+)
+    local jihTopoShape = jihengine.JiHShapeMaker:cycloid_gear(
+        teeth, base_module, height,
+        inner_diameter, outer_diameter,
+        head_fillet, root_fillet,
+        beta, double_helix,
+        backlash, clearance, head
+    )
+    local jih_node = self:addJiHNode(op, color, jihTopoShape)
+    jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
+end
+
+function JiHDocument:cycloid_rack_gear(
+    op, base_height, base_teeth, base_thickness,
+    base_add_ending,
+    cycloid_inner_diameter,
+    cycloid_outer_diameter, fillet_head,
+    fillet_root,
+    helical_beta, helical_double, involute_module,
+    tol_clearance, tol_head,
+    color
+)
+    local jihTopoShape = jihengine.JiHShapeMaker:cycloid_rack_gear(
+        base_height, base_teeth, base_thickness,
+        base_add_ending,
+        cycloid_inner_diameter,
+        cycloid_outer_diameter, fillet_head,
+        fillet_root,
+        helical_beta, helical_double, involute_module,
+        tol_clearance, tol_head
+    )
+    local jih_node = self:addJiHNode(op, color, jihTopoShape)
+    jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
+end
+
+function JiHDocument:latern_gear(
+    op, base_teeth, base_radius, base_height, base_module,
+    tol_head,
+    color
+)
+    local jihTopoShape = jihengine.JiHShapeMaker:latern_gear(
+        base_teeth, base_radius, base_height, base_module,
+        tol_head
+    )
+    local jih_node = self:addJiHNode(op, color, jihTopoShape)
+    jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
+end
+
+function JiHDocument:timing_gear(
+    op, teeth, height, type,
+    color
+)
+    local jihTopoShape = jihengine.JiHShapeMaker:timing_gear(
+        teeth, height, type
+    )
+    local jih_node = self:addJiHNode(op, color, jihTopoShape)
+    jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
+end
+
+function JiHDocument:bevel_gear_v2(op, base_module, numOfTeeth, numOfTeeth2, height, color)
+    local jihTopoShape = jihengine.JiHShapeMaker:bevel_gear_v2(base_module, numOfTeeth, numOfTeeth2, height)
+    local jih_node = self:addJiHNode(op, color, jihTopoShape)
+    jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
+end
+
+function JiHDocument:worm_gear_v2(op, color)
+    local jihTopoShape = jihengine.JiHShapeMaker:worm_gear_v2()
     local jih_node = self:addJiHNode(op, color, jihTopoShape)
     jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
 end
