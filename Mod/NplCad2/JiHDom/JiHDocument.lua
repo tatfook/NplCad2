@@ -1160,3 +1160,9 @@ function JiHDocument:worm_gear_v2(op, color)
     local jih_node = self:addJiHNode(op, color, jihTopoShape)
     jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
 end
+
+function JiHDocument:lantern_gear(op, base_teeth, base_radius, base_height, base_module, tol_head, color)
+    local jihTopoShape = jihengine.JiHShapeMaker:lantern_gear(base_teeth, base_radius, base_height, base_module, tol_head)
+    local jih_node = self:addJiHNode(op, color, jihTopoShape)
+    jih_node:setId("gear_" .. JiHDocumentHelper.generateId())
+end
