@@ -215,6 +215,7 @@ function JiHDocument:import_shape_str(op, step_data, color, isBase64)
     jih_node:addChild(root_node_step);
     jih_node:setId("shape_" .. JiHDocumentHelper.generateId());
 end
+
 function JiHDocument:createBSpline(name, closed, color)
     self.cur_curve_object = BSplineObject:new():onInit(name, {}, 3, closed, BSplineObject.CurveTypes.basis_spline, color);
 end
@@ -268,6 +269,7 @@ function JiHDocument:endSketch()
     self.cur_node = parent;
     self.selected_node = node;
 end
+
 function JiHDocument:geom_point(x, y, z, color)
     local geom_component = jihengine.JiHShapeMaker:geom_point(x, y, z);
     local jihTopoShape = geom_component:toShape();
@@ -275,13 +277,55 @@ function JiHDocument:geom_point(x, y, z, color)
     jih_node:addComponent(geom_component:toBase());
     jih_node:setId("geom_point_" .. JiHDocumentHelper.generateId());
 end
+
 function JiHDocument:geom_line_segment(start_x, start_y, start_z, end_x, end_y, end_z, color)
-    local geom_component = jihengine.JiHShapeMaker:geom_line_segment(start_x, start_y, start_z, end_x, end_y, end_z, 0, 1, 0);
+    -- ignore this if sp == ep
+    if (start_x == end_x and start_y == end_y and start_z == end_z) then
+        return
+    end
+
+    local dir_arr
+    local plane = JiHDocumentHelper.findParentSketchPlane(self:getCurNode())
+    if plane then
+        dir_arr = {plane[4], plane[5], plane[6]}
+    else
+        dir_arr = JiHDocumentHelper.convertDirectionToArray(dir)
+    end
+
+    local geom_component = jihengine.JiHShapeMaker:geom_line_segment(
+        start_x, start_y, start_z, end_x, end_y, end_z,
+        dir_arr[1], dir_arr[2], dir_arr[3]
+    );
     local jihTopoShape = geom_component:toShape();
     local jih_node = self:addJiHNode(JiHDocumentHelper.opType.union, color, jihTopoShape);
     jih_node:addComponent(geom_component:toBase());
     jih_node:setId("geom_line_segment_" .. JiHDocumentHelper.generateId());
 end
+
+function JiHDocument:geom_arc_of_ellipse(
+    x, y, z, major_r, minor_r, startAngle, endAngle, color, dir, isClockwise, xAxisRotation
+)
+    local dir_arr
+    local plane = JiHDocumentHelper.findParentSketchPlane(self:getCurNode())
+    if plane then
+        dir_arr = {plane[4], plane[5], plane[6]}
+    else
+        dir_arr = JiHDocumentHelper.convertDirectionToArray(dir)
+    end
+
+    commonlib.echo("=========geom_arc_of_ellipse");
+    commonlib.echo({x, y, z, major_r, minor_r, startAngle, endAngle, isClockwise, xAxisRotation});
+    commonlib.echo(dir_arr);
+    local geom_component = jihengine.JiHShapeMaker:geom_arc_of_ellipse(
+        x, y, z, major_r, minor_r, startAngle, endAngle, isClockwise,
+        dir_arr[1], dir_arr[2], dir_arr[3], xAxisRotation
+    )
+    local jihTopoShape = geom_component:toShape()
+    local jih_node = self:addJiHNode(JiHDocumentHelper.opType.union, color, jihTopoShape)
+    jih_node:addComponent(geom_component:toBase())
+    jih_node:setId("geom_arc_of_ellipse_" .. JiHDocumentHelper.generateId())
+end
+
 -- @param dir: "x|y|z" or { 0, 0, 0 }
 function JiHDocument:geom_circle(x, y, z, r, color, dir)
     local dir_arr;
@@ -443,6 +487,109 @@ function JiHDocument:run_dxf_codes(str, scale, color, plane)
         end
     end
 end
+
+function JiHDocument:geom_sketch3d_string(base64, scale, color, plane_arr, bBase64)
+    commonlib.echo("=========geom_sketch3d_string");
+    base64 = base64 or ""
+    if base64 == "" then
+        return
+    end
+    if bBase64 then
+        -- decode
+       base64 = Encoding.unbase64(base64);
+    end
+
+    local out = {}
+
+     -- Decode base64 to binary string
+    local binString = base64
+
+    -- Convert binary string to table of byte values
+    local utf8 = {string.byte(binString, 1, #binString)}
+    commonlib.echo("=====================utf8");
+
+    -- Check magic number
+    if #utf8 > 4 and (utf8[1] ~= 0xCF or utf8[2] ~= 0xCF or utf8[3] ~= 0xCF or utf8[4] ~= 0xCF) then
+        return binString
+    end
+
+    -- Remove magic number
+    utf8 = {table.unpack(utf8, 5)}
+
+    -- Convert remaining bytes back to UTF-8 string
+    base64 = string.char(table.unpack(utf8))
+    commonlib.echo("=====================base64");
+    commonlib.echo(base64);
+
+    NPL.FromJson(base64, out)
+    commonlib.echo("=====================out");
+    commonlib.echo(out);
+    self:run_sketch3d_codes(out, color)
+end
+
+function JiHDocument:run_sketch3d_codes(obj, color)
+    if not obj then
+        return
+    end
+
+    for i = 1, #obj.geoms do
+        local geom = obj.geoms[i]
+        local geom_type = geom.geom_type
+        local is_internal = geom.is_internal
+        if not is_internal then
+            if geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_Point then
+                local point = geom.point
+                -- ignored?
+                self:geom_point(point[1], point[2], point[3], color)
+            elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_Line then
+                local is_closed = false
+                local startPoint = geom.startPoint
+                local endPoint = geom.endPoint
+
+                self:geom_line_segment(
+                    startPoint[1], startPoint[2], startPoint[3],
+                    endPoint[1], endPoint[2], endPoint[3], color
+                )
+            elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_Arc then
+                local center = geom.center
+                local radius = geom.radius
+                local startAngle = geom.startAngle
+                local endAngle = geom.endAngle
+                self:geom_arc(center[1], center[2], center[3], radius, startAngle, endAngle, color, nil, false)
+            elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_Circle then
+                local center = geom.center
+                local radius = geom.radius
+                self:geom_circle(center[1], center[2], center[3], radius, color, nil)
+            elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_Ellipse then
+                local center = geom.center
+                local majorRadius = geom.majorRadius
+                local minorRadius = geom.minorRadius
+                self:geom_ellipse(center[1], center[2], center[3], majorRadius, minorRadius, color, nil)
+            elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_ArcOfEllipse then
+                local center = geom.center
+                local majorRadius = geom.majorRadius
+                local minorRadius = geom.minorRadius
+                local startAngle = geom.startAngle
+                local endAngle = geom.endAngle
+                local isClockwise = geom.isClockwise
+                local xAxisRotation = geom.xAxisRotation
+                local dir = geom.dir
+
+                self:geom_arc_of_ellipse(
+                    center[1], center[2], center[3], majorRadius, minorRadius,
+                    startAngle, endAngle, color, dir, isClockwise == 1, xAxisRotation
+                )
+            elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_BSpline then
+                local degree = geom.degree
+                local poles = geom.poles
+                local is_closed = geom.is_closed
+                local type = geom.type
+                self:geom_bspline_(poles, degree, is_closed, type, color)
+            end
+        end
+    end
+end
+
 function JiHDocument:geom_svg_file(filename, scale, color, plane)
     if (global_resource) then
         local str = global_resource(filename)

@@ -28,6 +28,7 @@ JiHDocumentHelper.GeomTypes = {
     JiHGeom_Arc = "JiHGeom_Arc",
     JiHGeom_Circle = "JiHGeom_Circle",
     JiHGeom_Ellipse = "JiHGeom_Ellipse",
+    JiHGeom_ArcOfEllipse = "JiHGeom_ArcOfEllipse",
     JiHGeom_BSpline = "JiHGeom_BSpline",
 }
 
