@@ -536,55 +536,60 @@ function JiHDocument:run_sketch3d_codes(obj, color)
         local geom = obj.geoms[i]
         local geom_type = geom.geom_type
         local is_internal = geom.is_internal
-        if not is_internal then
-            if geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_Point then
-                local point = geom.point
-                -- ignored?
-                self:geom_point(point[1], point[2], point[3], color)
-            elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_Line then
-                local is_closed = false
-                local startPoint = geom.startPoint
-                local endPoint = geom.endPoint
+        local is_construction = geom.is_construction
 
-                self:geom_line_segment(
-                    startPoint[1], startPoint[2], startPoint[3],
-                    endPoint[1], endPoint[2], endPoint[3], color
-                )
-            elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_Arc then
-                local center = geom.center
-                local radius = geom.radius
-                local startAngle = geom.startAngle
-                local endAngle = geom.endAngle
-                self:geom_arc(center[1], center[2], center[3], radius, startAngle, endAngle, color, nil, false)
-            elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_Circle then
-                local center = geom.center
-                local radius = geom.radius
-                self:geom_circle(center[1], center[2], center[3], radius, color, nil)
-            elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_Ellipse then
-                local center = geom.center
-                local majorRadius = geom.majorRadius
-                local minorRadius = geom.minorRadius
-                self:geom_ellipse(center[1], center[2], center[3], majorRadius, minorRadius, color, nil)
-            elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_ArcOfEllipse then
-                local center = geom.center
-                local majorRadius = geom.majorRadius
-                local minorRadius = geom.minorRadius
-                local startAngle = geom.startAngle
-                local endAngle = geom.endAngle
-                local isClockwise = geom.isClockwise
-                local xAxisRotation = geom.xAxisRotation
-                local dir = geom.dir
+        -- ignore construction geometry
+        if not is_construction then
+            if not is_internal then
+                if geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_Point then
+                    local point = geom.point
+                    -- ignored?
+                    self:geom_point(point[1], point[2], point[3], color)
+                elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_Line then
+                    local is_closed = false
+                    local startPoint = geom.startPoint
+                    local endPoint = geom.endPoint
 
-                self:geom_arc_of_ellipse(
-                    center[1], center[2], center[3], majorRadius, minorRadius,
-                    startAngle, endAngle, color, dir, isClockwise == 1, xAxisRotation
-                )
-            elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_BSpline then
-                local degree = geom.degree
-                local poles = geom.poles
-                local is_closed = geom.is_closed
-                local type = geom.type
-                self:geom_bspline_(poles, degree, is_closed, type, color)
+                    self:geom_line_segment(
+                        startPoint[1], startPoint[2], startPoint[3],
+                        endPoint[1], endPoint[2], endPoint[3], color
+                    )
+                elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_Arc then
+                    local center = geom.center
+                    local radius = geom.radius
+                    local startAngle = geom.startAngle
+                    local endAngle = geom.endAngle
+                    self:geom_arc(center[1], center[2], center[3], radius, startAngle, endAngle, color, nil, false)
+                elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_Circle then
+                    local center = geom.center
+                    local radius = geom.radius
+                    self:geom_circle(center[1], center[2], center[3], radius, color, nil)
+                elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_Ellipse then
+                    local center = geom.center
+                    local majorRadius = geom.majorRadius
+                    local minorRadius = geom.minorRadius
+                    self:geom_ellipse(center[1], center[2], center[3], majorRadius, minorRadius, color, nil)
+                elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_ArcOfEllipse then
+                    local center = geom.center
+                    local majorRadius = geom.majorRadius
+                    local minorRadius = geom.minorRadius
+                    local startAngle = geom.startAngle
+                    local endAngle = geom.endAngle
+                    local isClockwise = geom.isClockwise
+                    local xAxisRotation = geom.xAxisRotation
+                    local dir = geom.dir
+
+                    self:geom_arc_of_ellipse(
+                        center[1], center[2], center[3], majorRadius, minorRadius,
+                        startAngle, endAngle, color, dir, isClockwise == 1, xAxisRotation
+                    )
+                elseif geom_type == JiHDocumentHelper.GeomTypes.JiHGeom_BSpline then
+                    local degree = geom.degree
+                    local poles = geom.poles
+                    local is_closed = geom.is_closed
+                    local type = geom.type
+                    self:geom_bspline_(poles, degree, is_closed, type, color)
+                end
             end
         end
     end
